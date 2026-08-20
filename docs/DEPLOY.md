@@ -15,28 +15,31 @@ Peças e onde ficam:
 
 ## 0. Antes de tudo
 
-Três coisas que não dá para adiar:
-
-1. **Repositório no GitHub.** O projeto ainda não tem git iniciado, e a Vercel
-   publica a partir de um repositório.
+1. **Repositório no GitHub.** O git local já está iniciado e com o primeiro
+   commit. Falta publicar:
    ```sh
-   git init -b main
-   git add .
-   git commit -m "PERSEUS: treinador, ranking e duelo 1v1"
    gh repo create perseus --private --source=. --push
+   # sem o gh:  git remote add origin git@github.com:SEU-USUARIO/perseus.git
+   #            git push -u origin main
    ```
-   `.gitignore` já bloqueia `.env` e `.env.*`. Confira antes do push que nenhum
-   segredo entrou: `git ls-files | grep -i env` deve mostrar só os `.example`.
+   `.gitignore` bloqueia `.env` e `.env.*`; confirme com
+   `git ls-files | grep -i env` — só os `.example` devem aparecer.
 
-2. **Um domínio.** O site na Vercel é HTTPS; um navegador em página HTTPS
-   recusa chamar uma API em HTTP. E o Let's Encrypt não emite certificado para
-   IP puro — só para nome. Sem domínio, não há duelo em produção.
-   - Domínio próprio: aponte um `A` de `api.seudominio.com` para o IP da VM.
-   - Sem domínio: DuckDNS resolve (`perseus-api.duckdns.org`), é grátis, e o
-     certbot emite normalmente para ele.
+2. **Nome para a API.** O site na Vercel é HTTPS, e navegador em página HTTPS
+   recusa chamar API em HTTP. O Let's Encrypt não emite certificado para IP
+   puro. Decidido usar **DuckDNS**:
+   - <https://www.duckdns.org> → entrar com GitHub → criar o subdomínio
+     (ex. `perseus-api` → `perseus-api.duckdns.org`) → anotar o **token**.
+   - Aponte para o IP público da VM depois do passo 1.
+   - Trocar por domínio próprio mais tarde não mexe em código: só no
+     `CORS_ORIGINS` da API e na variável da Vercel.
 
-3. **Node 22+.** Está no `engines` do repositório e a imagem da VM não vem com
-   ele. O `setup-vm.sh` instala.
+3. **IP público reservado.** No console, marque o IP da VM como *reserved*.
+   Efêmero, ele muda a cada parada da instância e leva o DNS junto. Se preferir
+   deixar efêmero, o passo 3 tem o atualizador automático.
+
+4. **Node 22+** — está no `engines` do repositório, a imagem da VM não traz.
+   O `setup-vm.sh` instala.
 
 ---
 
@@ -93,25 +96,47 @@ que a Vercel dá um domínio ao site. Ordem correta: passo 4, depois volte aqui.
 
 ---
 
-## 3. TLS
+## 3. DNS e TLS
 
-Com o DNS já apontando para o IP:
+**Apontar o DuckDNS para a VM** — do seu computador ou da própria VM:
+
+```sh
+curl "https://www.duckdns.org/update?domains=perseus-api&token=SEU-TOKEN&ip=IP-DA-VM"
+# resposta esperada: OK
+dig +short perseus-api.duckdns.org      # tem que devolver o IP da VM
+```
+
+Se o IP da VM for efêmero, deixe um atualizador no cron da máquina — cinco
+minutos de intervalo, sem `ip=` para ele usar o endereço de origem:
+
+```sh
+( crontab -l 2>/dev/null; echo '*/5 * * * * curl -fsS "https://www.duckdns.org/update?domains=perseus-api&token=SEU-TOKEN&ip=" >/dev/null' ) | crontab -
+```
+
+**nginx e certificado**, só depois que o `dig` acima responder certo:
 
 ```sh
 sudo cp deploy/nginx-perseus-api.conf /etc/nginx/sites-available/perseus-api
-sudo sed -i 's/SEU-DOMINIO/api.seudominio.com/' /etc/nginx/sites-available/perseus-api
+sudo sed -i 's/SEU-DOMINIO/perseus-api.duckdns.org/' /etc/nginx/sites-available/perseus-api
 sudo ln -sf /etc/nginx/sites-available/perseus-api /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 
-sudo certbot --nginx -d api.seudominio.com
+sudo certbot --nginx -d perseus-api.duckdns.org
 ```
 
-O certbot reescreve o arquivo com o bloco 443 e o redirecionamento, e instala a
+O certbot valida por HTTP na porta 80 — se ela não estiver aberta nas **duas**
+metades do passo 1, ele falha aqui, e essa é a hora em que o erro aparece.
+
+Ele reescreve o arquivo com o bloco 443 e o redirecionamento, e instala a
 renovação automática. O `proxy_buffering off` do bloco `/matches/` sobrevive à
-reescrita — confira depois com `grep -n proxy_buffering
-/etc/nginx/sites-available/perseus-api`, porque sem ele o duelo chega todo de
-uma vez no fim.
+reescrita; confira mesmo assim:
+
+```sh
+grep -n proxy_buffering /etc/nginx/sites-available/perseus-api
+```
+
+Sem essa linha o duelo chega todo de uma vez, depois de acabar.
 
 ---
 
@@ -134,7 +159,7 @@ só existe depois de compilado.
 Variáveis de ambiente:
 
 ```
-NEXT_PUBLIC_API_URL=https://api.seudominio.com
+NEXT_PUBLIC_API_URL=https://perseus-api.duckdns.org
 NEXT_PUBLIC_SUPABASE_URL=          # vazio: ranking desligado, treino intacto
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
@@ -169,8 +194,8 @@ curl -s localhost:3001/health/ready  # "duelHistory":"reachable"
 De fora:
 
 ```sh
-curl -s https://api.seudominio.com/health
-curl -N https://api.seudominio.com/matches/00000000-0000-0000-0000-000000000000/stream
+curl -s https://perseus-api.duckdns.org/health
+curl -N https://perseus-api.duckdns.org/matches/00000000-0000-0000-0000-000000000000/stream
 # 401 imediato é a resposta certa: significa que chegou na API e ela pediu
 # credencial. Demorar para responder é buffering do proxy.
 ```
