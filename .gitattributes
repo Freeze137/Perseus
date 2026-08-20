@@ -1,0 +1,21 @@
+# Fim de linha.
+#
+# O repositório guarda LF. O Windows pode continuar convertendo para CRLF na
+# cópia de trabalho, mas os arquivos abaixo são executados por um Linux e um
+# `\r` sobrando neles é uma falha silenciosa: um shebang `#!/usr/bin/env bash\r`
+# vira "interpretador não encontrado", e uma unit do systemd com CRLF é
+# recusada sem explicação decente.
+* text=auto eol=lf
+
+*.sh            text eol=lf
+*.service       text eol=lf
+*.conf          text eol=lf
+*.sql           text eol=lf
+
+*.png           binary
+*.jpg           binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+
+pnpm-lock.yaml  linguist-generated=true -diff

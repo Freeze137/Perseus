@@ -1,0 +1,21 @@
+{
+  "name": "perseus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typing trainer for everyone — and for people who type code.",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm build:packages && pnpm --parallel -r dev",
+    "dev:web": "pnpm --filter @perseus/web dev",
+    "dev:api": "pnpm --filter @perseus/api dev",
+    "build": "pnpm build:packages && pnpm --filter \"./apps/*\" build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r exec rm -rf dist .next .turbo node_modules/.cache",
+    "build:packages": "pnpm --filter \"./packages/*\" build"
+  }
+}

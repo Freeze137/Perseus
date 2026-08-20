@@ -1,0 +1,62 @@
+# PERSEUS API — unit do systemd.
+#
+# Instalar em /etc/systemd/system/perseus-api.service.
+#
+#   sudo cp deploy/perseus-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now perseus-api
+#
+# Um processo, e só um. As salas de duelo vivem na memória deste processo: duas
+# instâncias colocariam os dois jogadores em salas diferentes. Não transforme
+# isto em template com @ nem suba uma segunda cópia atrás de um balanceador sem
+# antes trocar o registry por um canal compartilhado.
+
+[Unit]
+Description=PERSEUS API (resultados e duelos)
+Documentation=file:///opt/perseus/docs/DUELO.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/perseus
+
+# Segredos e configuração ficam fora do repositório, em um arquivo que só o
+# root e o dono do serviço leem. Ver deploy/setup-vm.sh, que o cria com 0600.
+EnvironmentFile=/etc/perseus/api.env
+
+ExecStart=/usr/bin/node apps/api/dist/main.js
+
+# A API fecha as requisições em voo antes de sair (enableShutdownHooks). O
+# duelo em andamento acaba junto de qualquer forma — as salas são memória — mas
+# uma submissão cortada no meio é a única requisição que custa uma corrida real.
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+Restart=always
+RestartSec=3
+
+# Endurecimento. A API lê o repositório, escreve nada, e fala com o Postgres
+# pela loopback.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+# ProtectSystem=strict deixa tudo somente-leitura; nada aqui precisa de exceção
+# hoje. Se algum dia a API escrever arquivo, some ReadWritePaths= com o caminho.
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=perseus-api
+
+[Install]
+WantedBy=multi-user.target

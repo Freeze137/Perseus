@@ -1,0 +1,346 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Tokens
+
+   The palette is black and green, but never the lazy version of it: no #000
+   with flat neon. The greens are mineral and run cold to warm — jade for
+   atmosphere, emerald for the brand, mint for live data, and citrine kept in
+   reserve for a personal record. Rust is the only warm colour in the system,
+   which is why an error reads instantly.
+--------------------------------------------------------------------------- */
+@theme {
+  /* True black. The surfaces above it lean green rather than blue — a blue-grey
+     tint on a black page reads as washed out, not as depth. */
+  --color-void: #000000;
+  --color-obsidian: #070b0a;
+  --color-slate: #101917;
+  --color-jade: #0f5c4a;
+  --color-emerald: #1db981;
+  --color-mint: #7df5c4;
+  --color-citrine: #c6ff4f;
+  --color-rust: #e2564a;
+  --color-ash: #6e7f87;
+  --color-bone: #e6efea;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "Courier New", monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root {
+  --grad-edge: linear-gradient(135deg, var(--color-emerald), var(--color-mint));
+
+  --panel-width: 280px;
+  --rule: 1px solid var(--color-slate);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+--------------------------------------------------------------------------- */
+* {
+  min-width: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  /* No gradient and no grain: both lift pure black into grey. The atmosphere
+     comes from the star field instead, which is light on black rather than
+     black made lighter. */
+  background-color: var(--color-void);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.star-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-emerald) 35%, transparent);
+  color: var(--color-bone);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-emerald);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Typography primitives
+--------------------------------------------------------------------------- */
+.label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+}
+
+.rule {
+  height: 1px;
+  background: var(--color-slate);
+}
+
+.edge-rule {
+  height: 1px;
+  background: var(--grad-edge);
+  opacity: 0.6;
+}
+
+/* ---------------------------------------------------------------------------
+   Typing surface
+
+   Everything here is tuned for one thing: the character has to be on screen in
+   the same frame as the keypress. Only the caret is allowed a transition, and
+   only on transform.
+--------------------------------------------------------------------------- */
+.typing-area {
+  position: relative;
+  cursor: text;
+}
+
+.typing-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  padding: 0;
+  inset-block-start: 50%;
+  inset-inline-start: 0;
+}
+
+.typing-viewport {
+  position: relative;
+  /* The whole text stays on screen: the typist has to see what is coming. */
+  transition: filter 160ms var(--ease-snap), opacity 160ms var(--ease-snap);
+}
+
+.typing-viewport[data-blurred="true"] {
+  filter: blur(4px);
+  opacity: 0.5;
+}
+
+/* Cancelling replaces the text under the caret. Swapping it outright reads as
+   a glitch — the dip is what turns the same pixels into an action the user
+   performed. Declared after the blur rule so it wins when both apply. */
+.typing-viewport[data-swapping="true"] {
+  opacity: 0.12;
+}
+
+.typing-text {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+  color: var(--color-ash);
+}
+
+/* Words are the wrapping unit. Without this every character would be its own
+   break opportunity, and the text would snap mid-word. */
+.word {
+  display: inline-block;
+  white-space: pre;
+}
+
+/* ---------------------------------------------------------------------------
+   Code layout
+
+   Prose is centred and wraps; code is neither. A wrapped line of code is a line
+   that does not exist in the file it came from, and the indentation the typist
+   is reading against would land in the wrong column. So the text is left
+   aligned, never wraps, and the viewport scrolls to follow the caret instead.
+--------------------------------------------------------------------------- */
+.typing-viewport[data-layout="code"] {
+  max-height: min(58vh, 30rem);
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate) transparent;
+}
+
+.typing-text[data-layout="code"] {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  letter-spacing: 0;
+  text-align: left;
+  /* Tabs are Go's own indent unit, so they are shown at Go's own width. */
+  tab-size: 4;
+  /* JetBrains Mono ligates "=>" into a single arrow and "!==" into one glyph.
+     In an editor that is a nicety; here it is a lie — the typist has to press
+     two keys for something drawn as one character, and the per-character
+     feedback would land on a glyph that does not exist in the target. */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+.code-line {
+  display: flex;
+  align-items: flex-start;
+  white-space: pre;
+  border-radius: 2px;
+}
+
+/* The caret is absolutely positioned and the text is monospaced, so nothing
+   else on screen says which line is live. This does. */
+.code-line[data-active="true"] {
+  background: color-mix(in oklab, var(--color-slate) 55%, transparent);
+}
+
+.code-gutter {
+  flex: 0 0 auto;
+  width: 3ch;
+  padding-inline-end: 1.5ch;
+  text-align: right;
+  color: var(--color-slate);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.code-line[data-active="true"] .code-gutter {
+  color: var(--color-ash);
+}
+
+.code-content {
+  white-space: pre;
+}
+
+/* The indent guide. A left border on the whitespace itself, so it lines up with
+   the column exactly and costs no extra element. */
+.char[data-guide="true"] {
+  box-shadow: inset 1px 0 0 color-mix(in oklab, var(--color-slate) 90%, transparent);
+}
+
+/* A newline has no glyph, but it is still a character that can be got wrong —
+   it needs a box for the error mark and for the caret to park on. */
+.char[data-newline="true"] {
+  display: inline-block;
+  width: 0.6ch;
+}
+
+.char {
+  position: relative;
+  white-space: pre;
+  color: var(--color-ash);
+}
+
+/* Inline code anywhere in the product, not only in the typing area. A page that
+   explains why "!==" is three keystrokes cannot draw it as one glyph. */
+code {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+.char[data-state="correct"] {
+  color: var(--color-bone);
+}
+
+/* Errors carry a second signal beyond colour — the wavy underline — so the
+   feedback survives colour blindness and low-contrast screens. */
+.char[data-state="wrong"] {
+  color: var(--color-rust);
+  text-decoration: underline wavy var(--color-rust);
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 1px;
+  animation: char-shake 60ms var(--ease-snap);
+}
+
+@keyframes char-shake {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+.caret {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--color-mint);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--color-mint) 60%, transparent);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* The result arrives as a rise and a fade, staggered block by block, so the eye
+   is led down the numbers instead of hit with all of them at once. */
+.result-block {
+  animation: result-in 260ms var(--ease-snap) both;
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.focus-veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.9375rem;
+  color: var(--color-ash);
+  background: transparent;
+  border: 0;
+  cursor: text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Silent scroll
+
+   For boxes that must be able to scroll but should never advertise it. The
+   settings panel grows when a keyboard layout narrows the corpus, and on a
+   short viewport that growth summoned a track down the panel's edge — a piece
+   of chrome next to the content, competing with it, for a couple of hundred
+   pixels of overflow. The scrolling still works; only the bar is gone.
+--------------------------------------------------------------------------- */
+.scroll-silent {
+  scrollbar-width: none;
+}
+
+.scroll-silent::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

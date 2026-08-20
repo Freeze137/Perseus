@@ -1,0 +1,20 @@
+{
+  "name": "@perseus/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure typing engine: keystroke reducer, metrics, per-key stats. No DOM, no React.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.10"
+  }
+}

@@ -1,0 +1,44 @@
+# O portão que a fase 2 pediu: lint, tipos e testes em toda mudança.
+#
+# Não faz deploy. A API sobe por `deploy/deploy.sh` na VM, à mão e de propósito
+# — reiniciar o processo encerra os duelos em andamento, e isso não é decisão
+# que um push no main deva tomar sozinho.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Os apps importam os pacotes pelo `dist`, então o build deles vem antes
+      # de qualquer checagem que resolva um import.
+      - run: pnpm build:packages
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # O build completo é a última barreira: pega o que só aparece quando o
+      # Next monta as rotas.
+      - run: pnpm build

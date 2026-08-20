@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>render</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js"
+  }
+}
+</script>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+
+const SIZE = 1024;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(SIZE, SIZE);
+renderer.setClearColor(0x000000, 0);
+document.body.appendChild(renderer.domElement);
+
+/* Materials come straight from the Claude Design handoff (perseus-icon.html). */
+const M = {
+  green: new THREE.MeshStandardMaterial({ name: 'perseus-green', color: 0x1fae6a, roughness: 0.26, metalness: 0.22 }),
+  greenDeep: new THREE.MeshStandardMaterial({ name: 'perseus-green-deep', color: 0x11784a, roughness: 0.32, metalness: 0.2 }),
+  black: new THREE.MeshStandardMaterial({ name: 'perseus-black', color: 0x15181a, roughness: 0.4, metalness: 0.22 }),
+};
+
+/* rounded square plate (squircle), soft bevelled edges */
+function plate(size, radius, depth, mat) {
+  const h = size / 2, r = radius;
+  const s = new THREE.Shape();
+  s.moveTo(-h + r, -h);
+  s.lineTo(h - r, -h);
+  s.quadraticCurveTo(h, -h, h, -h + r);
+  s.lineTo(h, h - r);
+  s.quadraticCurveTo(h, h, h - r, h);
+  s.lineTo(-h + r, h);
+  s.quadraticCurveTo(-h, h, -h, h - r);
+  s.lineTo(-h, -h + r);
+  s.quadraticCurveTo(-h, -h, -h + r, -h);
+  const g = new THREE.ExtrudeGeometry(s, {
+    depth, bevelEnabled: true, bevelThickness: depth * 0.34,
+    bevelSize: depth * 0.34, bevelSegments: 8, curveSegments: 40,
+  });
+  g.translate(0, 0, -depth / 2);
+  const m = new THREE.Mesh(g, mat);
+  m.name = 'plate';
+  return m;
+}
+
+/* Uppercase P: capsule stem to the baseline + bowl ring in the TOP half.
+   capH = cap height; the bowl fills the top 60% and its top sits flush with
+   the stem's, so the counter stays open enough to read at favicon sizes. */
+function letterP({ capH = 1.20, stroke = 0.115, mat, deepMat } = {}) {
+  const g = new THREE.Group();
+  g.name = 'letter-P';
+
+  const r = stroke;                        // stroke radius
+  const top = capH / 2, bottom = -capH / 2;
+  const bowlOuterH = capH * 0.60;
+  const bowlR = bowlOuterH / 2 - r;        // torus centerline radius
+  const bowlY = top - r - bowlR;           // bowl top flush with cap height
+
+  const stem = new THREE.Mesh(new THREE.CapsuleGeometry(r, capH - 2 * r, 12, 32), mat);
+  stem.name = 'P-stem';
+  stem.position.set(-bowlR, (top + bottom) / 2, 0);
+
+  const bowl = new THREE.Mesh(new THREE.TorusGeometry(bowlR, r, 24, 72), mat);
+  bowl.name = 'P-bowl';
+  bowl.position.set(0, bowlY, 0);
+
+  const joint = new THREE.Mesh(new THREE.SphereGeometry(r * 1.02, 32, 20), deepMat || mat);
+  joint.name = 'P-joint';
+  joint.position.set(-bowlR, bowlY - bowlR, 0);
+
+  g.add(stem, bowl, joint);
+  return g;
+}
+
+/* ---- variants ---- */
+
+/* Header mark: plate + letter + the thin halo ring. */
+function buildMark() {
+  const m = new THREE.Group();
+  m.name = 'perseus-mark';
+  const base = plate(1.62, 0.46, 0.30, M.black);
+  const P = letterP({ capH: 1.20, stroke: 0.090, mat: M.green, deepMat: M.greenDeep });
+  P.position.set(0.03, 0.0, 0.30);
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.020, 16, 96), M.greenDeep);
+  halo.name = 'halo';
+  halo.position.z = 0.27;
+  m.add(base, P, halo);
+  return m;
+}
+
+/* Favicon: fatter stroke, no halo — both details vanish below 32px. */
+function buildFavicon() {
+  const m = new THREE.Group();
+  m.name = 'perseus-favicon';
+  const base = plate(1.5, 0.40, 0.34, M.black);
+  const P = letterP({ capH: 1.10, stroke: 0.105, mat: M.green, deepMat: M.green });
+  P.position.set(0.05, 0.0, 0.32);
+  m.add(base, P);
+  return m;
+}
+
+const scene = new THREE.Scene();
+
+/* The handoff's studio: soft sky/ground wash, a key light, a dim warm fill.
+   No environment map, matching the prototype — the plate's metalness is low
+   enough that direct light carries it. */
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d2c4, 1.0));
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(4, 7, 5);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xfff4e6, 0.5);
+fill.position.set(-5, 3, -4);
+scene.add(fill);
+/* Not in the prototype: the plate is near-black and so is the site behind it,
+   so without a rim the silhouette dissolves into the page. */
+const rim = new THREE.DirectionalLight(0x7df5c4, 0.9);
+rim.position.set(-2.0, 1.2, -3.0);
+scene.add(rim);
+
+/* Renders one variant and returns its PNGs, trimmed and squared. */
+function shoot(model, { yaw, pitch, pad: padRatio }) {
+  scene.add(model);
+
+  const box = new THREE.Box3().setFromObject(model);
+  const c = box.getCenter(new THREE.Vector3());
+  model.position.set(-c.x, -c.y, -c.z);
+
+  model.rotation.y = THREE.MathUtils.degToRad(yaw);
+  model.rotation.x = THREE.MathUtils.degToRad(pitch);
+
+  const fitBox = new THREE.Box3().setFromObject(model);
+  const size = fitBox.getSize(new THREE.Vector3());
+  const half = Math.max(size.x, size.y) / 2 * 1.06;
+  model.position.sub(fitBox.getCenter(new THREE.Vector3()));
+
+  const camera = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, 100);
+  camera.position.set(0, 0, 10);
+  camera.lookAt(0, 0, 0);
+
+  renderer.render(scene, camera);
+  scene.remove(model);
+
+  /* Trim the transparent margin, re-square, then downscale to each target. */
+  const src = renderer.domElement;
+  const probe = document.createElement('canvas');
+  probe.width = probe.height = SIZE;
+  const pc = probe.getContext('2d');
+  pc.drawImage(src, 0, 0);
+  const data = pc.getImageData(0, 0, SIZE, SIZE).data;
+  let minX = SIZE, minY = SIZE, maxX = -1, maxY = -1;
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      if (data[(y * SIZE + x) * 4 + 3] > 8) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  const w = maxX - minX + 1;
+  const h = maxY - minY + 1;
+  const side = Math.max(w, h);
+  const pad = Math.round(side * padRatio);
+  const boxPx = side + pad * 2;
+
+  const square = document.createElement('canvas');
+  square.width = square.height = boxPx;
+  const sc = square.getContext('2d');
+  sc.drawImage(src, minX, minY, w, h, pad + (side - w) / 2, pad + (side - h) / 2, w, h);
+
+  function scaled(px) {
+    const c = document.createElement('canvas');
+    c.width = c.height = px;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(square, 0, 0, px, px);
+    return c.toDataURL('image/png');
+  }
+
+  return { full: square.toDataURL('image/png'), s512: scaled(512), s256: scaled(256), s180: scaled(180), s144: scaled(144), s32: scaled(32) };
+}
+
+window.__png = {
+  /* Three-quarter turn: at 48px the plate's bevel is the only cue that the
+     mark is a solid and not a flat sticker. */
+  mark: shoot(buildMark(), { yaw: -12, pitch: 6, pad: 0.04 }),
+  /* Straight on. Any turn costs counter width, and the counter is what tells
+     a 16px P apart from a 16px D. */
+  favicon: shoot(buildFavicon(), { yaw: 0, pitch: 0, pad: 0.03 }),
+};
+document.title = 'done';
+</script>
+</body>
+</html>
