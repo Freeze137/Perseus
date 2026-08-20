@@ -50,14 +50,29 @@ Console da Oracle → **Compute → Instances → Create instance**.
 | Campo | Valor |
 | --- | --- |
 | Image | **Canonical Ubuntu 24.04** (trocar da Oracle Linux padrão) |
-| Shape | **VM.Standard.A1.Flex** — 2 OCPU, 12 GB |
-| Rede | VCN nova, com **Assign a public IPv4 address** |
+| Shape | **VM.Standard.A1.Flex** — 1 a 2 OCPU, 6 a 12 GB. Ver a nota sobre capacidade. |
+| Rede | VCN e subnet **pública** já existentes (crie pelo *Start VCN Wizard*) |
 | Chave SSH | Gere e **guarde a privada** — não há segunda chance |
 
-Sobre a shape: o Always Free dá 4 OCPU e 24 GB de Ampere no total. Usar metade
-deixa espaço para uma segunda máquina depois e reduz a chance de esbarrar em
-`Out of host capacity`, que é o erro mais comum aqui. Se aparecer, tente outro
-*availability domain* ou espere — é fila, não erro de configuração.
+**Crie a VCN antes, pelo wizard.** Networking → Virtual cloud networks →
+*Start VCN Wizard* → *VCN with Internet Connectivity*. Criar a subnet dentro do
+formulário da instância deixa o toggle de IP público travado em "You must select
+a public subnet", e sem IP público não há SSH nem site.
+
+### Quando o Ampere disser `Out of capacity`
+
+É fila do free tier, não erro de configuração — e em regiões de uma única
+*availability domain*, como Vinhedo, não há outro AD para tentar. Em ordem:
+
+1. **Peça menos**: 1 OCPU / 6 GB cabe em fragmentos onde 2 OCPU não cabe.
+2. **Insista**: capacidade libera em ondas; madrugada costuma ser melhor.
+3. **`VM.Standard.E2.1.Micro`**: x86, 1 OCPU, 1 GB, também Always Free e sempre
+   disponível. Roda a API e o Postgres sem drama — o `setup-vm.sh` cria 2 GB de
+   swap e compila só os pacotes e a API, porque o site é compilado na Vercel.
+   Migrar para A1 depois é recriar a VM e rodar o mesmo script.
+4. **Pay As You Go**: contas pagas têm prioridade na fila do Ampere e os
+   recursos Always Free continuam gratuitos. Destrava de verdade; o risco é
+   criar sem querer algo fora do teto gratuito.
 
 ### Abrir as portas — nos dois lugares
 

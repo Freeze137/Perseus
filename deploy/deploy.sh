@@ -33,8 +33,10 @@ for file in supabase/migrations/0004_*.sql; do
   sudo -u postgres psql -q -d perseus -v ON_ERROR_STOP=1 -f "$file"
 done
 
-say "Build"
-pnpm build
+say "Build (pacotes + API)"
+# O site não é compilado aqui — ele vive na Vercel. Ver setup-vm.sh.
+pnpm build:packages
+pnpm --filter @perseus/api build
 
 say "Reiniciando"
 sudo systemctl restart perseus-api

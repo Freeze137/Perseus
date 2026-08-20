@@ -128,12 +128,35 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Build
+# Swap
+#
+# A imagem não vem com nenhum, e numa máquina de 1 GB (E2.1.Micro) o `tsc` do
+# build é morto pelo OOM killer sem swap. Numa de 12 GB isto não custa nada e
+# não atrapalha: swappiness baixo mantém o kernel na RAM enquanto houver.
 # ---------------------------------------------------------------------------
-say "Build"
+if ! sudo swapon --show | grep -q /swapfile; then
+  say "Swap de 2 GB"
+  sudo fallocate -l 2G /swapfile
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+  echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-perseus-swap.conf >/dev/null
+  sudo sysctl -q -p /etc/sysctl.d/99-perseus-swap.conf
+fi
+
+# ---------------------------------------------------------------------------
+# Build
+#
+# Só o que roda aqui: os pacotes e a API. O `apps/web` vai para a Vercel, e
+# compilar o Next nesta máquina seria gastar o recurso mais escasso dela num
+# artefato que ninguém aqui serve.
+# ---------------------------------------------------------------------------
+say "Build (pacotes + API; o site é compilado na Vercel)"
 cd "$REPO_DIR"
 pnpm install --frozen-lockfile
-pnpm build
+pnpm build:packages
+pnpm --filter @perseus/api build
 
 say "Pronto. Falta:"
 cat <<'EOF'
