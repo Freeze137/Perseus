@@ -3,12 +3,17 @@
 import type { Match } from "@perseus/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { TEXT_LENGTHS } from "@/features/settings/text-lengths";
+import { reseedMatch } from "@/lib/api";
 import { describeConfig, inviteLink } from "./duel-copy";
 import { LeaveButton } from "./leave-button";
 
 type Props = {
   match: Match;
   slot: number;
+  /** This tab's seat. The host's is what lets it redraw the text. */
+  token: string;
   /** Closes the room and goes home. See the page, which owns the seat. */
   onLeave: () => void;
 };
@@ -29,7 +34,7 @@ const COPIED_MS = 1_600;
  * thing left to agree on is when — and the countdown that begins the moment the
  * second player arrives says that without anybody having to press anything.
  */
-export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
+export function DuelLobby({ match, slot: yourSlot, token, onLeave }: Props) {
   const [copied, setCopied] = useState(false);
   /**
    * Shown only when the clipboard refused.
@@ -77,6 +82,24 @@ export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
   useEffect(() => {
     if (manual) manualField.current?.select();
   }, [manual]);
+
+  /**
+   * Draws another text, and optionally another size.
+   *
+   * Nothing is applied locally. The server publishes the room to both tabs, so
+   * the new text arrives the same way every other change does — which is also
+   * what keeps the guest's screen from lagging a text behind the host's.
+   */
+  const [drawing, setDrawing] = useState(false);
+  const newText = useCallback(
+    (length?: number) => {
+      setDrawing(true);
+      void reseedMatch(match.id, token, length)
+        .catch(() => undefined)
+        .finally(() => setDrawing(false));
+    },
+    [match.id, token],
+  );
 
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-6 text-center">
@@ -131,6 +154,29 @@ export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
         <span aria-hidden="true" className="h-4 w-px bg-slate" />
         <span className="text-sm text-ash">{describeConfig(match.config)}</span>
       </div>
+
+      {/* Só o anfitrião, e só aqui: a partir da contagem o texto é o que as
+          duas pessoas estão digitando, e trocá-lo seria apagar a corrida de
+          alguém. O servidor recusa das duas formas; isto é a metade visível. */}
+      {waiting ? (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Select
+            label="Tamanho do texto"
+            value={String(match.config.length)}
+            options={TEXT_LENGTHS}
+            onValueChange={(value) => newText(Number(value))}
+          />
+          <span aria-hidden="true" className="h-4 w-px bg-slate" />
+          <Button
+            variant="quiet"
+            size="sm"
+            disabled={drawing}
+            onClick={() => newText()}
+          >
+            Novo texto
+          </Button>
+        </div>
+      ) : null}
 
       {/* O caminho de quando o clipboard nega. Só aparece aí — em uso normal
           esta linha não existe e o botão continua sendo a história inteira. */}

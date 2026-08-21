@@ -3,8 +3,9 @@
 import type { Match, MatchOutcome } from "@perseus/contracts";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { requestRematch } from "@/lib/api";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
@@ -32,6 +33,9 @@ type Props = {
   match: Match;
   /** Which player is reading this. Null when neither — a spectator's link. */
   slot: number | null;
+  /** This tab's seat, when it has one. A spectator has none and is not offered
+   *  a rematch. */
+  token: string | null;
 };
 
 /**
@@ -46,11 +50,42 @@ type Props = {
  * the other end, and a product that does not flatter the winner has no business
  * needling the loser either.
  */
-export function DuelResult({ match, slot }: Props) {
+export function DuelResult({ match, slot, token }: Props) {
   const router = useRouter();
   const level = useMotionLevel();
   const still = level === "none";
   const abandoned = match.state === "abandoned";
+
+  const me = match.players.find((player) => player.slot === slot);
+  const them = match.players.find((player) => player.slot !== slot);
+
+  /**
+   * Another round, in this same room.
+   *
+   * Offered only where it can actually happen: a duel that was played to the
+   * end, by somebody holding a seat, with the other player still in the room.
+   * An abandoned room fails all three — there is nobody on the other side to
+   * agree, which is why it ended.
+   */
+  const [asking, setAsking] = useState(false);
+  const canAsk =
+    match.state === "done" &&
+    slot !== null &&
+    token !== null &&
+    match.players.length === 2;
+  const iAsked = Boolean(me?.rematch);
+  const theyAsked = Boolean(them?.rematch);
+
+  const askRematch = useCallback(() => {
+    if (!token) return;
+    setAsking(true);
+    // The answer is ignored on purpose: the room is published to both tabs, so
+    // whichever screen comes next — waiting, or a countdown — arrives the same
+    // way every other change in a duel does.
+    void requestRematch(match.id, token)
+      .catch(() => undefined)
+      .finally(() => setAsking(false));
+  }, [match.id, token]);
 
   return (
     <section className="flex flex-col gap-5">
@@ -172,12 +207,34 @@ export function DuelResult({ match, slot }: Props) {
         animate={still ? { opacity: 1 } : { opacity: 1, y: 0 }}
         transition={transitionFor(level, { ...SETTLE, delay: 0.34 })}
       >
-        <Button variant="edge" size="sm" onClick={() => router.push("/")}>
+        {canAsk ? (
+          <>
+            <Button
+              variant="edge"
+              size="sm"
+              disabled={asking || iAsked}
+              onClick={askRematch}
+            >
+              {theyAsked ? "Aceitar revanche" : "Revanche"}
+            </Button>
+            <span aria-hidden="true" className="h-4 w-px bg-slate" />
+          </>
+        ) : null}
+
+        <Button variant="quiet" size="sm" onClick={() => router.push("/")}>
           Voltar ao treino
         </Button>
         <span aria-hidden="true" className="h-4 w-px bg-slate" />
-        <p className="text-sm text-ash">
-          Este duelo fica no seu histórico de partidas.
+
+        {/* Uma frase por vez, e sempre a que diz de quem é a vez de agir.
+            "Esperando" tem destinatário: sem o nome, quem lê fica sem saber se
+            precisa fazer algo ou se já fez. */}
+        <p aria-live="polite" className="text-sm text-ash">
+          {iAsked
+            ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
+            : theyAsked
+              ? `${them?.displayName ?? "O outro jogador"} quer revanche.`
+              : "Este duelo fica no seu histórico de partidas."}
         </p>
       </motion.div>
     </section>

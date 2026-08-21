@@ -363,6 +363,88 @@ describe('MatchesService', () => {
     );
   });
 
+  it('draws a new text for the host, and refuses everyone else', () => {
+    const { service } = build();
+    const host = service.create(REQUEST);
+    const first = host.match.config;
+
+    const reseeded = service.reseed(host.match.id, host.token, {});
+    expect(reseeded.config.seed).not.toBe(first.seed);
+    expect(reseeded.config.length).toBe(first.length);
+    expect(generate(reseeded.config)).not.toBe(generate(first));
+
+    const longer = service.reseed(host.match.id, host.token, { length: 180 });
+    expect(longer.config.length).toBe(180);
+
+    const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
+    // The guest is a player, so the token is good — and still not the host's.
+    expect(() => service.reseed(host.match.id, guest.token, {})).toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('refuses to change the text once the keys are unlocked', () => {
+    const { service } = build();
+    const { host } = running(service);
+
+    expect(() => service.reseed(host.match.id, host.token, {})).toThrow(
+      ConflictException,
+    );
+  });
+
+  it('plays again in the same room, and only when both asked', () => {
+    const { service, save } = build();
+    const { host, guest, config } = running(service);
+
+    service.finish(host.match.id, host.token, {
+      keystrokes: honestRun(config, 120),
+    });
+    service.finish(host.match.id, guest.token, {
+      keystrokes: honestRun(config, 220),
+    });
+
+    const firstRound = service.forPlayer(host.match.id, host.token).match;
+    expect(firstRound.state).toBe('done');
+
+    // One vote is not a rematch: the other screen only learns it is waited on.
+    const waiting = service.rematch(host.match.id, host.token);
+    expect(waiting.state).toBe('done');
+    expect(waiting.players.map((one) => one.rematch)).toEqual([true, false]);
+
+    const started = service.rematch(host.match.id, guest.token);
+
+    // Same room, same link — that is the whole point of asking here.
+    expect(started.id).toBe(host.match.id);
+    expect(started.inviteCode).toBe(host.match.inviteCode);
+
+    // New round, new text, clean slate.
+    expect(started.roundId).not.toBe(firstRound.roundId);
+    expect(started.config.seed).not.toBe(config.seed);
+    expect(started.state).toBe('countdown');
+    expect(started.winnerSlot).toBeNull();
+    expect(started.players.every((one) => one.score === null)).toBe(true);
+    expect(started.players.every((one) => !one.rematch)).toBe(true);
+
+    jest.advanceTimersByTime(MATCH_COUNTDOWN_MS);
+    expect(service.forPlayer(host.match.id, host.token).match.state).toBe(
+      'running',
+    );
+
+    // The duel that just happened keeps its row: the second one is written
+    // under a different id rather than colliding with it.
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save.mock.calls[0][0].roundId).toBe(firstRound.roundId);
+  });
+
+  it('refuses a rematch while the duel is still being played', () => {
+    const { service } = build();
+    const { host } = running(service);
+
+    expect(() => service.rematch(host.match.id, host.token)).toThrow(
+      ConflictException,
+    );
+  });
+
   it('answers a history from memory, and says it is not stored', async () => {
     const { service } = build();
     const { host, guest, config } = running(service);
@@ -374,7 +456,9 @@ describe('MatchesService', () => {
       keystrokes: honestRun(config, 220),
     });
 
-    const history = await service.summaries([host.match.id]);
+    // By round, not by room: a room can play several duels, and each one is
+    // its own entry in a history.
+    const history = await service.summaries([host.match.roundId]);
     expect(history.status).toBe('unavailable');
     expect(history.matches).toHaveLength(1);
     expect(history.matches[0].players.map((one) => one.displayName)).toEqual([

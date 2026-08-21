@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useSettings } from "@/features/settings/use-settings";
 import { SYNTAX_OPTIONS } from "@/features/settings/syntax-options";
+import { TEXT_LENGTHS } from "@/features/settings/text-lengths";
 
 const LANGUAGES = [
   { value: "pt-BR", label: "Português" },
@@ -19,11 +20,7 @@ const KINDS = [
   { value: "code", label: "Código" },
 ] as const satisfies readonly { value: TextKind; label: string }[];
 
-const LENGTHS = [
-  { value: "90", label: "Curto" },
-  { value: "180", label: "Médio" },
-  { value: "360", label: "Longo" },
-] as const;
+
 
 type Props = {
   onNewText: () => void;
@@ -86,7 +83,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
       <Select
         label="Tamanho do texto"
         value={String(length)}
-        options={LENGTHS}
+        options={TEXT_LENGTHS}
         onValueChange={(value) => setLength(Number(value))}
       />
       <Divider />

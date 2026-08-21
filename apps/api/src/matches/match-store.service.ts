@@ -77,7 +77,9 @@ export class MatchStoreService {
            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
            on conflict (id) do nothing`,
           [
-            room.id,
+            // The round, not the room: a room that plays a rematch writes a
+            // second row, and the room id would collide with the first.
+            room.roundId,
             room.inviteCode,
             room.state,
             JSON.stringify(room.config),
@@ -100,7 +102,7 @@ export class MatchStoreService {
              values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              on conflict (match_id, slot) do nothing`,
             [
-              room.id,
+              room.roundId,
               player.slot,
               player.displayName,
               new Date(player.joinedAt).toISOString(),

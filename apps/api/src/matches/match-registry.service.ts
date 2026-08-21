@@ -17,13 +17,24 @@ export type RoomPlayer = {
   finishedAt: number | null;
   score: MatchScore | null;
   outcome: MatchOutcome | null;
+  /** Asked for another round. Cleared when one starts. */
+  rematch: boolean;
 };
 
 /** A duel in progress. Epoch milliseconds throughout; ISO is for the wire. */
 export type Room = {
   readonly id: string;
+  /**
+   * The round being played, and the id it is stored under when it ends.
+   *
+   * Redrawn on every rematch. The room keeps its id and its code — that is
+   * what the link points at — while each duel played in it gets a fresh
+   * identity, because each one is its own row in the history.
+   */
+  roundId: string;
   readonly inviteCode: string;
-  readonly config: SessionConfig;
+  /** Redrawn by the host between rounds — new seed, and possibly new length. */
+  config: SessionConfig;
   readonly corpusVersion: number;
   readonly createdAt: number;
   state: MatchState;
@@ -88,6 +99,20 @@ export class MatchRegistryService implements OnModuleDestroy {
   byCode(code: string): Room | null {
     const id = this.codes.get(code);
     return id ? (this.rooms.get(id) ?? null) : null;
+  }
+
+  /**
+   * The room currently playing — or that just played — a given round.
+   *
+   * A linear scan over at most `MAX_ROOMS` entries, and it runs once per id in
+   * a history request. An index keyed by round would have to be kept in step
+   * with every rematch for no measurable gain.
+   */
+  byRound(roundId: string): Room | null {
+    for (const room of this.rooms.values()) {
+      if (room.roundId === roundId) return room;
+    }
+    return null;
   }
 
   hasCode(code: string): boolean {

@@ -279,6 +279,45 @@ export async function leaveMatch(id: string, token: string): Promise<Match> {
 }
 
 /**
+ * Draws a different text for the room, and optionally resizes it.
+ *
+ * The host's, and only in the lobby — the server enforces both. Omitting the
+ * length keeps the one the room already has, which is what "outro texto" means
+ * when nobody touched the size.
+ */
+export async function reseedMatch(
+  id: string,
+  token: string,
+  length?: number,
+): Promise<Match> {
+  return request(`/matches/${id}/text`, MatchSchema, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(length === undefined ? {} : { length }),
+  });
+}
+
+/**
+ * Asks for another round in the same room.
+ *
+ * The answer is the room, and which of two screens to draw is read off its
+ * state: still `done` means the other person has not asked yet, `countdown`
+ * means they have and the next duel is starting.
+ */
+export async function requestRematch(
+  id: string,
+  token: string,
+): Promise<Match> {
+  return request(`/matches/${id}/rematch`, MatchSchema, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
+/**
  * The event stream for a duel.
  *
  * `EventSource` cannot set headers, so the token rides in the query string —

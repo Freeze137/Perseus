@@ -20,6 +20,7 @@ import {
   type CreateMatch,
   type JoinMatch,
   type Match,
+  type ReseedMatch,
   type MatchCredentials,
   type MatchErrorCode,
   type MatchSummariesResponse,
@@ -115,6 +116,7 @@ export class MatchesService {
     const now = Date.now();
     const room: Room = {
       id: randomUUID(),
+      roundId: randomUUID(),
       inviteCode: this.freshCode(),
       config,
       corpusVersion: CORPUS_VERSION,
@@ -197,6 +199,128 @@ export class MatchesService {
       slot,
       token: this.tokens.issue(room.id, slot),
     };
+  }
+
+  /**
+   * Draws a different text for the room.
+   *
+   * The host's, and only while the keys are still locked. Once a duel is
+   * running the text is what both people are typing, and after it ends it is
+   * what their scores were measured against — changing it in either state would
+   * rewrite something that already happened.
+   *
+   * `length` is optional because the two things the button offers are the same
+   * gesture: "outro texto" and "outro texto, maior".
+   */
+  reseed(
+    id: string,
+    token: string | undefined,
+    payload: ReseedMatch,
+  ): Match {
+    const { room, slot } = this.authorise(id, token);
+
+    if (slot !== 1) {
+      throw new UnauthorizedException({
+        code: 'match_token' satisfies MatchErrorCode,
+        message: 'only the host draws the text',
+      });
+    }
+
+    if (room.state !== 'lobby') {
+      throw new ConflictException({
+        code: 'match_closed' satisfies MatchErrorCode,
+        message: 'the text is fixed once the duel starts',
+      });
+    }
+
+    const config: SessionConfig = {
+      ...room.config,
+      length: payload.length ?? room.config.length,
+      seed: randomSeed(),
+    };
+
+    // Same guard as at creation, for the same reason: a configuration that
+    // produces no text would leave two people staring at an empty screen.
+    if (generate(config).length === 0) {
+      throw new BadRequestException('that configuration produces no text');
+    }
+
+    room.config = config;
+    this.publish(room);
+    return this.snapshot(room);
+  }
+
+  /**
+   * Asks for another round, and starts one when both have asked.
+   *
+   * The room is kept — same code, same link, same two people — and what is
+   * redrawn is the round: a new id, so the duel that just happened keeps its
+   * row in the history, and a new seed, so nobody types a text they have
+   * already seen.
+   *
+   * A vote is not withdrawn once cast. The window is the five minutes a
+   * finished room is kept for, and inside it the only thing that can happen is
+   * the other person agreeing.
+   */
+  rematch(id: string, token: string | undefined): Match {
+    const { room, slot, player: me } = this.authorise(id, token);
+
+    if (room.state !== 'done') {
+      throw new ConflictException({
+        code: 'match_closed' satisfies MatchErrorCode,
+        message: 'a rematch is offered after the duel, not during it',
+      });
+    }
+
+    // Somebody who left is not there to play again, and the room would start a
+    // countdown against an empty seat.
+    if (room.players.length < MATCH_PLAYERS) {
+      throw new ConflictException({
+        code: 'match_closed' satisfies MatchErrorCode,
+        message: 'the other player has left',
+      });
+    }
+
+    me.rematch = true;
+
+    if (!room.players.every((one) => one.rematch)) {
+      // Half a rematch: the other screen learns somebody is waiting on it.
+      this.publish(room);
+      return this.snapshot(room);
+    }
+
+    const now = Date.now();
+
+    room.roundId = randomUUID();
+    room.config = { ...room.config, seed: randomSeed() };
+    room.state = 'countdown';
+    room.startsAt = now + MATCH_COUNTDOWN_MS;
+    room.graceEndsAt = null;
+    room.finishedAt = null;
+    room.winnerSlot = null;
+
+    for (const one of room.players) {
+      one.progress = 0;
+      one.finishedAt = null;
+      one.score = null;
+      one.outcome = null;
+      one.rematch = false;
+    }
+
+    // The room was on its way out; it is being played again instead.
+    this.registry.disarm(room.id, 'reap');
+
+    this.registry.arm(room.id, 'start', room.startsAt, () => {
+      if (room.state !== 'countdown') return;
+      room.state = 'running';
+      this.publish(room);
+    });
+    this.registry.arm(room.id, 'max', room.startsAt + MATCH_MAX_RUN_MS, () =>
+      this.settle(room),
+    );
+
+    this.publish(room);
+    return this.snapshot(room, now);
   }
 
   /**
@@ -389,11 +513,20 @@ export class MatchesService {
     }
 
     this.publish(room);
-    // Fire and forget: both players already have the scoreboard, and the write
-    // is a record of it rather than a step in producing it.
-    void this.store.save(room).catch((error: unknown) => {
+
+    // A copy, not the room. The write is fire and forget — both players already
+    // have the scoreboard, and storing it is a record rather than a step in
+    // producing it — which means it can still be in flight when a rematch
+    // reuses this room. A rematch redraws `roundId` and clears every score, so
+    // handing the live object over would file the duel that just ended under
+    // the next one's id, or with no scores at all.
+    const finishedRound: Room = {
+      ...room,
+      players: room.players.map((one) => ({ ...one })),
+    };
+    void this.store.save(finishedRound).catch((error: unknown) => {
       this.logger.error(
-        `match ${room.id} not stored: ${error instanceof Error ? error.message : String(error)}`,
+        `match ${finishedRound.roundId} not stored: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
     this.reap(room, KEEP_AFTER_DONE_MS);
@@ -413,7 +546,9 @@ export class MatchesService {
 
     for (const id of ids) {
       if (byId.has(id)) continue;
-      const room = this.registry.byId(id);
+      // What a browser holds is the round it played, which is also the id the
+      // row carries. The room is found through it, not the other way round.
+      const room = this.registry.byRound(id);
       if (!room || room.state !== 'done') continue;
       byId.set(id, this.summarise(room));
     }
@@ -485,6 +620,7 @@ export class MatchesService {
   private snapshot(room: Room, now: number = Date.now()): Match {
     return {
       id: room.id,
+      roundId: room.roundId,
       inviteCode: room.inviteCode,
       state: room.state,
       config: room.config,
@@ -508,6 +644,7 @@ export class MatchesService {
             : null,
           score: one.score,
           outcome: one.outcome,
+          rematch: one.rematch,
         })),
       serverNow: now,
     };
@@ -515,7 +652,9 @@ export class MatchesService {
 
   private summarise(room: Room): MatchSummary {
     return {
-      id: room.id,
+      // The round, matching the row this would have been read from had the
+      // write already landed. The room id would be a different duel's key.
+      id: room.roundId,
       inviteCode: room.inviteCode,
       kind: room.config.kind,
       language: room.config.language,
@@ -575,5 +714,6 @@ function player(slot: number, displayName: string, at: number): RoomPlayer {
     finishedAt: null,
     score: null,
     outcome: null,
+    rematch: false,
   };
 }

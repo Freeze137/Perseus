@@ -515,11 +515,29 @@ export const MatchPlayerSchema = z.object({
   finishedAt: z.iso.datetime().nullable(),
   score: MatchScoreSchema.nullable(),
   outcome: MatchOutcomeSchema.nullable(),
+  /**
+   * Whether this player has asked for another round.
+   *
+   * Both have to ask. A rematch that started because one person clicked would
+   * drag the other into a race they were done with — and the person who wanted
+   * it would be typing before the one who did not had read the scoreboard.
+   */
+  rematch: z.boolean(),
 });
 export type MatchPlayer = z.infer<typeof MatchPlayerSchema>;
 
 export const MatchSchema = z.object({
+  /** The room. Stable across rematches: it is what the link points at. */
   id: z.uuid(),
+  /**
+   * The round being played right now, and the id the finished duel is stored
+   * under.
+   *
+   * A room can host several duels in a row, and each one is its own row in the
+   * history — so the room cannot be the thing that identifies a match. This is
+   * what a browser remembers when it wants to see a duel again.
+   */
+  roundId: z.uuid(),
   inviteCode: InviteCodeSchema,
   state: MatchStateSchema,
   /** Including the seed, which the server picks. Both clients build from it. */
@@ -562,6 +580,22 @@ export type CreateMatch = z.infer<typeof CreateMatchSchema>;
 
 export const JoinMatchSchema = z.object({ displayName: DisplayNameSchema });
 export type JoinMatch = z.infer<typeof JoinMatchSchema>;
+
+/**
+ * Draws a different text for the room, optionally at a different length.
+ *
+ * The host's call, and only before the keys unlock: changing the text under
+ * somebody already typing would be the same as deleting their run. The seed
+ * stays the server's to pick, for the reason written above `CreateMatchSchema`
+ * — a host who chose it could have typed the text already.
+ *
+ * `length` omitted means "same size, different words", which is what the
+ * button says when nobody touches the slider.
+ */
+export const ReseedMatchSchema = z.object({
+  length: z.int().min(10).max(2_000).optional(),
+});
+export type ReseedMatch = z.infer<typeof ReseedMatchSchema>;
 
 /**
  * The room, the slot, and the only proof of being in it.

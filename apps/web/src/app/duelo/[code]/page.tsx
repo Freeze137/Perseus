@@ -55,10 +55,12 @@ export default function DuelPage({
   const link = useMatch(seat?.matchId ?? null, seat?.token ?? null);
   const { match, error, apply } = link;
 
-  // A duel worth remembering is one that was played to the end.
+  // A duel worth remembering is one that was played to the end. The round is
+  // what gets remembered, not the room: a rematch plays another duel in the
+  // same room, and both belong in the history as their own entries.
   useEffect(() => {
-    if (match?.state === "done") rememberMatch(match.id);
-  }, [match?.state, match?.id]);
+    if (match?.state === "done") rememberMatch(match.roundId);
+  }, [match?.state, match?.roundId]);
 
   // A seat whose room is gone is worse than no seat: it holds the screen on an
   // error nobody can act on, where dropping it offers the invite form instead.
@@ -115,7 +117,12 @@ export default function DuelPage({
         ) : !match ? (
           <p className="text-center text-sm text-ash">Entrando na sala…</p>
         ) : match.state === "lobby" ? (
-          <DuelLobby match={match} slot={seat.slot} onLeave={leave} />
+          <DuelLobby
+            match={match}
+            slot={seat.slot}
+            token={seat.token}
+            onLeave={leave}
+          />
         ) : (
           <DuelScreen
             match={match}

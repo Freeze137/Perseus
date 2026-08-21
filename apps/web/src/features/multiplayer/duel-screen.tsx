@@ -189,7 +189,7 @@ export function DuelScreen({
 
   const swallow = useCallback(() => undefined, []);
 
-  if (done) return <DuelResult match={match} slot={slot} />;
+  if (done) return <DuelResult match={match} slot={slot} token={token} />;
 
   return (
     <div className="flex flex-col gap-6">

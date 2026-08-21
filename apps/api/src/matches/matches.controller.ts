@@ -17,6 +17,7 @@ import {
   InviteCodeSchema,
   JoinMatchSchema,
   MatchProgressSchema,
+  ReseedMatchSchema,
   MatchSummariesQuerySchema,
   SubmitMatchRunSchema,
   type Match,
@@ -166,6 +167,43 @@ export class MatchesController {
   ): void {
     const payload = parse(MatchProgressSchema, body);
     this.matches.progress(id, bearer(authorization), payload.index);
+  }
+
+  /**
+   * Draws a different text for the room, optionally at a different length.
+   *
+   * The host's button, in the lobby. Budgeted generously — deciding on a text
+   * is a few presses in a row while somebody reads the first line and says "não
+   * esse" — and still far below what a script would want.
+   */
+  @Post(':id/text')
+  @RateLimit({ limit: 30, windowMs: 60_000 })
+  reseed(
+    @Param('id') id: string,
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: unknown,
+  ): Match {
+    return this.matches.reseed(
+      id,
+      bearer(authorization),
+      parse(ReseedMatchSchema, body),
+    );
+  }
+
+  /**
+   * Asks for another round in the same room.
+   *
+   * Answers with the room either way, because the two answers are different
+   * screens: one says the other person is being waited on, the other is a
+   * countdown. Which of them came back is read off the state.
+   */
+  @Post(':id/rematch')
+  @RateLimit({ limit: 20, windowMs: 60_000 })
+  rematch(
+    @Param('id') id: string,
+    @Headers('authorization') authorization: string | undefined,
+  ): Match {
+    return this.matches.rematch(id, bearer(authorization));
   }
 
   /**
