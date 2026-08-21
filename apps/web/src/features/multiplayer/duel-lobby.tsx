@@ -1,7 +1,7 @@
 "use client";
 
 import type { Match } from "@perseus/contracts";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { describeConfig, inviteLink } from "./duel-copy";
 import { LeaveButton } from "./leave-button";
@@ -31,6 +31,17 @@ const COPIED_MS = 1_600;
  */
 export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
   const [copied, setCopied] = useState(false);
+  /**
+   * Shown only when the clipboard refused.
+   *
+   * The first version of this swallowed that refusal, on the theory that the
+   * code is on screen anyway. It is — but somebody who pressed "copiar link"
+   * wanted the link, and a button that answers nothing reads as broken rather
+   * than as declined. So the refusal now produces the link itself, selected,
+   * which is the thing the button was for.
+   */
+  const [manual, setManual] = useState(false);
+  const manualField = useRef<HTMLInputElement>(null);
   const host = match.players.find((player) => player.slot === 1);
   const waiting = yourSlot === 1;
 
@@ -41,13 +52,31 @@ export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
   }, [copied]);
 
   const copy = useCallback(() => {
-    void navigator.clipboard
-      ?.writeText(inviteLink(match.inviteCode))
-      .then(() => setCopied(true))
-      // A clipboard that refuses is not a failure worth a message: the code is
-      // on screen in letters made to be read out loud.
-      .catch(() => undefined);
+    const link = inviteLink(match.inviteCode);
+
+    // `navigator.clipboard` is missing outside a secure context and rejects
+    // when the browser or a permission policy says no. Both are ordinary — and
+    // neither is something the person pressing the button can act on unless
+    // they are handed the link.
+    const written = navigator.clipboard?.writeText(link);
+    if (!written) {
+      setManual(true);
+      return;
+    }
+
+    void written
+      .then(() => {
+        setManual(false);
+        setCopied(true);
+      })
+      .catch(() => setManual(true));
   }, [match.inviteCode]);
+
+  // Selected on arrival: with the link already highlighted, copying it by hand
+  // is one keystroke instead of a drag across text.
+  useEffect(() => {
+    if (manual) manualField.current?.select();
+  }, [manual]);
 
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-6 text-center">
@@ -102,6 +131,24 @@ export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
         <span aria-hidden="true" className="h-4 w-px bg-slate" />
         <span className="text-sm text-ash">{describeConfig(match.config)}</span>
       </div>
+
+      {/* O caminho de quando o clipboard nega. Só aparece aí — em uso normal
+          esta linha não existe e o botão continua sendo a história inteira. */}
+      {manual ? (
+        <div className="flex flex-col gap-2 text-left">
+          <label htmlFor="duel-link" className="label text-ash">
+            Copie o link
+          </label>
+          <input
+            id="duel-link"
+            ref={manualField}
+            readOnly
+            value={inviteLink(match.inviteCode)}
+            onFocus={(event) => event.target.select()}
+            className="h-9 w-full min-w-0 rounded-sm border border-slate bg-void px-3 text-sm text-bone"
+          />
+        </div>
+      ) : null}
 
       {/* Said once, here, because it is the one thing about a duel that is not
           obvious: both screens draw the same text without it ever being sent. */}
