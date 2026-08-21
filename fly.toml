@@ -1,0 +1,56 @@
+# PERSEUS API no Fly.io.
+#
+# Gerado por `fly launch` e comentado à mão depois — `fly launch` reescreve este
+# arquivo e come os comentários. `fly deploy` não mexe.
+#
+# Três linhas aqui carregam a arquitetura inteira do duelo, e trocar qualquer
+# uma delas quebra partidas em andamento:
+#
+#   auto_stop_machines = 'off'   a máquina não dorme. Dormir é perder as salas.
+#   min_machines_running = 1     sempre uma de pé para o convite achar.
+#   count = 1 (via `fly scale`)  UMA instância. Duas, e quem criou a sala e quem
+#                                entrou pelo link caem em processos diferentes,
+#                                que não se enxergam. Ver match-registry.service.ts.
+
+app = 'perseus-api'
+primary_region = 'gru'          # São Paulo — a latência importa no duelo.
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  # O banco é externo agora: o tráfego sai da máquina e precisa de TLS.
+  DATABASE_SSL = 'true'
+  PORT = '3001'
+  # O proxy do Fly é o único salto na frente da API. Sem isto o rate limiter
+  # conta o mundo inteiro como um único chamador — o do proxy.
+  TRUST_PROXY_HOPS = '1'
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  # Escala a zero é o modo serverless com outro nome. Fica desligado.
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  # Cada espectador de duelo segura uma conexão aberta o tempo todo da partida.
+  # O limite é de conexões, não de requisições por segundo.
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 200
+    soft_limit = 150
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    # /health e não /health/ready: o banco fora do ar degrada o histórico, não
+    # o duelo. Reiniciar a API por causa do Neon derrubaria quem está jogando.
+    path = '/health'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'

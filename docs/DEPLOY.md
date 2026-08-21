@@ -1,7 +1,14 @@
-# PERSEUS — subir no ar
+# PERSEUS — subir no ar (VM na Oracle Cloud)
 
 Runbook. A ordem importa: cada passo depende do endereço que o anterior
 produziu.
+
+> **Há duas rotas.** Esta usa uma VM própria: mais controle, e a conta de
+> manutenção que vem junto — Postgres, nginx, certbot, DNS, e a fila de
+> capacidade do Ampere, que pode negar a instância por dias.
+> A outra está em [`DEPLOY-FLY.md`](DEPLOY-FLY.md): container no Fly.io,
+> Postgres no Neon, TLS pronto. Menos peças, menos manutenção, e nenhuma fila.
+> As duas rodam o mesmo código sem alteração nenhuma.
 
 Peças e onde ficam:
 
@@ -211,8 +218,9 @@ De fora:
 ```sh
 curl -s https://perseus-api.duckdns.org/health
 curl -N https://perseus-api.duckdns.org/matches/00000000-0000-0000-0000-000000000000/stream
-# 401 imediato é a resposta certa: significa que chegou na API e ela pediu
-# credencial. Demorar para responder é buffering do proxy.
+# 404 imediato é a resposta certa: a sala é procurada antes do token, e um id
+# que não existe para em match_not_found. O que se mede aqui é o tempo — chegar
+# na hora significa que chegou na API. Demorar é buffering do proxy.
 ```
 
 No navegador, o teste que vale por todos: abra o site, **⚔ Duelo**, crie a

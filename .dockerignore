@@ -1,0 +1,25 @@
+# Contexto de build. Regra: entra o que a API precisa para compilar, nada mais.
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+
+# Segredos nunca entram numa camada de imagem — camada é pública para quem tem
+# a imagem, mesmo que o arquivo seja apagado numa camada seguinte.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Não fazem parte da API.
+docs
+deploy
+supabase
+apps/web/app
+apps/web/components
+apps/web/public
