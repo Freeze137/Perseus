@@ -128,6 +128,16 @@ export function DuelScreen({
   const [submission, setSubmission] = useState<Submission>("idle");
   const [refusal, setRefusal] = useState<string | null>(null);
 
+  // A rematch is a new duel in the same component: nothing is remounted, so the
+  // last round's status line would still be on screen while this one is being
+  // typed. The round is what changes between them, and it is what resets this.
+  const [round, setRound] = useState(match.roundId);
+  if (round !== match.roundId) {
+    setRound(match.roundId);
+    setSubmission("idle");
+    setRefusal(null);
+  }
+
   /**
    * Read by the publisher below without being one of its dependencies: the
    * interval must not be torn down and rebuilt on every character. Written in
@@ -189,7 +199,15 @@ export function DuelScreen({
 
   const swallow = useCallback(() => undefined, []);
 
-  if (done) return <DuelResult match={match} slot={slot} token={token} />;
+  if (done)
+    return (
+      <DuelResult
+        match={match}
+        slot={slot}
+        token={token}
+        onMatch={onMatch}
+      />
+    );
 
   return (
     <div className="flex flex-col gap-6">

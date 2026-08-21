@@ -110,9 +110,14 @@ export class MatchesController {
    * logger redacts it.
    *
    * The stream is authorised before the observable exists, so a bad token is an
-   * ordinary 401 rather than an error inside an already-open stream. It
-   * completes once the duel reaches a terminal state; a client that has not
-   * closed by then reconnects, receives the same terminal snapshot, and closes.
+   * ordinary 401 rather than an error inside an already-open stream.
+   *
+   * A finished duel does not end the stream. It used to, and that is precisely
+   * what a rematch needs: the vote is published into the same room, and both
+   * screens have to hear it — the one that asked, and the one being asked. What
+   * ends the stream is the room being removed, minutes later, when there is
+   * nothing left to say. An abandoned duel is the exception: nobody is coming
+   * back to it.
    */
   @Sse(':id/stream')
   stream(
@@ -128,13 +133,11 @@ export class MatchesController {
         token,
         (event: MatchEvent) => {
           subscriber.next({ data: event });
-          if (
-            event.type === 'match' &&
-            (event.match.state === 'done' || event.match.state === 'abandoned')
-          ) {
+          if (event.type === 'match' && event.match.state === 'abandoned') {
             subscriber.complete();
           }
         },
+        () => subscriber.complete(),
       );
 
       // The current state first, so a tab that arrives late or reconnects is

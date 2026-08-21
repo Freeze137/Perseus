@@ -5,7 +5,7 @@ import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { requestRematch } from "@/lib/api";
+import { ApiError, requestRematch } from "@/lib/api";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
@@ -36,6 +36,8 @@ type Props = {
   /** This tab's seat, when it has one. A spectator has none and is not offered
    *  a rematch. */
   token: string | null;
+  /** Hands a snapshot up when a request answers before the stream does. */
+  onMatch: (match: Match) => void;
 };
 
 /**
@@ -50,7 +52,7 @@ type Props = {
  * the other end, and a product that does not flatter the winner has no business
  * needling the loser either.
  */
-export function DuelResult({ match, slot, token }: Props) {
+export function DuelResult({ match, slot, token, onMatch }: Props) {
   const router = useRouter();
   const level = useMotionLevel();
   const still = level === "none";
@@ -68,6 +70,7 @@ export function DuelResult({ match, slot, token }: Props) {
    * agree, which is why it ended.
    */
   const [asking, setAsking] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
   const canAsk =
     match.state === "done" &&
     slot !== null &&
@@ -79,13 +82,22 @@ export function DuelResult({ match, slot, token }: Props) {
   const askRematch = useCallback(() => {
     if (!token) return;
     setAsking(true);
-    // The answer is ignored on purpose: the room is published to both tabs, so
-    // whichever screen comes next — waiting, or a countdown — arrives the same
-    // way every other change in a duel does.
-    void requestRematch(match.id, token)
-      .catch(() => undefined)
+    setRefusal(null);
+    // The answer is a snapshot of the room, and it is used rather than dropped.
+    // The stream carries the same thing a moment later, but this screen is the
+    // one that pressed the button: it should not depend on a connection that
+    // has been open since before the duel ended to show that the press landed.
+    requestRematch(match.id, token)
+      .then(onMatch)
+      .catch((error: unknown) => {
+        setRefusal(
+          error instanceof ApiError
+            ? error.message
+            : "não foi possível pedir revanche",
+        );
+      })
       .finally(() => setAsking(false));
-  }, [match.id, token]);
+  }, [match.id, token, onMatch]);
 
   return (
     <section className="flex flex-col gap-5">
@@ -230,11 +242,13 @@ export function DuelResult({ match, slot, token }: Props) {
             "Esperando" tem destinatário: sem o nome, quem lê fica sem saber se
             precisa fazer algo ou se já fez. */}
         <p aria-live="polite" className="text-sm text-ash">
-          {iAsked
-            ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
-            : theyAsked
-              ? `${them?.displayName ?? "O outro jogador"} quer revanche.`
-              : "Este duelo fica no seu histórico de partidas."}
+          {refusal
+            ? `A revanche não saiu: ${refusal}`
+            : iAsked
+              ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
+              : theyAsked
+                ? `${them?.displayName ?? "O outro jogador"} quer revanche.`
+                : "Este duelo fica no seu histórico de partidas."}
         </p>
       </motion.div>
     </section>

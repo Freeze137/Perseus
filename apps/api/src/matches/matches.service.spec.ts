@@ -15,7 +15,7 @@ import {
 } from '@perseus/contracts';
 import { generate } from '@perseus/corpus';
 import { applyInput, createSession } from '@perseus/engine';
-import { MatchRegistryService } from './match-registry.service';
+import { MatchRegistryService, type Room } from './match-registry.service';
 import { MatchTokenService } from './match-token.service';
 import { MatchesService } from './matches.service';
 import type { MatchStoreService } from './match-store.service';
@@ -433,7 +433,56 @@ describe('MatchesService', () => {
     // The duel that just happened keeps its row: the second one is written
     // under a different id rather than colliding with it.
     expect(save).toHaveBeenCalledTimes(1);
-    expect(save.mock.calls[0][0].roundId).toBe(firstRound.roundId);
+    const stored = save.mock.calls as unknown as [Room][];
+    expect(stored[0][0].roundId).toBe(firstRound.roundId);
+  });
+
+  it('keeps a finished room talking to both screens until it is reaped', () => {
+    const { registry, service } = build();
+    const { host, guest, config } = running(service);
+
+    service.finish(host.match.id, host.token, {
+      keystrokes: honestRun(config, 120),
+    });
+    service.finish(host.match.id, guest.token, {
+      keystrokes: honestRun(config, 220),
+    });
+
+    // A watcher that was there for the duel is still there after it: this is
+    // the connection a rematch travels down, and closing it at `done` is what
+    // made both buttons do nothing.
+    const seen: MatchEvent[] = [];
+    let ended = false;
+    registry.subscribe(
+      host.match.id,
+      (event) => seen.push(event),
+      () => {
+        ended = true;
+      },
+    );
+
+    service.rematch(host.match.id, host.token);
+
+    // The vote reaches the room while it is still `done` — that is the whole
+    // of "somebody is waiting on you".
+    const votes = seen
+      .filter((event) => event.type === 'match')
+      .map((event) =>
+        event.type === 'match' ? event.match.players.map((p) => p.rematch) : [],
+      );
+    expect(votes).toContainEqual([true, false]);
+
+    service.rematch(host.match.id, guest.token);
+
+    const states = seen
+      .filter((event) => event.type === 'match')
+      .map((event) => (event.type === 'match' ? event.match.state : ''));
+    expect(states).toContain('countdown');
+
+    // Open all the way through, and closed when the room finally goes.
+    expect(ended).toBe(false);
+    registry.remove(host.match.id);
+    expect(ended).toBe(true);
   });
 
   it('refuses a rematch while the duel is still being played', () => {

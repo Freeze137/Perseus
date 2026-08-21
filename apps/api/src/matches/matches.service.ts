@@ -212,11 +212,7 @@ export class MatchesService {
    * `length` is optional because the two things the button offers are the same
    * gesture: "outro texto" and "outro texto, maior".
    */
-  reseed(
-    id: string,
-    token: string | undefined,
-    payload: ReseedMatch,
-  ): Match {
+  reseed(id: string, token: string | undefined, payload: ReseedMatch): Match {
     const { room, slot } = this.authorise(id, token);
 
     if (slot !== 1) {
@@ -263,7 +259,7 @@ export class MatchesService {
    * the other person agreeing.
    */
   rematch(id: string, token: string | undefined): Match {
-    const { room, slot, player: me } = this.authorise(id, token);
+    const { room, player: me } = this.authorise(id, token);
 
     if (room.state !== 'done') {
       throw new ConflictException({
@@ -566,10 +562,11 @@ export class MatchesService {
     id: string,
     token: string | undefined,
     listener: Parameters<MatchRegistryService['subscribe']>[1],
+    end?: Parameters<MatchRegistryService['subscribe']>[2],
   ): { unsubscribe: () => void; match: Match; slot: number } {
     const { room, slot } = this.authorise(id, token);
     return {
-      unsubscribe: this.registry.subscribe(id, listener),
+      unsubscribe: this.registry.subscribe(id, listener, end),
       match: this.snapshot(room),
       slot,
     };

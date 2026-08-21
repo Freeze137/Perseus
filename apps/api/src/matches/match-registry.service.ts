@@ -46,6 +46,19 @@ export type Room = {
 };
 
 /**
+ * One open connection to a room: where its events go, and how to close it.
+ *
+ * The end callback is what lets a room outlive its duel without leaking. A
+ * finished room stays streamable for the five minutes a rematch can be offered
+ * in; when it is finally removed, every watcher is closed rather than left
+ * listening to a room that is no longer there.
+ */
+type Watcher = {
+  next: (event: MatchEvent) => void;
+  end: () => void;
+};
+
+/**
  * Ceiling on how many rooms exist at once.
  *
  * A room is a few hundred bytes and two open responses, so this is not about
@@ -77,10 +90,7 @@ export const MAX_ROOMS = 200;
 export class MatchRegistryService implements OnModuleDestroy {
   private readonly rooms = new Map<string, Room>();
   private readonly codes = new Map<string, string>();
-  private readonly listeners = new Map<
-    string,
-    Set<(event: MatchEvent) => void>
-  >();
+  private readonly listeners = new Map<string, Set<Watcher>>();
   private readonly timers = new Map<string, Map<string, NodeJS.Timeout>>();
 
   get size(): number {
@@ -130,10 +140,15 @@ export class MatchRegistryService implements OnModuleDestroy {
     this.clearTimers(id);
     this.codes.delete(room.inviteCode);
     this.rooms.delete(id);
-    // Listeners are dropped rather than closed: the controller completes its
-    // own stream when the match reaches a terminal state, and a stream that
-    // outlives its room simply stops receiving.
+    // Watchers are told the room is gone rather than silently dropped. A
+    // finished room keeps its streams open so a rematch can reach both tabs,
+    // which means this is the moment those streams have nothing left to wait
+    // for — and a stream left hanging on a room that no longer exists is a
+    // connection nobody ever closes.
+    const set = this.listeners.get(id);
     this.listeners.delete(id);
+    if (!set) return;
+    for (const watcher of set) watcher.end();
   }
 
   /**
@@ -142,16 +157,25 @@ export class MatchRegistryService implements OnModuleDestroy {
    * Fan-out is a plain Set of callbacks rather than an rxjs Subject per room
    * because the controller already owns the Observable it hands to Nest, and
    * two layers of subscription management would only be two places for a leak.
+   *
+   * `end` is called when the room is removed, so the caller can close whatever
+   * it is holding open. It is optional: the tests that only want the events do
+   * not have anything to close.
    */
-  subscribe(id: string, listener: (event: MatchEvent) => void): () => void {
-    const set = this.listeners.get(id) ?? new Set();
-    set.add(listener);
+  subscribe(
+    id: string,
+    listener: (event: MatchEvent) => void,
+    end: () => void = () => undefined,
+  ): () => void {
+    const watcher: Watcher = { next: listener, end };
+    const set = this.listeners.get(id) ?? new Set<Watcher>();
+    set.add(watcher);
     this.listeners.set(id, set);
 
     return () => {
       const current = this.listeners.get(id);
       if (!current) return;
-      current.delete(listener);
+      current.delete(watcher);
       if (current.size === 0) this.listeners.delete(id);
     };
   }
@@ -164,7 +188,7 @@ export class MatchRegistryService implements OnModuleDestroy {
   publish(id: string, event: MatchEvent): void {
     const set = this.listeners.get(id);
     if (!set) return;
-    for (const listener of set) listener(event);
+    for (const watcher of set) watcher.next(event);
   }
 
   /**
@@ -207,6 +231,9 @@ export class MatchRegistryService implements OnModuleDestroy {
     for (const id of [...this.rooms.keys()]) this.clearTimers(id);
     this.rooms.clear();
     this.codes.clear();
+    for (const set of this.listeners.values()) {
+      for (const watcher of set) watcher.end();
+    }
     this.listeners.clear();
   }
 }

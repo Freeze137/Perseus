@@ -110,12 +110,11 @@ export function useMatch(
 
       if (parsed.data.type === "match") {
         take(parsed.data.match);
-        // A finished duel has nothing left to say, and a completed stream would
-        // otherwise be reopened by EventSource's own reconnect.
-        if (
-          parsed.data.match.state === "done" ||
-          parsed.data.match.state === "abandoned"
-        ) {
+        // A finished duel still has one thing to say: a rematch. The room lives
+        // on for as long as one can be offered, and the vote arrives down this
+        // same stream — closing here is what made the button do nothing on both
+        // screens. Only an abandoned room is over for good.
+        if (parsed.data.match.state === "abandoned") {
           source.close();
           setConnected(false);
         }
