@@ -265,6 +265,20 @@ export async function readMatchHistory(
 }
 
 /**
+ * Ends the duel from this side.
+ *
+ * A duel is two people, so leaving does not free a seat — it closes the room.
+ * The server answers with the settled match, which is what the screen renders:
+ * the ending is a fact that came back, not one the client drew for itself.
+ */
+export async function leaveMatch(id: string, token: string): Promise<Match> {
+  return request(`/matches/${id}/leave`, MatchSchema, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
+/**
  * The event stream for a duel.
  *
  * `EventSource` cannot set headers, so the token rides in the query string —

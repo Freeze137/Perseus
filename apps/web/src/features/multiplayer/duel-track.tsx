@@ -42,10 +42,10 @@ export function DuelTrack({ lanes, total }: Props) {
                 className="truncate text-sm text-ash data-[mine=true]:text-bone"
               >
                 {lane.name}
-                {lane.mine ? " · você" : ""}
+                {lane.mine ? " · Você" : ""}
               </span>
               <span className="font-mono text-xs tabular-nums text-ash">
-                {lane.finished ? "fim" : `${Math.round(share * 100)}%`}
+                {lane.finished ? "Fim" : `${Math.round(share * 100)}%`}
               </span>
             </div>
 

@@ -4,10 +4,13 @@ import type { Match } from "@perseus/contracts";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { describeConfig, inviteLink } from "./duel-copy";
+import { LeaveButton } from "./leave-button";
 
 type Props = {
   match: Match;
   slot: number;
+  /** Closes the room and goes home. See the page, which owns the seat. */
+  onLeave: () => void;
 };
 
 /** How long "copiado" stays on the button before it goes back to offering. */
@@ -26,10 +29,10 @@ const COPIED_MS = 1_600;
  * thing left to agree on is when — and the countdown that begins the moment the
  * second player arrives says that without anybody having to press anything.
  */
-export function DuelLobby({ match, slot }: Props) {
+export function DuelLobby({ match, slot: yourSlot, onLeave }: Props) {
   const [copied, setCopied] = useState(false);
   const host = match.players.find((player) => player.slot === 1);
-  const waiting = slot === 1;
+  const waiting = yourSlot === 1;
 
   useEffect(() => {
     if (!copied) return;
@@ -63,6 +66,35 @@ export function DuelLobby({ match, slot }: Props) {
         {match.inviteCode}
       </p>
 
+      {/* Quem está na sala, com o nome que a pessoa escolheu.
+          Sem isto o lobby mostra um código e mais nada: o nome recém-digitado
+          some da tela até a corrida começar, o que faz parecer que ele não foi
+          guardado. O assento vazio é declarado em vez de escondido — é a única
+          coisa que falta para a partida sair. */}
+      <ul className="flex flex-col">
+        {[1, 2].map((slot) => {
+          const player = match.players.find((one) => one.slot === slot);
+          const you = player?.slot === yourSlot;
+          return (
+            <li
+              key={slot}
+              className="flex items-baseline justify-between gap-3 border-b border-slate py-2 text-left last:border-b-0"
+            >
+              <span
+                data-you={you}
+                data-empty={!player}
+                className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-base text-ash data-[you=true]:text-bone"
+              >
+                {player?.displayName ?? "Assento livre"}
+              </span>
+              <span data-you={you} className="label data-[you=true]:text-mint">
+                {player ? (you ? "Você" : "Pronto") : "Esperando"}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
       <div className="flex items-center justify-center gap-3">
         <Button variant="edge" size="sm" onClick={copy}>
           {copied ? "Link copiado" : "Copiar link"}
@@ -77,6 +109,12 @@ export function DuelLobby({ match, slot }: Props) {
         Os dois recebem exatamente o mesmo texto — ele é gerado da mesma semente
         nos dois navegadores, e não trafega pela rede.
       </p>
+
+      {/* Em voz baixa e no fim: fechar uma sala em que ninguém entrou é rotina,
+          não decisão dramática. */}
+      <div className="flex justify-center">
+        <LeaveButton onLeave={onLeave} label="Fechar sala" />
+      </div>
     </section>
   );
 }

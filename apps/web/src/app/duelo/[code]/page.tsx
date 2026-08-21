@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useSyncExternalStore } from "react";
 import { DuelJoin } from "@/features/multiplayer/duel-join";
 import { DuelLobby } from "@/features/multiplayer/duel-lobby";
@@ -14,6 +15,7 @@ import {
   subscribeDuels,
 } from "@/features/multiplayer/match-storage";
 import { useMatch } from "@/features/multiplayer/use-match";
+import { leaveMatch } from "@/lib/api";
 
 /**
  * One duel, at one invite code.
@@ -36,6 +38,7 @@ export default function DuelPage({
 }) {
   const { code: raw } = use(params);
   const code = raw.toUpperCase();
+  const router = useRouter();
 
   /**
    * The seat comes straight out of local storage, which is state outside React
@@ -63,6 +66,22 @@ export default function DuelPage({
     if (!error || !seat) return;
     forgetSeat(code);
   }, [error, seat, code]);
+
+  /**
+   * Ends the duel and walks away.
+   *
+   * The seat is dropped whatever the server answers. A failed request here means
+   * the room was already gone or the network is down — in both cases the thing
+   * to do is leave, and keeping a dead seat would only send this tab back into a
+   * room that no longer exists.
+   */
+  const leave = useCallback(() => {
+    if (!seat) return;
+    const { matchId, token } = seat;
+    forgetSeat(code);
+    router.push("/");
+    void leaveMatch(matchId, token).catch(() => undefined);
+  }, [seat, code, router]);
 
   const joined = useCallback(
     (credentials: { match: { id: string }; slot: number; token: string }) => {
@@ -96,7 +115,7 @@ export default function DuelPage({
         ) : !match ? (
           <p className="text-center text-sm text-ash">Entrando na sala…</p>
         ) : match.state === "lobby" ? (
-          <DuelLobby match={match} slot={seat.slot} />
+          <DuelLobby match={match} slot={seat.slot} onLeave={leave} />
         ) : (
           <DuelScreen
             match={match}
@@ -105,6 +124,7 @@ export default function DuelPage({
             serverNow={link.serverNow}
             connected={link.connected}
             onMatch={apply}
+            onLeave={leave}
           />
         )}
       </main>

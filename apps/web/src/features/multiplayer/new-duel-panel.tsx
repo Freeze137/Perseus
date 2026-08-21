@@ -57,7 +57,7 @@ export function NewDuelPanel() {
         setProblem(
           error instanceof ApiError
             ? error.message
-            : "não foi possível abrir a sala",
+            : "Não foi possível abrir a sala.",
         );
         setOpening(false);
       });
@@ -85,7 +85,7 @@ export function NewDuelPanel() {
             onChange={(event) => setName(event.target.value)}
             maxLength={20}
             autoComplete="off"
-            placeholder="seu nome nesta partida"
+            placeholder="Seu nome nesta partida"
             className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-slate"
           />
           <Button

@@ -168,6 +168,23 @@ export class MatchesController {
     this.matches.progress(id, bearer(authorization), payload.index);
   }
 
+  /**
+   * Ends the duel from this player's side.
+   *
+   * Same budget as finishing: both are once-per-duel actions, and twenty a
+   * minute is far more duels than anybody plays and far fewer than a script
+   * wants. Answers with the settled room rather than 204, so the tab that
+   * pressed the button renders the ending instead of asking for it again.
+   */
+  @Post(':id/leave')
+  @RateLimit({ limit: 20, windowMs: 60_000 })
+  leave(
+    @Param('id') id: string,
+    @Headers('authorization') authorization: string | undefined,
+  ): Match {
+    return this.matches.leave(id, bearer(authorization));
+  }
+
   /** The finished timeline, scored the same way a solo run is. */
   @Post(':id/finish')
   @RateLimit({ limit: 20, windowMs: 60_000 })

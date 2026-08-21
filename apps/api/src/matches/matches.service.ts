@@ -213,6 +213,29 @@ export class MatchesService {
   }
 
   /**
+   * Walks out of the duel, and takes the room with it.
+   *
+   * A duel is two people by definition, so one leaving does not leave a duel
+   * behind — it ends one. That is why this settles the room rather than
+   * removing a player from it: whatever the state, the other person gets a
+   * screen that says the thing is over instead of a bar that stopped moving.
+   *
+   * `settle` decides what "over" means, and it already knows: if somebody had
+   * finished, the duel is scored as it stands and the leaver is the one who did
+   * not make it to the end; if nobody had, the room is abandoned and nothing is
+   * recorded. There is deliberately no second way to close a room here.
+   *
+   * Leaving a duel that is already over is not an error. A tab that lost the
+   * stream, saw the scoreboard late, and only then hit the button is asking for
+   * something that has already happened.
+   */
+  leave(id: string, token: string | undefined): Match {
+    const { room } = this.authorise(id, token);
+    if (room.state !== 'done' && room.state !== 'abandoned') this.settle(room);
+    return this.snapshot(room);
+  }
+
+  /**
    * Publishes a caret position to the other player.
    *
    * Silently ignored outside a running duel rather than refused. A client that

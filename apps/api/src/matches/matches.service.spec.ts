@@ -262,6 +262,107 @@ describe('MatchesService', () => {
     ).toThrow(ConflictException);
   });
 
+  it('closes the room when the host walks out of an empty lobby', () => {
+    const { save, service } = build();
+    const host = service.create(REQUEST);
+
+    const left = service.leave(host.match.id, host.token);
+
+    expect(left.state).toBe('abandoned');
+    expect(left.winnerSlot).toBeNull();
+    expect(left.players[0].outcome).toBe('abandoned');
+    // Nobody typed, so there is nothing to remember.
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('ends the duel for both when one leaves during the countdown', () => {
+    const { service } = build();
+    const host = service.create(REQUEST);
+    const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
+
+    service.leave(host.match.id, host.token);
+
+    // The one left behind sees an ending, not a bar that stopped moving.
+    const seen = service.forPlayer(host.match.id, guest.token).match;
+    expect(seen.state).toBe('abandoned');
+    expect(seen.players.every((one) => one.outcome === 'abandoned')).toBe(true);
+  });
+
+  it('publishes the ending to whoever is watching', () => {
+    const { registry, service } = build();
+    const { host } = running(service);
+    const seen: MatchEvent[] = [];
+    registry.subscribe(host.match.id, (event) => seen.push(event));
+
+    service.leave(host.match.id, host.token);
+
+    const states = seen
+      .filter((event) => event.type === 'match')
+      .map((event) => (event.type === 'match' ? event.match.state : ''));
+    expect(states).toContain('abandoned');
+  });
+
+  it('gives the duel to whoever finished when the other one leaves', () => {
+    const { save, service } = build();
+    const { host, guest, config } = running(service);
+
+    service.finish(host.match.id, host.token, {
+      keystrokes: honestRun(config, 120),
+    });
+    const left = service.leave(host.match.id, guest.token);
+
+    // Leaving mid-race is not a way to deny somebody the run they finished.
+    expect(left.state).toBe('done');
+    expect(left.winnerSlot).toBe(1);
+    expect(left.players[0].outcome).toBe('won');
+    expect(left.players[1].outcome).toBe('unfinished');
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles once when both players leave', () => {
+    const { save, service } = build();
+    const { host, guest } = running(service);
+
+    const first = service.leave(host.match.id, host.token);
+    const second = service.leave(host.match.id, guest.token);
+
+    expect(first.state).toBe('abandoned');
+    expect(second.state).toBe('abandoned');
+    expect(second.finishedAt).toBe(first.finishedAt);
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('accepts leaving a duel that is already over', () => {
+    const { save, service } = build();
+    const { host, guest, config } = running(service);
+
+    service.finish(host.match.id, host.token, {
+      keystrokes: honestRun(config, 120),
+    });
+    service.finish(host.match.id, guest.token, {
+      keystrokes: honestRun(config, 220),
+    });
+
+    const after = service.leave(host.match.id, host.token);
+
+    // The scoreboard stands: a late button press is not a second ending.
+    expect(after.state).toBe('done');
+    expect(after.winnerSlot).toBe(1);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let a stranger end somebody else’s duel', () => {
+    const { service } = build();
+    const { host } = running(service);
+
+    expect(() => service.leave(host.match.id, 'forged')).toThrow(
+      UnauthorizedException,
+    );
+    expect(service.forPlayer(host.match.id, host.token).match.state).toBe(
+      'running',
+    );
+  });
+
   it('answers a history from memory, and says it is not stored', async () => {
     const { service } = build();
     const { host, guest, config } = running(service);

@@ -103,7 +103,7 @@ export function MatchHistoryPanel() {
                   .map((player) =>
                     player.score
                       ? `${Math.round(player.score.wpm)} ppm`
-                      : "não completou",
+                      : "Não completou",
                   )
                   .join("  ×  ")}
               </span>
@@ -117,12 +117,12 @@ export function MatchHistoryPanel() {
 }
 
 function outcome(match: MatchSummary): string {
-  if (match.state === "abandoned") return "sem corrida";
-  if (match.winnerSlot === null) return "empate";
+  if (match.state === "abandoned") return "Sem corrida";
+  if (match.winnerSlot === null) return "Empate";
   const winner = match.players.find(
     (player) => player.slot === match.winnerSlot,
   );
-  return winner ? `${winner.displayName} venceu` : "encerrado";
+  return winner ? `${winner.displayName} venceu` : "Encerrado";
 }
 
 /** Short and local. A duel from this afternoon does not need a year on it. */

@@ -165,7 +165,7 @@ export function KeyboardPanel({
                     </motion.span>
                   ))
                 ) : (
-                  <span className="text-sm text-ash">nenhuma</span>
+                  <span className="text-sm text-ash">Nenhuma</span>
                 )}
               </div>
             </div>

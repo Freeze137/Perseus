@@ -96,7 +96,7 @@ export function DuelJoin({ code, onJoined }: Props) {
             maxLength={20}
             autoComplete="off"
             autoFocus
-            placeholder="como quer aparecer"
+            placeholder="Como quer aparecer"
             disabled={!room || joining}
             className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-slate"
           />
@@ -131,7 +131,7 @@ export function DuelJoin({ code, onJoined }: Props) {
  */
 function explain(error: unknown): string {
   if (!(error instanceof ApiError)) {
-    return "não foi possível falar com o servidor de duelos";
+    return "Não foi possível falar com o servidor de duelos.";
   }
   switch (error.code) {
     case "match_full":
