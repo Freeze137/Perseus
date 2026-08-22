@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import perseusMark from "@/assets/perseus-mark.png";
 import { Button } from "@/components/ui/button";
+import { PerseusMark3D } from "@/components/shell/perseus-mark-3d";
 
 type Props = {
   onOpenRanking: () => void;
@@ -38,15 +37,11 @@ export function AppHeader({
       </div>
 
       <span className="display flex items-center gap-2 text-2xl tracking-[0.3em] text-bone">
-        {/* The project mark: the 3D letter P raised off a black plate. It
-            leads the lockup, so the wordmark's letterspacing does not have to
-            be undone on the last letter to keep the gap even. */}
-        <Image
-          src={perseusMark}
-          alt=""
-          priority
-          className="h-12 w-12 shrink-0"
-        />
+        {/* The project mark: the 3D letter P raised off a black plate,
+            tumbling on two axes. It leads the lockup, so the wordmark's
+            letterspacing does not have to be undone on the last letter to
+            keep the gap even. */}
+        <PerseusMark3D size={48} className="shrink-0" />
         PERSEUS
       </span>
 
