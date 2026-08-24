@@ -122,28 +122,33 @@ describe('generate', () => {
  * the output apart and proves every piece of it came out of the phrase bank,
  * which no amount of shuffled words can satisfy.
  */
+/**
+ * Consumes the text from the left, one bank sentence at a time. Longest first,
+ * so a sentence that happens to start with a shorter one cannot be mis-consumed
+ * and report a false failure.
+ *
+ * Whole sentences rather than clauses. A bank entry can hold two of them — "O
+ * que ele está fazendo aí fora? Convide-o para entrar!" is one phrase — so
+ * splitting the generated text on terminal punctuation and looking each piece
+ * up would fail on an entry that is perfectly well drawn.
+ */
+function consumedBy(text: string, pieces: readonly string[]): boolean {
+  const ordered = [...pieces].sort((a, b) => b.length - a.length);
+  let rest = text;
+  while (rest.length > 0) {
+    const piece = ordered.find((p) => rest === p || rest.startsWith(`${p} `));
+    if (!piece) return false;
+    rest = rest.slice(piece.length).trimStart();
+  }
+  return true;
+}
+
 describe('every builder draws from the phrase bank', () => {
   const KINDS = ['words', 'quote', 'punctuation', 'numbers'] as const;
   const LANGUAGES = ['pt-BR', 'en'] as const;
 
   /** The same transform the `words` mode applies, so its output can match. */
   const stripped = (text: string) => text.toLowerCase().replaceAll('.', '');
-
-  /**
-   * Consumes the text from the left, one bank sentence at a time. Longest
-   * first, so a sentence that happens to start with a shorter one cannot be
-   * mis-consumed and report a false failure.
-   */
-  function consumedBy(text: string, pieces: readonly string[]): boolean {
-    const ordered = [...pieces].sort((a, b) => b.length - a.length);
-    let rest = text;
-    while (rest.length > 0) {
-      const piece = ordered.find((p) => rest === p || rest.startsWith(`${p} `));
-      if (!piece) return false;
-      rest = rest.slice(piece.length).trimStart();
-    }
-    return true;
-  }
 
   for (const language of LANGUAGES) {
     const bank = phrases(language);
@@ -184,10 +189,7 @@ describe('generate: numbers mode', () => {
       const text = generate(config({ language, kind: 'numbers', length: 400 }));
       const bank = phrases(language);
       const numeric = bank.filter((phrase) => phrase.tags.includes('numbers'));
-      const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-      for (const sentence of sentences) {
-        expect(numeric.some((phrase) => phrase.text === sentence)).toBe(true);
-      }
+      expect(consumedBy(text, numeric.map((phrase) => phrase.text))).toBe(true);
     }
   });
 

@@ -39,13 +39,25 @@ const MAX_LENGTH = 140;
 const TARGETS = { simple: 3000, punctuated: 2000, numbers: 600 };
 
 /**
- * Portuguese sentences a plain US keyboard can type, as a floor.
+ * Quanto de cada pool portuguesa precisa ser digitável num teclado US puro.
  *
- * Without this the Portuguese bank fills with correctly accented sentences and
- * a US-layout typist keeps drawing from whatever ASCII happens to be left over
- * — which is how the current bank ended up offering them 22 sentences.
+ * Um piso global era a primeira tentativa e resolvia a conta sem resolver o
+ * problema: ele enchia com o que estivesse à mão, quase tudo da pool `simple`,
+ * e deixava pontuação em 28% e números em 23%. Quem digita em português num
+ * teclado americano não escolhe "o modo com mais frases" — escolhe o modo que
+ * quer treinar, e encontrava um deles cheio e os outros vazios.
+ *
+ * Por pool, então. Os dois teclados não podem ver literalmente a mesma
+ * biblioteca: um US puro não tem dead key para "ç", e entregar a ele uma frase
+ * que não consegue terminar é pior do que entregar menos. Mas uma frase sem
+ * acento serve nos dois, então este piso não custa **nada** à pool do ABNT2 —
+ * ela continua do mesmo tamanho e só muda do que é feita.
+ *
+ * O que custa é treino de acento, e por isso fica abaixo da metade: um
+ * treinador de português que parasse de pedir "ã" teria resolvido a divisão
+ * desistindo da língua.
  */
-const PT_ASCII_FLOOR = 900;
+const PT_ASCII_SHARE = 0.45;
 
 /** Characters a sentence may contain. Everything else drops the sentence. */
 const ALLOWED = /^[\p{L}\p{M}\p{N} ,.;:!?'-]+$/u;
@@ -417,19 +429,22 @@ for (const [file, language] of [
   const index = new Map();
   const chosen = [];
 
-  // The ASCII floor is filled first, while the whole pool is still available.
-  // Filling it last would mean asking for accent-free sentences after every
-  // accent-free sentence had already been taken by the general targets.
-  if (language === 'pt-BR') {
-    const ascii = shuffled.filter((item) => item.ascii);
-    chosen.push(...selectDistinct(ascii, PT_ASCII_FLOOR, taken, index));
-  }
-
   for (const [pool, target] of Object.entries(TARGETS)) {
-    const already = chosen.filter((item) => item.pool === pool).length;
-    const remaining = Math.max(0, target - already);
     const candidates = shuffled.filter((item) => item.pool === pool);
-    chosen.push(...selectDistinct(candidates, remaining, taken, index));
+
+    // A cota ASCII de cada pool é servida primeiro, enquanto a pool inteira
+    // ainda está disponível. Servi-la por último seria pedir frases sem acento
+    // depois de todas elas já terem sido levadas pelo alvo geral.
+    if (language === 'pt-BR') {
+      const quota = Math.round(target * PT_ASCII_SHARE);
+      const ascii = candidates.filter((item) => item.ascii);
+      chosen.push(...selectDistinct(ascii, quota, taken, index));
+    }
+
+    const already = chosen.filter((item) => item.pool === pool).length;
+    chosen.push(
+      ...selectDistinct(candidates, Math.max(0, target - already), taken, index),
+    );
   }
 
   const byPool = (pool) => chosen.filter((item) => item.pool === pool).length;

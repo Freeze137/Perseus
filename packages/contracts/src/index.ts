@@ -123,8 +123,14 @@ export type SessionConfig = z.infer<typeof SessionConfigSchema>;
  *     but consecutive runs deal from one shuffled pass instead of sampling the
  *     whole pool afresh each time. A seed with no cursor reads as the top of
  *     the bag, which is what leaves duels untouched.
+ * 7 — a cota de frases sem acento passou a ser servida por pool, não em bloco.
+ *     Um teclado US puro em português via 32% do banco, e o que via estava
+ *     empilhado num modo só: pontuação em 28%, números em 23%. Agora as pools
+ *     ficam parelhas em torno de 43%. Números continua em 23% por limite da
+ *     língua, não do filtro — existem 483 frases portuguesas com dígitos e sem
+ *     nenhum acento em todo o Tatoeba.
  */
-export const CORPUS_VERSION = 6;
+export const CORPUS_VERSION = 7;
 
 export const TypingResultSchema = z.object({
   id: z.uuid(),
