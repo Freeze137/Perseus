@@ -6,3 +6,4 @@ export type { Phrase } from './data/types';
 export { SNIPPETS, type Snippet } from './data/snippets';
 export { PHRASES_EN } from './data/phrases-en';
 export { PHRASES_PT_BR } from './data/phrases-pt-br';
+export { validate, reviewMarkdown, type Finding, type Review, type Report } from './validate';

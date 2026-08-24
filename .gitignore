@@ -33,3 +33,6 @@ npm-debug.log*
 
 # deploy
 .vercel
+
+# relatorio gerado por validate:content
+content-review.md

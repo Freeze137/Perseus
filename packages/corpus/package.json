@@ -5,12 +5,15 @@
   "description": "Word lists and quotes in pt-BR and English, plus a seeded text generator.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate:content": "pnpm build && node scripts/content-review.mjs"
   },
   "dependencies": {
     "@perseus/contracts": "workspace:*"
