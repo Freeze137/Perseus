@@ -5,3 +5,5 @@ packages:
 allowBuilds:
   sharp: false
   unrs-resolver: false
+  # Downloads the Electron binary the desktop shell runs on.
+  electron: true

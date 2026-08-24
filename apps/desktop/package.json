@@ -1,0 +1,13 @@
+{
+  "name": "@perseus/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PERSEUS numa janela própria: o site, sem barra de endereço.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^43.4.1"
+  }
+}
