@@ -112,8 +112,13 @@ export type SessionConfig = z.infer<typeof SessionConfigSchema>;
  * 4 — `keyboardLayout` joined the config, and the prose pools are now drawn
  *     per reach. A US-layout run draws from the subset its keyboard can type,
  *     so the same seed and language no longer name one text on their own.
+ * 5 — the Tatoeba banks joined the hand-written ones: about 5.600 sentences per
+ *     language on top of the original 197. Every pool grew, so every old seed
+ *     now lands somewhere else. The Portuguese ASCII pool grew the most — 22
+ *     sentences to 1.761 — which means a US-layout Portuguese run is the one
+ *     that changed beyond recognition.
  */
-export const CORPUS_VERSION = 4;
+export const CORPUS_VERSION = 5;
 
 export const TypingResultSchema = z.object({
   id: z.uuid(),

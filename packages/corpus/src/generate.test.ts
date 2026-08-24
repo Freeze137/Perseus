@@ -4,7 +4,7 @@ import { PHRASES_EN } from './data/phrases-en';
 import { PHRASES_PT_BR } from './data/phrases-pt-br';
 import { SNIPPETS, type Snippet } from './data/snippets';
 import { difficultyOf } from './difficulty';
-import { generate } from './generate';
+import { generate, phrases } from './generate';
 import { createRandom } from './random';
 
 function config(overrides: Partial<SessionConfig> = {}): SessionConfig {
@@ -146,7 +146,7 @@ describe('every builder draws from the phrase bank', () => {
   }
 
   for (const language of LANGUAGES) {
-    const bank = language === 'pt-BR' ? PHRASES_PT_BR : PHRASES_EN;
+    const bank = phrases(language);
     const sentences = bank.map((phrase) => phrase.text);
 
     for (const kind of KINDS) {
@@ -168,7 +168,7 @@ describe('every builder draws from the phrase bank', () => {
 describe('generate: words mode', () => {
   it('draws real sentences, only without their capitals and full stops', () => {
     const text = generate(config({ kind: 'words', length: 300 }));
-    const simple = PHRASES_PT_BR.filter((phrase) =>
+    const simple = phrases('pt-BR').filter((phrase) =>
       /^[\p{L}\p{M} ]+\.$/u.test(phrase.text),
     );
     const first = simple.find((phrase) =>
@@ -182,7 +182,7 @@ describe('generate: numbers mode', () => {
   it('takes its digits from sentences that carry them, not from a coin flip', () => {
     for (const language of ['pt-BR', 'en'] as const) {
       const text = generate(config({ language, kind: 'numbers', length: 400 }));
-      const bank = language === 'pt-BR' ? PHRASES_PT_BR : PHRASES_EN;
+      const bank = phrases(language);
       const numeric = bank.filter((phrase) => phrase.tags.includes('numbers'));
       const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
       for (const sentence of sentences) {
@@ -192,7 +192,7 @@ describe('generate: numbers mode', () => {
   });
 
   it('has a numbers pool big enough for the longest run in both languages', () => {
-    for (const bank of [PHRASES_PT_BR, PHRASES_EN]) {
+    for (const bank of [phrases('pt-BR'), phrases('en')]) {
       const numeric = bank.filter((phrase) => phrase.tags.includes('numbers'));
       const budget = numeric.reduce((sum, phrase) => sum + phrase.text.length + 1, 0);
       expect(budget).toBeGreaterThan(360);

@@ -1,5 +1,7 @@
 import { PHRASES_EN } from './data/phrases-en';
 import { PHRASES_PT_BR } from './data/phrases-pt-br';
+import { TATOEBA_EN } from './data/tatoeba-en';
+import { TATOEBA_PT_BR } from './data/tatoeba-pt-br';
 import type { Phrase } from './data/types';
 
 /**
@@ -125,6 +127,31 @@ function words(text: string): string[] {
   return text.toLowerCase().match(/[\p{L}\p{M}]+/gu) ?? [];
 }
 
+/** How many sentences of a bank each word appears in. */
+function documentFrequency(phrases: readonly Phrase[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const phrase of phrases) {
+    for (const word of new Set(normalize(phrase.text).split(' '))) {
+      if (word) counts.set(word, (counts.get(word) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/** How many of a sentence's rarest words it gets indexed under. */
+const INDEX_WIDTH = 3;
+
+function rarest(
+  bag: readonly string[],
+  frequency: Map<string, number>,
+): string[] {
+  return [...new Set(bag)]
+    .sort(
+      (a, b) => (frequency.get(a) ?? 0) - (frequency.get(b) ?? 0) || (a < b ? -1 : 1),
+    )
+    .slice(0, INDEX_WIDTH);
+}
+
 function jaccard(a: readonly string[], b: readonly string[]): number {
   const left = new Set(a);
   const right = new Set(b);
@@ -205,6 +232,17 @@ export function validate(): Report {
       phrases: PHRASES_PT_BR,
     },
     { bank: 'phrases-en', language: 'en' as const, phrases: PHRASES_EN },
+    // The ingested banks are checked by exactly the same rules as the written
+    // ones. They are machine-selected, which is a reason to check them harder
+    // rather than to trust them: the filters in ingest-tatoeba.mjs and the
+    // rules here were written separately, and this is where they are made to
+    // agree.
+    {
+      bank: 'tatoeba-pt-br',
+      language: 'pt-BR' as const,
+      phrases: TATOEBA_PT_BR,
+    },
+    { bank: 'tatoeba-en', language: 'en' as const, phrases: TATOEBA_EN },
   ]);
 }
 
@@ -230,7 +268,10 @@ export function validateBanks(banks: readonly Bank[]): Report {
   for (const { bank, language, phrases } of banks) {
     const seenIds = new Set<string>();
     const seenText = new Map<string, string>();
-    const compared: { id: string; bag: string[] }[] = [];
+    /** Word -> the ids of the sentences indexed under it, for the near-dup scan. */
+    const index = new Map<string, string[]>();
+    const bags = new Map<string, string[]>();
+    const frequency = documentFrequency(phrases);
 
     for (const phrase of phrases) {
       const push = (rule: string, detail: string): void => {
@@ -247,16 +288,35 @@ export function validateBanks(banks: readonly Bank[]): Report {
       if (twin) push('duplicate', `same sentence as ${twin}`);
       else seenText.set(key, phrase.id);
 
+      // Near-duplicates are looked for only among sentences that share one of
+      // this sentence's rarest words. Comparing every sentence with every other
+      // is quadratic — twenty-five million set intersections at five thousand a
+      // bank — and indexing on every word barely helps, because "de" and "que"
+      // link almost the whole corpus to almost the whole corpus.
+      //
+      // Rare words are the discriminating ones: two sentences alike enough to
+      // be near-copies share their unusual vocabulary, not just their articles.
       const bag = key.split(' ').filter(Boolean);
-      for (const other of compared) {
-        const score = jaccard(bag, other.bag);
+      const neighbours = new Set<string>();
+      for (const word of rarest(bag, frequency)) {
+        for (const id of index.get(word) ?? []) neighbours.add(id);
+      }
+      for (const id of neighbours) {
+        const other = bags.get(id);
+        if (!other) continue;
+        const score = jaccard(bag, other);
         if (score >= NEAR_DUPLICATE)
           push(
             'near-duplicate',
-            `${Math.round(score * 100)}% of the words of ${other.id}`,
+            `${Math.round(score * 100)}% of the words of ${id}`,
           );
       }
-      compared.push({ id: phrase.id, bag });
+      bags.set(phrase.id, bag);
+      for (const word of rarest(bag, frequency)) {
+        const list = index.get(word) ?? [];
+        list.push(phrase.id);
+        index.set(word, list);
+      }
 
       if (language === 'pt-BR') {
         for (const word of new Set(words(phrase.text))) {

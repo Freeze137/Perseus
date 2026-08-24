@@ -7,14 +7,26 @@ import type {
 } from '@perseus/contracts';
 import { PHRASES_EN } from './data/phrases-en';
 import { PHRASES_PT_BR } from './data/phrases-pt-br';
+import { TATOEBA_EN } from './data/tatoeba-en';
+import { TATOEBA_PT_BR } from './data/tatoeba-pt-br';
 import { SNIPPETS, type Snippet } from './data/snippets';
 import type { Phrase } from './data/types';
 import { createRandom, pick, type Random } from './random';
 import { reachOf, reaches, type Reach } from './reach';
 
+/**
+ * The bank a language draws from: the hand-written sentences first, then the
+ * ones ingested from Tatoeba.
+ *
+ * Concatenated rather than merged into one file so the two keep their separate
+ * provenance. The curated sentences carry register tags and a voice; the
+ * ingested ones carry volume and can be regenerated at any time by rerunning
+ * scripts/ingest-tatoeba.mjs. Losing that distinction would mean never being
+ * able to re-ingest without hand-picking the originals back out.
+ */
 const PHRASES: Record<Language, readonly Phrase[]> = {
-  'pt-BR': PHRASES_PT_BR,
-  en: PHRASES_EN,
+  'pt-BR': [...PHRASES_PT_BR, ...TATOEBA_PT_BR],
+  en: [...PHRASES_EN, ...TATOEBA_EN],
 };
 
 /**
@@ -30,17 +42,22 @@ const PLAIN_SENTENCE = /^[\p{L}\p{M} ]+\.$/u;
  * Every text a user types comes out of one of these pools.
  *
  * Split by reach as well as by language, and split once at module load rather
- * than per draw: the banks are a few hundred sentences, and a filter that ran
- * on every keystroke-sized regeneration would be paying for the same answer
- * over and over.
+ * than per draw: the banks run to several thousand sentences each, and a filter
+ * that ran on every keystroke-sized regeneration would be paying for the same
+ * answer over and over.
  */
 const POOLS = {
   all: byLanguage((bank) => bank),
   simple: byLanguage((bank) =>
     bank.filter((phrase) => PLAIN_SENTENCE.test(phrase.text)),
   ),
+  // Inner punctuation, with the terminal mark cut off first. A sentence whose
+  // only punctuation is the question mark that ends it drills nothing this mode
+  // exists for — the comma and the semicolon are the whole point, and a bank
+  // large enough to have thousands of plain questions in it will happily fill
+  // the mode with them if the filter looks at the last character.
   punctuated: byLanguage((bank) =>
-    bank.filter((phrase) => /[,;:!?]/.test(phrase.text)),
+    bank.filter((phrase) => /[,;:!?]/.test(phrase.text.slice(0, -1))),
   ),
   numeric: byLanguage((bank) =>
     bank.filter((phrase) => phrase.tags.includes('numbers')),
@@ -51,8 +68,8 @@ function byLanguage(
   select: (bank: readonly Phrase[]) => readonly Phrase[],
 ): Record<Language, Record<Reach, readonly Phrase[]>> {
   return {
-    'pt-BR': byReach(select(PHRASES_PT_BR)),
-    en: byReach(select(PHRASES_EN)),
+    'pt-BR': byReach(select(PHRASES['pt-BR'])),
+    en: byReach(select(PHRASES.en)),
   };
 }
 
