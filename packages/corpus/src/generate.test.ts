@@ -319,9 +319,16 @@ describe('generate: punctuation mode', () => {
   });
 
   it('only draws sentences that actually carry inner punctuation', () => {
-    for (const sentence of sentences) {
-      expect(sentence.slice(0, -1)).toMatch(/[,;:!?]/);
-    }
+    // Contra as frases do banco, não contra as orações do texto. Uma entrada
+    // pode trazer duas orações — "Qual é a diferença entre um violino e um
+    // piano? Um queima mais tempo." — e a pontuação interna que a qualifica
+    // para este modo pode estar justamente na emenda entre elas. Dividir o
+    // texto por oração e cobrar vírgula de cada pedaço reprova um sorteio
+    // perfeitamente correto.
+    const punctuated = phrases('pt-BR')
+      .filter((phrase) => /[,;:!?]/.test(phrase.text.slice(0, -1)))
+      .map((phrase) => phrase.text);
+    expect(consumedBy(text, punctuated)).toBe(true);
   });
 });
 

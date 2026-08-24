@@ -102,6 +102,30 @@ describe('the checker', () => {
     ).toContain('tags');
   });
 
+  it('catches European Portuguese, and spares the Brazilian spelling', () => {
+    // A direção importa mais que a regra: é o brasileiro quem mantém o c em
+    // "aspecto". Uma lista escrita ao contrário apagaria a grafia certa.
+    expect(
+      rulesFor('pt-BR', 'Os netos provam que algo de bom vem do facto de ter filhos.'),
+    ).toContain('spelling');
+    expect(
+      rulesFor('pt-BR', 'O ignorante afirma e o sábio duvida e reflecte sobre isso.'),
+    ).toContain('spelling');
+    expect(
+      rulesFor('pt-BR', 'Ele pegou o comboio das seis para chegar mais cedo.'),
+    ).toContain('spelling');
+
+    expect(
+      rulesFor('pt-BR', 'O aspecto geral da sala melhorou bastante com a luz.'),
+    ).not.toContain('spelling');
+    expect(
+      rulesFor('pt-BR', 'Os espectadores aplaudiram de pé no fim da apresentação.'),
+    ).not.toContain('spelling');
+    expect(
+      rulesFor('pt-BR', 'A ação começou cedo e terminou antes do almoço.'),
+    ).not.toContain('spelling');
+  });
+
   it('catches a language that strayed into the wrong bank', () => {
     expect(
       rulesFor('en', 'The coffee went cold porque I looked for the keys nearby.'),

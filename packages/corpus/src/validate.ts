@@ -86,6 +86,20 @@ const AMBIGUOUS = new Set([
   'continuo', 'intimo', 'proposito',
 ]);
 
+/**
+ * Grafias europeias que o Brasil não escreve.
+ *
+ * Só as consoantes mudas, e só na direção certa: o brasileiro é quem *mantém*
+ * o c em "aspecto" e "espectador", e quem o perde em "facto" e "reflecte".
+ * Listar o par errado apagaria do banco a grafia correta em vez da errada, que
+ * é o pior desfecho possível para uma regra escrita para melhorar o português.
+ *
+ * O ingestor já filtra isto, mas ele roda uma vez e este validador roda em toda
+ * mudança — inclusive numa frase acrescentada à mão, que o ingestor nunca vê.
+ */
+const EUROPEAN_SPELLING =
+  /\b(factos?|actos?|[óo]ptim[oa]s?|object[oa]s?|direct[oa]s?|correct[oa]s?|exact[oa]s?|activ[oa]s?|adopt\w*|baptis\w*|Egipto|h[úu]mid[oa]s?|connosco|reflect\w*|arquitect\w*|electr[óo]nic\w*|espect[áa]cul\w*|ac[çc][ãa]o|sec[çc][ãa]o|comboio|autocarro|telem[óo]vel|rapariga)\b/iu;
+
 /** Unambiguous markers that a sentence strayed into the wrong bank. */
 const PT_MARKERS = new Set([
   'você', 'não', 'também', 'então', 'porque', 'quando', 'sempre', 'ainda',
@@ -200,6 +214,10 @@ function checkPhrase(
   if (language === 'pt-BR') {
     // NEVER_UNACCENTED holds bare spellings, so a raw word that matches one is
     // a word that lost its accent. "café" never matches; "cafe" always does.
+    const european = EUROPEAN_SPELLING.exec(text);
+    if (european)
+      push('spelling', `"${european[0]}" is European Portuguese, not Brazilian`);
+
     for (const word of written) {
       if (NEVER_UNACCENTED.has(word))
         push('accent', `"${word}" never exists without its accent`);

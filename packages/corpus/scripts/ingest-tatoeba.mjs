@@ -122,6 +122,15 @@ const EUROPEAN_PT = new RegExp(
     // Spellings the 1990 agreement left different on the two sides.
     '\\b(aspeto|rece[çc][ãa]o|conce[çc][ãa]o|dete[çc][ãa]o|perce[çc][ãa]o|' +
       'contacto|fato de banho|casa de banho)\\b',
+    // Consoantes mudas que o Brasil não escreve. Cuidado com a direção: o
+    // brasileiro é quem *mantém* o c em "aspecto" e "espectador", e quem o
+    // perde em "facto" e "reflecte". Listar o par errado apagaria do banco a
+    // grafia certa em vez da errada.
+    '\\b(factos?|actos?|[óo]ptim[oa]s?|object\\w*|direct[oa]s?|' +
+      'correct[oa]s?|exact[oa]s?|activ[oa]s?|adopt\\w*|baptis\\w*|' +
+      'Egipto|h[úu]mid[oa]s?|connosco|reflect\\w*|arquitect\\w*|' +
+      'electr[óo]nic\\w*|espect[áa]cul\\w*|ac[çc][ãa]o|sec[çc][ãa]o|' +
+      'infec[çc]\\w*|selec[çc]\\w*|colec[çc]\\w*|direc[çc][ãa]o)\\b',
     // The joins matter: these are alternatives to each other, not a sequence.
     // Building this with .join('') concatenated the groups instead, which
     // demanded all of them in one sentence and so matched nothing at all.
@@ -148,6 +157,16 @@ const NEVER_UNACCENTED = new Set(
     'caminhao cartao botao limao verao sabao facilmente dificilmente proximos ' +
     'ultimos areas niveis').split(' '),
 );
+
+/**
+ * Inglês vazado na frase portuguesa.
+ *
+ * A mesma lista do validador. Casos como "rock and roll" são empréstimo
+ * legítimo, mas na prática a frase que os traz costuma vir torta por outros
+ * motivos — a que motivou esta regra dizia "na musical ocidental".
+ */
+const ENGLISH_IN_PT =
+  /\b(the|and|with|that|this|from|they|have|been|which|their|would|about|there)\b/i;
 
 /** English words that mark a sentence as being about a named person. */
 const NAME_HINT = /\b(Tom|Mary|John|Jane|Bob|Alice|Ken|Yumi|Taro)\b/;
@@ -225,6 +244,10 @@ function accepts(text, language) {
     if (!isAscii(text)) return false;
   } else {
     if (EUROPEAN_PT.test(text)) return false;
+    // O mesmo que o validador cobra. Os dois precisam concordar: uma frase que
+    // o ingestor aceita e o validador recusa quebra a suíte no próximo
+    // re-sorteio, e quem for consertar não terá nem o texto na mão.
+    if (ENGLISH_IN_PT.test(text)) return false;
     for (const word of normalize(text).split(' ')) {
       if (NEVER_UNACCENTED.has(word)) return false;
     }
@@ -407,7 +430,7 @@ export const ${constant}: readonly Phrase[] = [
       const id = `${prefix}-${String(i + 1).padStart(4, '0')}`;
       const tags =
         item.pool === 'numbers' ? "['tatoeba', 'numbers']" : "['tatoeba']";
-      const text = item.text.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
+      const text = item.text.replaceAll('\\', '\\').replaceAll("'", "\\'");
       return `  { id: '${id}', text: '${text}', tags: ${tags} },`;
     })
     .join('\n');
