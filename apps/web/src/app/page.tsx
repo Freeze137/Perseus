@@ -131,33 +131,6 @@ export default function Home() {
   const takeFocusBack = useCallback(() => setFocusSignal((n) => n + 1), []);
 
   /**
-   * N draws another text, the same letter the result screen uses.
-   *
-   * It is only a shortcut while the caret is somewhere else: in the typing area
-   * `n` is a letter of the text being typed, and a shortcut that swallowed it
-   * would be a bug in the one thing this page exists to do. So the key is read
-   * only when focus is off the writing surface — after a click on a button, or
-   * a Tab away — and never while a run is under way.
-   *
-   * Capture phase on purpose. The typing area pulls focus back on any key, and
-   * that listener is registered first; without capture this one would ask about
-   * focus after the answer had already been changed.
-   */
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "n") return;
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      if (running) return;
-      if (drawer !== null || settingsOpen || duelOpen) return;
-      if (writing(document.activeElement)) return;
-      event.preventDefault();
-      newTest();
-    };
-    document.addEventListener("keydown", handleKey, true);
-    return () => document.removeEventListener("keydown", handleKey, true);
-  }, [running, drawer, settingsOpen, duelOpen, newTest]);
-
-  /**
    * Escape walks away from the run.
    *
    * It is deliberately not the same key as restart. Enter replays the text you
@@ -257,7 +230,11 @@ export default function Home() {
                 data-visible={running}
                 className="pb-1 font-mono text-xs tracking-wide text-ash opacity-0 transition-opacity duration-200 data-[visible=true]:opacity-70"
               >
-                esc — cancelar
+                {/* A tecla em caixa alta, a ação em caixa baixa: quem procura
+                    isto no meio de uma corrida está procurando a tecla, e ela
+                    precisa saltar antes da frase que a explica. */}
+                <span className="uppercase tracking-wider text-bone">esc</span>{" "}
+                — cancelar
               </p>
               <p className="flex items-baseline gap-2">
                 <span className="display text-2xl tabular-nums text-bone">
@@ -284,7 +261,7 @@ export default function Home() {
               </Button>
               <span aria-hidden="true" className="h-4 w-px bg-slate" />
               <Button variant="quiet" size="sm" onClick={newTest}>
-                N · Novo texto
+                Novo texto
               </Button>
             </div>
           </>
@@ -357,22 +334,5 @@ export default function Home() {
         </div>
       </Modal>
     </div>
-  );
-}
-
-/**
- * Whether this element is somewhere a letter is being written.
- *
- * The typing area's field is one, and so is anything a panel puts on screen —
- * a name, a search box. Asked of the element rather than of the page's own
- * state so a control added later is covered without this having to know it
- * exists.
- */
-function writing(element: Element | null): boolean {
-  if (!(element instanceof HTMLElement)) return false;
-  return (
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element.isContentEditable
   );
 }

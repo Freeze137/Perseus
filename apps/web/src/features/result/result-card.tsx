@@ -58,10 +58,6 @@ export function ResultCard({
         event.preventDefault();
         onRestart();
       }
-      if (event.key.toLowerCase() === 'n') {
-        event.preventDefault();
-        onNewText();
-      }
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
@@ -217,7 +213,7 @@ export function ResultCard({
           ⏎ Repetir mesmo texto
         </Button>
         <Button variant="ghost" size="md" onClick={onNewText}>
-          N · Novo texto
+          Novo texto
         </Button>
       </Block>
     </section>

@@ -118,7 +118,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
 
 function Key({ children }: { children: string }) {
   return (
-    <kbd className="rounded-xs bg-slate px-1 py-0.5 font-mono text-[0.6875rem] text-bone">
+    <kbd className="rounded-xs bg-slate px-1 py-0.5 font-mono text-[0.6875rem] uppercase tracking-wider text-bone">
       {children}
     </kbd>
   );
