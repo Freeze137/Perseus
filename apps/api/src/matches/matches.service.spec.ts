@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   MATCH_COUNTDOWN_MS,
+  TIMELINE_LIMITS,
   MATCH_GRACE_MS,
   MATCH_MAX_RUN_MS,
   type CreateMatch,
@@ -44,14 +45,38 @@ const REQUEST: CreateMatch = {
  * even rhythm is refused as machine-made, so a fixture without it would be
  * testing the duel against something no hand produces.
  */
+/**
+ * O intervalo mais lento que esta suíte pede. Todos são escalados por ele.
+ *
+ * Escalar pelo mais lento, e não cada um por si, é o que mantém a ordem entre
+ * um jogador rápido e um devagar: se cada chamada fosse limitada sozinha, o
+ * teto achataria a diferença entre 120 e 220 até os dois empatarem, e o teste
+ * que exige o duelo para o mais rápido passaria a depender de sorte.
+ */
+const SLOWEST_GAP = 220;
+
 function honestRun(config: SessionConfig, gap = 120): SubmittedKeystroke[] {
   const target = generate(config);
+
+  // O intervalo pedido é uma intenção, não uma promessa. Estes testes encerram
+  // a sala no mesmo instante em que a abrem, então o relógio que o servidor viu
+  // passar é quase zero, e a corrida inteira tem de caber na folga que o scorer
+  // permite. Isso vinha saindo por acaso: uma frase de 60 caracteres a 220 ms
+  // reivindica 13 s e passa. Uma de 140 reivindica 30,8 s e é recusada — e o
+  // texto da sala é sorteado, então o teste falhava de vez em quando sem nada
+  // ter mudado no código que ele testa.
+  const ceiling = (TIMELINE_LIMITS.clockSlackMs * 0.6) / target.length;
+  const paced = Math.max(
+    30,
+    Math.round(gap * Math.min(1, ceiling / SLOWEST_GAP)),
+  );
+
   let session = createSession(target, { autoIndent: config.kind === 'code' });
   let at = 0;
   let step = 0;
 
   while (session.typed.length < session.target.length) {
-    at += gap + (((step * 37) % 13) - 6) * 4;
+    at += paced + (((step * 37) % 13) - 6) * 4;
     step += 1;
     session = applyInput(session, session.target[session.typed.length], at);
   }

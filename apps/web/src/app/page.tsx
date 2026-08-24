@@ -1,7 +1,7 @@
 "use client";
 
 import type { SessionConfig } from "@perseus/contracts";
-import { generate, randomSeed, reachableShare } from "@perseus/corpus";
+import { generate, reachableShare } from "@perseus/corpus";
 import { isFinished, metrics } from "@perseus/engine";
 import {
   useCallback,
@@ -31,9 +31,8 @@ import { useFrameRate } from "@/features/settings/use-frame-rate";
 import { StartBar } from "@/features/typing/start-bar";
 import { TypingArea } from "@/features/typing/typing-area";
 import { useTypingSession } from "@/features/typing/use-typing-session";
+import { bagSeed, useBag, useBagHydration } from "@/features/typing/use-bag";
 
-/** Fixed on the server so the first render matches; replaced on "novo texto". */
-const INITIAL_SEED = "perseus";
 /** Live metrics refresh rate — fast enough to feel live, cheap enough to be free. */
 const TICK_MS = 100;
 /**
@@ -49,6 +48,7 @@ type Drawers = "ranking" | "stats" | null;
 
 export default function Home() {
   useSettingsHydration();
+  useBagHydration();
 
   const {
     language,
@@ -61,7 +61,10 @@ export default function Home() {
     setLanguage,
     setPerformance,
   } = useSettings();
-  const [seed, setSeed] = useState(INITIAL_SEED);
+  const bag = useBag();
+  // A seed é a posição da sacola escrita por extenso. Sai daqui na config,
+  // viaja com a corrida e é o que deixa o servidor redistribuir a mesma sacola.
+  const seed = bagSeed(bag);
   const [drawer, setDrawer] = useState<Drawers>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [duelOpen, setDuelOpen] = useState(false);
@@ -127,7 +130,17 @@ export default function Home() {
     return () => window.clearInterval(id);
   }, [running]);
 
-  const newTest = useCallback(() => setSeed(randomSeed()), []);
+  /**
+   * Tira as próximas frases da sacola.
+   *
+   * Anda o cursor pelo tanto que a corrida atual consumiu, e não por um número
+   * fixo: uma corrida de 180 caracteres come três frases e uma de 600 come
+   * dez. Andar menos repetiria; andar mais puliria frases que ninguém viu.
+   */
+  const newTest = useCallback(
+    () => bag.next(deferredConfig),
+    [bag, deferredConfig],
+  );
   const takeFocusBack = useCallback(() => setFocusSignal((n) => n + 1), []);
 
   /**
@@ -147,10 +160,10 @@ export default function Home() {
     if (drawer !== null || settingsOpen || duelOpen) return;
     // Nothing under way: no reset, no new seed, no render at all.
     if (!running) return;
-    // Reset and reseed both: the reseed is what supplies new text, the reset is
-    // what guarantees a clean session even if a seed ever repeats its text.
+    // Reset and advance both: the advance is what supplies new text, the reset
+    // is what guarantees a clean session even if a seed ever repeats its text.
     restart();
-    setSeed(randomSeed());
+    bag.next(deferredConfig);
 
     setSwapping(true);
     // Cleared before it is written: a live region says nothing when the text it
@@ -165,7 +178,10 @@ export default function Home() {
         ANNOUNCE_MS,
       ),
     ];
-  }, [drawer, settingsOpen, duelOpen, running, restart]);
+    // `bag` e `deferredConfig` entram aqui porque o avanço lê os dois. Sem
+    // eles o Esc andaria a partir do cursor que existia quando este callback
+    // foi criado, e cancelar duas vezes seguidas devolveria o mesmo texto.
+  }, [drawer, settingsOpen, duelOpen, running, restart, bag, deferredConfig]);
 
   useEffect(
     () => () => cancelTimers.current.forEach(window.clearTimeout),

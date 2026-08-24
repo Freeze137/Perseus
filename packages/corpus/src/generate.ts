@@ -11,6 +11,7 @@ import { TATOEBA_EN } from './data/tatoeba-en';
 import { TATOEBA_PT_BR } from './data/tatoeba-pt-br';
 import { SNIPPETS, type Snippet } from './data/snippets';
 import type { Phrase } from './data/types';
+import { phraseAt, positionOf } from './bag';
 import { createRandom, pick, type Random } from './random';
 import { reachOf, reaches, type Reach } from './reach';
 
@@ -183,7 +184,23 @@ export function reachableShare(config: SessionConfig): {
  * punctuation survives — never in whether the text means anything.
  */
 export function generate(config: SessionConfig): string {
-  return BUILDERS[config.kind](createRandom(seedOf(config)), config).trim();
+  return run(config).text;
+}
+
+/**
+ * How many sentences this run takes out of the bag.
+ *
+ * The browser needs this to advance its cursor, and it must be the count the
+ * draw actually used rather than an estimate: an off-by-one here either skips a
+ * sentence nobody sees or repeats one everybody does.
+ */
+export function drawCount(config: SessionConfig): number {
+  return run(config).drawn;
+}
+
+function run(config: SessionConfig): Drawn {
+  const built = BUILDERS[config.kind](createRandom(seedOf(config)), config);
+  return { text: built.text.trim(), drawn: built.drawn };
 }
 
 /**
@@ -204,35 +221,41 @@ export function generate(config: SessionConfig): string {
  * this app offers can fail to type it. A test holds that true.
  */
 function seedOf(config: SessionConfig): string {
-  return config.kind === 'code'
-    ? `${config.seed}:code:${config.syntax ?? 'mix'}`
-    : `${config.seed}:${config.language}:${config.kind}:${reachFor(config)}`;
+  if (config.kind === 'code') return `${config.seed}:code:${config.syntax ?? 'mix'}`;
+  // Only the bag's *id* shapes the prose shuffle — never the cursor. Folding
+  // the cursor in here would reshuffle the pool on every advance, which is
+  // sampling with replacement again wearing a bag's clothes.
+  const { id } = positionOf(config.seed);
+  return `${id}:${config.language}:${config.kind}:${reachFor(config)}`;
 }
 
-type Builder = (random: Random, config: SessionConfig) => string;
+/** A built text and how many sentences of the bag it consumed. */
+type Drawn = { readonly text: string; readonly drawn: number };
+
+type Builder = (random: Random, config: SessionConfig) => Drawn;
 
 const BUILDERS: Record<TextKind, Builder> = {
   // Real sentences with the capitals and the full stops taken off. The drill
   // here is letter reach and rhythm, so Shift and punctuation are out of scope
   // — but the words underneath are still a sentence somebody wrote.
-  words: (random, config) =>
-    stripped(draw(random, config.length, drawnPool(config))),
+  words: (_random, config) => {
+    const run = drawFromBag(config);
+    return { text: stripped(run.text), drawn: run.drawn };
+  },
 
   // Whole sentences from the bank, never cut mid-thought.
-  quote: (random, config) => draw(random, config.length, drawnPool(config)),
+  quote: (_random, config) => drawFromBag(config),
 
   // Also real sentences, but only the ones carrying inner punctuation. Stitching
   // random words together and sprinkling commas on top would drill the symbols
   // while teaching a rhythm that no real sentence has.
-  punctuation: (random, config) =>
-    draw(random, config.length, drawnPool(config)),
+  punctuation: (_random, config) => drawFromBag(config),
 
   // Sentences that carry numbers of their own — a delay of eighteen minutes, a
   // bill in reais. Injecting digits into a word stream on a coin flip drills
   // the top row out of any context, which is the one thing that makes the top
   // row hard: you never know it is coming.
-  numbers: (random, config) =>
-    draw(random, config.length, drawnPool(config)),
+  numbers: (_random, config) => drawFromBag(config),
 
   // Whole functions, indentation and all. `language` is ignored here on
   // purpose: Rust reads the same in São Paulo and in Seattle, and folding the
@@ -242,7 +265,13 @@ const BUILDERS: Record<TextKind, Builder> = {
   // so no layout is short of a character here. What differs between them is how
   // far the fingers travel to reach a brace, and that is the drill, not a
   // reason to hand somebody a smaller bank.
-  code: (random, config) => drawCode(random, config.length, config.syntax ?? 'mix'),
+  code: (random, config) => ({
+    text: drawCode(random, config.length, config.syntax ?? 'mix'),
+    // Code has no bag: the snippet pool is 66 entries and a run takes most of
+    // them, so there is nothing to deal out without repeating. Its variety
+    // still comes from the seed, which the cursor changes on every new run.
+    drawn: 0,
+  }),
 };
 
 /**
@@ -273,25 +302,38 @@ function drawCode(random: Random, target: number, choice: SyntaxChoice): string 
 }
 
 /**
- * Pulls whole phrases until the budget is met, never repeating one.
+ * Deals sentences off the top of this run's bag until the budget is met.
  *
- * A pool that runs dry ends the text early. Repeating a sentence would let the
- * typist coast on muscle memory, and cutting one in half would put a fragment
- * on screen — a shorter run is the honest outcome of a small pool.
+ * The bag is what stops a sentence coming back before the pool has been gone
+ * through. The old draw picked at random with a `used` set, which kept a run
+ * from repeating itself but remembered nothing between runs: every new seed
+ * sampled the whole pool again, so two consecutive runs shared a sentence about
+ * a fifth of the time on the bank as it then was.
+ *
+ * Nothing is cut short at the seam. A run starting near the end of a pass rolls
+ * into the next one, reshuffled, rather than ending early — see `phraseAt`.
  */
-function draw(random: Random, target: number, pool: readonly Phrase[]): string {
-  const chosen: string[] = [];
-  const used = new Set<string>();
-  let length = 0;
+function drawFromBag(config: SessionConfig): Drawn {
+  const pool = drawnPool(config);
+  if (pool.length === 0) return { text: '', drawn: 0 };
 
-  while (length < target && used.size < pool.length) {
-    const phrase = pick(random, pool);
-    if (used.has(phrase.id)) continue;
-    used.add(phrase.id);
+  const base = seedOf(config);
+  const { cursor } = positionOf(config.seed);
+
+  const chosen: string[] = [];
+  let length = 0;
+  let drawn = 0;
+
+  // Never more than a whole pass: past that a run would start repeating itself,
+  // which is the one thing the old `used` set did get right.
+  while (length < config.length && drawn < pool.length) {
+    const phrase = phraseAt(pool, base, cursor + drawn);
     chosen.push(phrase.text);
     length += phrase.text.length + 1;
+    drawn += 1;
   }
-  return chosen.join(' ');
+
+  return { text: chosen.join(' '), drawn };
 }
 
 /**

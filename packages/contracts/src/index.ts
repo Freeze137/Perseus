@@ -117,8 +117,14 @@ export type SessionConfig = z.infer<typeof SessionConfigSchema>;
  *     now lands somewhere else. The Portuguese ASCII pool grew the most — 22
  *     sentences to 1.761 — which means a US-layout Portuguese run is the one
  *     that changed beyond recognition.
+ * 6 — the prose draw became a shuffle bag. The seed now carries a position
+ *     inside it ("id.cursor"), so a text is still a pure function of the
+ *     config — the server has to be able to regenerate it to score the run —
+ *     but consecutive runs deal from one shuffled pass instead of sampling the
+ *     whole pool afresh each time. A seed with no cursor reads as the top of
+ *     the bag, which is what leaves duels untouched.
  */
-export const CORPUS_VERSION = 5;
+export const CORPUS_VERSION = 6;
 
 export const TypingResultSchema = z.object({
   id: z.uuid(),
