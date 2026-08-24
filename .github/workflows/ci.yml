@@ -39,6 +39,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
 
+      # Texto de interface começando em minúscula é erro, não estilo.
+      # Ver docs/convencoes-de-texto.md.
+      - run: pnpm check:text
+
       # O build completo é a última barreira: pega o que só aparece quando o
       # Next monta as rotas.
       - run: pnpm build
