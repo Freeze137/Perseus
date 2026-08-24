@@ -14,11 +14,13 @@ próprios, ausência de temas pesados e ausência de quase-duplicatas.
 A atribuição é **condição da licença**, não cortesia. Ela precisa aparecer em
 algum lugar visível para quem usa o site, não só neste arquivo.
 
-### Pendência
+### Onde aparece
 
-Ainda falta creditar o Tatoeba na interface — rodapé, tela de configurações ou
-página de créditos. Enquanto isso não existe, o requisito de atribuição está
-cumprido apenas no repositório.
+Na interface, em Configurações → Créditos
+(`apps/web/src/features/settings/credits-panel.tsx`), com link para o Tatoeba e
+para o texto da licença. Não fica em rodapé porque não existe rodapé: a tela é
+uma superfície de digitação, e um rodapé permanente competiria por atenção com a
+única coisa que ela pede.
 
 ## Frases originais
 

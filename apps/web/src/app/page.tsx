@@ -27,6 +27,7 @@ import {
 } from "@/features/settings/use-settings";
 import { KeyboardPanel } from "@/features/settings/keyboard-panel";
 import { PerformancePanel } from "@/features/settings/performance-panel";
+import { CreditsPanel } from "@/features/settings/credits-panel";
 import { useFrameRate } from "@/features/settings/use-frame-rate";
 import { StartBar } from "@/features/typing/start-bar";
 import { TypingArea } from "@/features/typing/typing-area";
@@ -347,6 +348,10 @@ export default function Home() {
             O mapa estelar do teclado e os testes por tempo chegam nas próximas
             fases. Ranking online e partidas com amigos vêm com elas.
           </p>
+
+          <div className="rule" />
+
+          <CreditsPanel />
         </div>
       </Modal>
     </div>
