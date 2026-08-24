@@ -86,30 +86,31 @@ export function AppHeader({
           belong to the star field behind it. */}
       <span
         data-placement={placement}
-        className="group pointer-events-none absolute left-1/2 top-1/2 mt-2.5 flex origin-center -translate-x-1/2 -translate-y-1/2 scale-[0.62] items-center data-[placement=after]:flex-row-reverse sm:scale-100"
+        className="group pointer-events-none absolute left-1/2 top-1/2 mt-2.5 origin-center -translate-x-1/2 -translate-y-1/2 scale-[0.62] sm:scale-100"
       >
-        {/* The project mark: the 3D letter P raised off a black plate,
-            tumbling on two axes. It sits above the wordmark and clips its
-            leading edge, because occlusion is what says "nearer" — a drop
-            shadow cannot, on a page whose background is already true black,
-            and a CSS filter over a canvas that repaints every frame is a cost
-            the keystroke would end up paying. */}
-        <PerseusMark3D size={76} className="relative z-10 shrink-0" />
-        {/* Two negative margins doing two different jobs.
-            The one facing the mark (-ml-5 / -mr-5) is the overlap. Most of it
-            is spent crossing the canvas's own transparent margin — the camera
-            frames the tumble's bounding sphere, so the plate never reaches the
-            edge of its 76px box — and what is left lands on the P. Widen or
-            narrow it by one step if the bite is wrong; it is the only number
-            here that has to be judged by eye.
-            The one on the outer edge cancels the trailing letterspace after
-            the final S. Tracking adds a gap the eye does not see but the box
-            does, and an uncancelled one drags the lockup half a letter off the
-            centre line. With the mark on the right that gap falls between the
-            two, where it is wanted, so only the overlap remains. */}
-        <span className="display -ml-5 -mr-[0.3em] text-2xl tracking-[0.3em] text-bone group-data-[placement=after]:ml-0 group-data-[placement=after]:-mr-5">
+        {/* The word is the thing that gets centred, and it is centred alone.
+            -mr cancels the trailing letterspace after the final S: tracking
+            adds a gap the eye does not see but the box does, and leaving it in
+            drags the word half a letter left of the centre line. */}
+        <span className="display block -mr-[0.3em] text-3xl tracking-[0.3em] text-bone">
           PERSEUS
         </span>
+
+        {/* The project mark: the 3D letter P raised off a black plate,
+            tumbling on two axes. Out of the flow on purpose — it hangs beside
+            the word instead of standing next to it in a row.
+
+            A tumbling object has no single width. Face-on the plate covers
+            about 47 of its 76 pixels; corner-on it reaches 68. In a row that
+            breathing width would drag the word off centre as it turned, and
+            any overlap tuned against the face-on silhouette would be eating a
+            letter a second and a half later. Hung off the side, it cannot
+            move the word and cannot reach a glyph, and the canvas's own
+            transparent margin becomes the gap. */}
+        <PerseusMark3D
+          size={76}
+          className="absolute top-1/2 z-10 -translate-y-1/2 right-full group-data-[placement=after]:left-full group-data-[placement=after]:right-auto"
+        />
       </span>
 
       <div className="flex items-center gap-2">
