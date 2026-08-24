@@ -1,126 +1,133 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  createHistogram,
+  record,
+  summarize,
+  type FrameReport,
+} from "./frame-report";
 
-export type FrameReport = {
-  /** Frames per second across the whole sample, on the wall clock. */
-  fps: number;
-  /**
-   * The rate this display was ever going to allow, inferred from the quickest
-   * frames actually observed. 60 on most screens, 30 on a cheap panel or under
-   * a battery saver, 120 on a fast one.
-   */
-  ceiling: number;
-  /** Share of frames that missed the display's own beat, 0–1. */
-  missed: number;
-  total: number;
-  /** Whether this is the machine falling behind rather than the screen's pace. */
-  struggling: boolean;
-};
-
-/** Under this many frames the numbers mean nothing; a real run is thousands. */
-const MIN_SAMPLE = 240;
-/** A frame this much longer than the display's beat missed at least one. */
-const MISS_FACTOR = 1.6;
-/** Missing this share of frames is visible as stutter rather than as bad luck. */
-const MISS_SHARE = 0.1;
-/** Frame durations are bucketed to the millisecond up to this ceiling. */
-const MAX_BUCKET = 64;
+export type { FrameReport } from "./frame-report";
 
 /**
- * Measures what the machine actually managed while the typist was typing — and,
- * just as importantly, what it was ever allowed to manage.
+ * Quadros descartados no começo da amostra.
  *
- * **A frame rate on its own is not evidence of a slow machine**, which is the
- * mistake the first version of this made. A 30 Hz panel reports 30 fps while
- * keeping perfect time. So does a laptop in battery-saver mode, because Chrome
- * and Edge deliberately halve the animation callback there, and so does macOS
- * in Low Power Mode. Telling any of those three that their hardware is
- * struggling would be the interface inventing a problem and then selling the
- * cure for it.
+ * Os primeiros quadros de uma corrida não são a máquina digitando: são o
+ * componente montando, a primeira animação partindo e o navegador decidindo
+ * layout. Contá-los inflava a perda em toda corrida — e sempre no mesmo
+ * sentido, o que fazia o aviso parecer confirmar a si mesmo.
  *
- * So the sample is judged against itself. The quickest frames observed say what
- * this display's beat actually is; frames far longer than that beat are the ones
- * the machine genuinely missed. A screen running steadily at 30 misses nothing.
- * A machine that can reach 120 but keeps landing at 40 misses most of them.
+ * Meio segundo a 120 Hz, ou um segundo inteiro a 60.
+ */
+const WARMUP_FRAMES = 60;
+
+/**
+ * Mede o que a máquina conseguiu enquanto a pessoa digitava — e, tão importante
+ * quanto, o que ela chegou a ter permissão de conseguir.
  *
- * `deviceMemory` and `hardwareConcurrency` were the other obvious instrument and
- * are worse than either: they describe the hardware, not the hardware running
- * this page in this browser with this configuration — and the most common cause
- * of a genuinely bad frame rate here is hardware acceleration being switched
- * off, which no device API reports at all.
+ * **Uma taxa de quadros sozinha não é prova de máquina lenta**, que foi o erro
+ * da primeira versão disto. Um painel de 30 Hz reporta 30 fps mantendo o tempo
+ * perfeitamente. O mesmo faz um notebook em economia de bateria, porque Chrome
+ * e Edge cortam a frequência do callback pela metade ali de propósito, e o mesmo
+ * faz o macOS em Low Power Mode. Dizer a qualquer um dos três que o hardware
+ * está sofrendo seria a interface inventar um problema e vender a cura.
  *
- * **Nothing here touches the keystroke's critical path.** Per frame it does one
- * subtraction and one array increment into a fixed histogram — no allocation, no
- * `setState`. The hook re-renders exactly once, when the run ends.
+ * Por isso a amostra é julgada contra si mesma. Ver frame-report.ts para a
+ * conta, e para as duas condições que o aviso precisa cumprir antes de aparecer.
+ *
+ * `deviceMemory` e `hardwareConcurrency` eram o outro instrumento óbvio e são
+ * piores que qualquer um: descrevem o hardware, não o hardware rodando esta
+ * página neste navegador com esta configuração — e a causa mais comum de uma
+ * taxa genuinamente ruim aqui é a aceleração por hardware estar desligada, que
+ * nenhuma API de dispositivo reporta.
+ *
+ * **Nada aqui encosta no caminho crítico da tecla.** Por quadro é uma subtração
+ * e um incremento num histograma de tamanho fixo — sem alocação, sem setState.
+ * O hook re-renderiza exatamente uma vez, quando a corrida acaba.
  */
 export function useFrameRate(active: boolean): FrameReport | null {
   const [report, setReport] = useState<FrameReport | null>(null);
-  // Fixed-size histogram of frame durations in whole milliseconds. Bounded and
-  // allocation-free, which a growing array of every frame's duration would not
-  // have been over a run of several thousand frames.
-  const buckets = useRef(new Uint32Array(MAX_BUCKET + 1));
+  const buckets = useRef(createHistogram());
 
   useEffect(() => {
     if (!active) return;
 
     const histogram = buckets.current;
     histogram.fill(0);
-    const started = performance.now();
-    let previous = started;
+
     let frames = 0;
+    let warmed = 0;
+    let previous = performance.now();
+    let startedAt = 0;
+    /**
+     * Tempo somado só enquanto a aba esteve à vista.
+     *
+     * O relógio de parede do começo ao fim contaria os minutos em que a página
+     * ficou escondida, e com eles uma taxa de quadros que a máquina nunca foi
+     * convidada a entregar.
+     */
+    let visibleMs = 0;
+    let watching = true;
+
+    /**
+     * O navegador estrangula o requestAnimationFrame numa aba de fundo ou numa
+     * janela sem foco — chega a um quadro por segundo, e chega a zero. Esses
+     * intervalos não são a máquina falhando, são o navegador economizando, e
+     * contá-los como quadro perdido é acusar alguém por ter trocado de aba.
+     */
+    const pause = () => {
+      if (!watching) return;
+      watching = false;
+      if (startedAt > 0) visibleMs += performance.now() - startedAt;
+    };
+
+    const resume = () => {
+      if (watching) return;
+      watching = true;
+      // O primeiro quadro depois da volta traz o buraco inteiro dentro dele.
+      previous = performance.now();
+      startedAt = previous;
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") pause();
+      else resume();
+    };
 
     let frame = requestAnimationFrame(function step(now: number) {
       const delta = now - previous;
       previous = now;
-      frames += 1;
-      histogram[Math.min(MAX_BUCKET, Math.max(0, Math.round(delta)))] += 1;
+
+      if (watching) {
+        if (warmed < WARMUP_FRAMES) {
+          warmed += 1;
+          // O relógio da amostra só começa quando o aquecimento termina, senão
+          // o fps sairia dividido por um tempo que não foi medido.
+          if (warmed === WARMUP_FRAMES) startedAt = now;
+        } else {
+          frames += 1;
+          record(histogram, delta);
+        }
+      }
+
       frame = requestAnimationFrame(step);
     });
 
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", pause);
+    window.addEventListener("focus", resume);
+
     return () => {
       cancelAnimationFrame(frame);
-      const elapsed = performance.now() - started;
-      if (frames < MIN_SAMPLE || elapsed <= 0) {
-        setReport(null);
-        return;
-      }
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", pause);
+      window.removeEventListener("focus", resume);
 
-      // The display's beat, taken as the 10th percentile rather than the single
-      // fastest frame: one freak 4 ms callback would otherwise claim the screen
-      // runs at 250 Hz and make every honest frame look like a miss.
-      const beat = percentile(histogram, frames, 0.1);
-      const threshold = beat * MISS_FACTOR;
-      let missed = 0;
-      for (let ms = 0; ms <= MAX_BUCKET; ms += 1) {
-        if (ms > threshold) missed += histogram[ms] ?? 0;
-      }
-
-      const share = missed / frames;
-      setReport({
-        fps: Math.round((frames / elapsed) * 1_000),
-        ceiling: beat > 0 ? Math.round(1_000 / beat) : 0,
-        missed: share,
-        total: frames,
-        struggling: share > MISS_SHARE,
-      });
+      pause();
+      setReport(summarize(histogram, frames, visibleMs));
     };
   }, [active]);
 
   return report;
-}
-
-/** The duration at a given percentile, read straight out of the histogram. */
-function percentile(
-  histogram: Uint32Array,
-  total: number,
-  fraction: number,
-): number {
-  const target = total * fraction;
-  let seen = 0;
-  for (let ms = 0; ms <= MAX_BUCKET; ms += 1) {
-    seen += histogram[ms] ?? 0;
-    if (seen >= target) return Math.max(1, ms);
-  }
-  return MAX_BUCKET;
 }

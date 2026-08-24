@@ -180,14 +180,22 @@ export function ResultCard({
       {struggled ? (
         <Block delay={150}>
           <div className="flex flex-col gap-2 border-t border-slate pt-3">
+            {/* Diz o que foi medido e nada além. A versão anterior anunciava
+                "213 de 250 possíveis" com um teto que vinha de intervalos
+                arredondados para milissegundos inteiros — numa tela de 240 Hz
+                isso inventava 250, e transformava o erro de arredondamento em
+                perda. O tempo perdido entra porque é o número que a pessoa
+                sentiu; a porcentagem sozinha não diz se foi um susto ou meio
+                minuto de imagem que não apareceu. */}
             <p className="max-w-prose text-sm leading-relaxed text-bone">
-              Durante esta corrida sua tela entregou{' '}
+              Durante esta corrida sua tela manteve{' '}
               <span className="font-mono font-semibold tabular-nums text-rust">
-                {frames.fps} fps
-              </span>{' '}
-              de {frames.ceiling} possíveis, perdendo{' '}
-              {Math.round(frames.missed * 100)}% dos quadros. O resultado acima
-              não foi afetado — ele é medido pelo relógio, não pela tela.
+                {frames.ceiling} Hz
+              </span>
+              , e {Math.round(frames.missed * 100)}% dos quadros não
+              acompanharam — {(frames.lostMs / 1000).toFixed(1)} segundos de
+              imagem que não apareceu. O resultado acima não foi afetado: ele é
+              medido pelo relógio, não pela tela.
             </p>
             {/* Named because it is the likeliest cause and the only one this
                 button cannot fix. A machine with software rendering will still

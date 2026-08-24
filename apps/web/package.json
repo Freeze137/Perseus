@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check:text": "node scripts/check-text.mjs"
+    "check:text": "node scripts/check-text.mjs",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@perseus/contracts": "workspace:*",
@@ -32,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
