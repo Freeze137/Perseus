@@ -82,11 +82,23 @@ export function AppHeader({
           well, so the lockup sits over the star field rather than crowding the
           top edge, and the mark is free to overhang a 72px-tall header.
 
+          The word sits on the centre line and the mark hangs off one side, so
+          the pair weighs about sixty-six pixels more on the mark's side than
+          on the other. The eye centres mass rather than boxes, which is why a
+          mathematically centred word still reads as pushed over. `ml` leans
+          the whole thing back against that, by roughly a third of the excess
+          rather than all of it — the plate is dark on a black page and does
+          not pull as hard as bold white letters do. It flips with the
+          placement, so the lean always points away from the mark.
+
+          Judge this one by eye; it is the only number here that cannot be
+          derived. More negative moves the pair left on an "after" week.
+
           Inert: the wordmark is not a control, so it must not eat clicks that
           belong to the star field behind it. */}
       <span
         data-placement={placement}
-        className="group pointer-events-none absolute left-1/2 top-1/2 mt-2.5 origin-center -translate-x-1/2 -translate-y-1/2 scale-[0.62] sm:scale-100"
+        className="group pointer-events-none absolute left-1/2 top-1/2 ml-5 mt-2.5 origin-center -translate-x-1/2 -translate-y-1/2 scale-[0.62] data-[placement=after]:-ml-5 sm:scale-100"
       >
         {/* The word is the thing that gets centred, and it is centred alone.
             -mr cancels the trailing letterspace after the final S: tracking
