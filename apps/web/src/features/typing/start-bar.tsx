@@ -1,9 +1,10 @@
 "use client";
 
-import type { Language, TextKind } from "@perseus/contracts";
+import type { Language } from "@perseus/contracts";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useSettings } from "@/features/settings/use-settings";
+import { KIND_OPTIONS } from "@/features/settings/kind-options";
 import { SYNTAX_OPTIONS } from "@/features/settings/syntax-options";
 import { TEXT_LENGTHS } from "@/features/settings/text-lengths";
 
@@ -11,14 +12,6 @@ const LANGUAGES = [
   { value: "pt-BR", label: "Português" },
   { value: "en", label: "English" },
 ] as const satisfies readonly { value: Language; label: string }[];
-
-const KINDS = [
-  { value: "words", label: "Palavras" },
-  { value: "quote", label: "Frase" },
-  { value: "punctuation", label: "Pontuação" },
-  { value: "numbers", label: "Números" },
-  { value: "code", label: "Código" },
-] as const satisfies readonly { value: TextKind; label: string }[];
 
 
 
@@ -64,7 +57,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
           <Divider />
         </>
       )}
-      <Select label="Tipo de texto" value={kind} options={KINDS} onValueChange={setKind} />
+      <Select label="Tipo de texto" value={kind} options={KIND_OPTIONS} onValueChange={setKind} />
       <Divider />
       {/* Right beside the mode it belongs to: picking "Código" and then hunting
           through settings for which code is the one step nobody should have to

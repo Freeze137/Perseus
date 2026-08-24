@@ -22,7 +22,13 @@ import {
 } from "@perseus/contracts";
 import { z } from "zod";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const CONFIGURED_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+/** Where the scoring API is. */
+function base(): string {
+  return CONFIGURED_BASE;
+}
 
 /**
  * The scoring API.
@@ -69,7 +75,7 @@ async function request<T extends z.ZodType>(
 ): Promise<z.infer<T>> {
   let response: Response;
   try {
-    response = await fetch(`${BASE}${path}`, {
+    response = await fetch(`${base()}${path}`, {
       ...init,
       headers: { "content-type": "application/json", ...init.headers },
     });
@@ -224,7 +230,7 @@ export async function publishProgress(
   token: string,
   index: number,
 ): Promise<void> {
-  await fetch(`${BASE}/matches/${id}/progress`, {
+  await fetch(`${base()}/matches/${id}/progress`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -325,5 +331,5 @@ export async function requestRematch(
  * is a seat in one ephemeral room, and it dies with the room.
  */
 export function matchStreamUrl(id: string, token: string): string {
-  return `${BASE}/matches/${id}/stream?token=${encodeURIComponent(token)}`;
+  return `${base()}/matches/${id}/stream?token=${encodeURIComponent(token)}`;
 }
