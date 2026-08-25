@@ -19,18 +19,18 @@ import { useMatch } from "@/features/multiplayer/use-match";
 import { leaveMatch } from "@/lib/api";
 
 /**
- * One duel, at one invite code.
+ * Um duelo, num código de convite.
  *
- * The code is the whole address: a link that can be pasted into a chat, opened
- * on a phone, and read out loud. What separates the two players from anybody
- * else holding it is the seat in local storage — the token the server issued
- * when they joined — which is also what lets a reloaded tab walk back into a
- * duel that is already running.
+ * O código é o endereço inteiro: um link pra colar numa conversa, abrir no
+ * celular e ler em voz alta. O que separa os dois jogadores de quem mais estiver
+ * segurando é a cadeira no armazenamento local — o token que o servidor emitiu
+ * quando entraram — que é também o que deixa uma aba recarregada voltar pra um
+ * duelo já rodando.
  *
- * A visitor with no seat is offered the invite screen. A visitor whose seat
- * points at a room that no longer exists is offered the same thing, because a
- * dead token is indistinguishable from never having had one, and telling
- * somebody their token expired is not an instruction they can follow.
+ * Visitante sem cadeira recebe a tela de convite. Visitante cuja cadeira aponta
+ * pra uma sala que não existe mais recebe a mesma coisa, porque token morto é
+ * indistinguível de nunca ter tido um, e dizer pra alguém que o token dele
+ * venceu não é uma instrução que ele possa seguir.
  */
 export default function DuelPage({
   params,
@@ -42,10 +42,10 @@ export default function DuelPage({
   const router = useRouter();
 
   /**
-   * The seat comes straight out of local storage, which is state outside React
-   * — so it is read the way outside state is meant to be read. The server
-   * snapshot is "no seat": nothing rendered on the server can know, and the
-   * invite screen is the correct thing to show while that is true.
+   * A cadeira sai direto do armazenamento local, que é estado fora do React —
+   * então é lida do jeito que estado de fora deve ser lido. O retrato do
+   * servidor é "sem cadeira": nada renderizado no servidor tem como saber, e a
+   * tela de convite é a coisa certa a mostrar enquanto isso for verdade.
    */
   const seat = useSyncExternalStore(
     subscribeDuels,
@@ -56,27 +56,28 @@ export default function DuelPage({
   const link = useMatch(seat?.matchId ?? null, seat?.token ?? null);
   const { match, error, apply } = link;
 
-  // A duel worth remembering is one that was played to the end. The round is
-  // what gets remembered, not the room: a rematch plays another duel in the
-  // same room, and both belong in the history as their own entries.
+  // Duelo que vale lembrar é o que foi jogado até o fim. O que é lembrado é a
+  // rodada, não a sala: revanche joga outro duelo na mesma sala, e os dois
+  // pertencem ao histórico como entradas próprias.
   useEffect(() => {
     if (match?.state === "done") rememberMatch(match.roundId);
   }, [match?.state, match?.roundId]);
 
-  // A seat whose room is gone is worse than no seat: it holds the screen on an
-  // error nobody can act on, where dropping it offers the invite form instead.
+  // Cadeira cuja sala já era é pior que nenhuma cadeira: segura a tela num erro
+  // sobre o qual ninguém pode agir, enquanto largar oferece o formulário de
+  // convite.
   useEffect(() => {
     if (!error || !seat) return;
     forgetSeat(code);
   }, [error, seat, code]);
 
   /**
-   * Ends the duel and walks away.
+   * Encerra o duelo e vai embora.
    *
-   * The seat is dropped whatever the server answers. A failed request here means
-   * the room was already gone or the network is down — in both cases the thing
-   * to do is leave, and keeping a dead seat would only send this tab back into a
-   * room that no longer exists.
+   * A cadeira é largada seja qual for a resposta do servidor. Requisição que
+   * falha aqui quer dizer que a sala já tinha ido ou que a rede caiu — nos dois
+   * casos a coisa a fazer é sair, e guardar uma cadeira morta só mandaria esta
+   * aba de volta pra uma sala que não existe.
    */
   const leave = useCallback(() => {
     if (!seat) return;

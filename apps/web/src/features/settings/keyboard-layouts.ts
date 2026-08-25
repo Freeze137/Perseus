@@ -1,14 +1,14 @@
 import { KeyboardLayoutSchema, type KeyboardLayout } from "@perseus/contracts";
 
 /**
- * What a key costs on a given layout.
+ * O que uma tecla custa num dado layout.
  *
- * Three states, not four. An earlier draft carried an 'altgr' state on the
- * strength of the advice this app used to print — that ABNT2 reaches braces
- * through AltGr. It does not: `[` and `]` sit right of P and Ç, and `{` and `}`
- * are Shift away from them, which is what every keyboard charges for a brace.
- * AltGr on ABNT2 buys ² ³ £ ¢ ¬ — nothing anybody types in code. The state was
- * describing a keyboard that does not exist, so it is gone.
+ * Três estados, não quatro. Um rascunho anterior carregava um estado 'altgr'
+ * apoiado no conselho que este app imprimia — que o ABNT2 alcança chaves pelo
+ * AltGr. Não alcança: `[` e `]` ficam à direita do P e do Ç, e `{` e `}` estão a
+ * um Shift deles, que é o que todo teclado cobra por uma chave. AltGr no ABNT2
+ * compra ² ³ £ ¢ ¬ — nada que alguém digite em código. O estado descrevia um
+ * teclado que não existe, então foi embora.
  */
 export type KeyReach = "direct" | "dead" | "none";
 
@@ -31,16 +31,16 @@ export type LayoutInfo = {
 };
 
 /**
- * The same twelve characters on every layout, in the same order.
+ * Os mesmos doze caracteres em todo layout, na mesma ordem.
  *
- * Fixed on purpose: the panel exists to be compared across the three, and a
- * sample set that changed per layout would compare nothing. Four are the
- * accents Portuguese cannot do without; the rest are what code is made of.
+ * Fixos de propósito: o painel existe pra ser comparado entre os três, e um
+ * conjunto de amostra que mudasse por layout não compararia nada. Quatro são os
+ * acentos sem os quais o português não vive; o resto é do que código é feito.
  *
- * The backtick earns its place over any second bracket. On both Brazilian and
- * US-International keyboards it is a dead key, which means every template
- * literal in JavaScript costs a press of the space bar to escape — the single
- * most-hit friction in this whole table, and invisible until somebody names it.
+ * A crase ganha o lugar de qualquer segundo colchete. Nos teclados brasileiro e
+ * US-International ela é tecla morta, o que significa que todo template literal
+ * em JavaScript custa um toque na barra de espaço pra escapar — o atrito mais
+ * batido desta tabela inteira, e invisível até alguém nomeá-lo.
  */
 export const LAYOUTS: Record<KeyboardLayout, LayoutInfo> = {
   abnt2: {
@@ -103,10 +103,10 @@ export const LAYOUTS: Record<KeyboardLayout, LayoutInfo> = {
 };
 
 /**
- * How each cost is named, and the order the groups are stacked in.
+ * Como cada custo é nomeado, e a ordem em que os grupos são empilhados.
  *
- * Ordered by what it costs the hand, cheapest first, so switching layouts reads
- * as keys falling down the list rather than shuffling inside it.
+ * Ordenados pelo que custam à mão, do mais barato, pra trocar de layout ler
+ * como teclas caindo pela lista e não se embaralhando dentro dela.
  */
 export const REACH_GROUPS = [
   {
@@ -127,8 +127,8 @@ export const REACH_GROUPS = [
 ] satisfies readonly { reach: KeyReach; title: string; note: string }[];
 
 /**
- * The picker's options, built from the schema so the list cannot drift from
- * what the corpus will actually accept. ABNT2 leads because it is the default.
+ * As opções do seletor, montadas a partir do schema pra lista não descolar do
+ * que o corpus de fato aceita. ABNT2 vem primeiro porque é o padrão.
  */
 export const LAYOUT_OPTIONS = KeyboardLayoutSchema.options.map((value) => ({
   value,

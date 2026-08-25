@@ -15,33 +15,32 @@ export type Settings = {
   language: Language;
   kind: TextKind;
   /**
-   * Which programming language the code mode draws. Kept beside `language`
-   * rather than inside it: one is the prose, the other is the syntax, and they
-   * are chosen independently.
+   * Qual linguagem de programação o modo código sorteia. Fica ao lado de
+   * `language` e não dentro: uma é a prosa, a outra é a sintaxe, e são
+   * escolhidas de forma independente.
    */
   syntax: SyntaxChoice;
   length: number;
   /**
-   * The keyboard in front of the typist.
+   * O teclado na frente da pessoa.
    *
-   * Unlike everything else here it describes hardware, not taste — which is
-   * why it sits in settings rather than in the start bar: you set it once, on
-   * the day you set up the machine, and never think about it again.
+   * Ao contrário de tudo aqui, descreve hardware e não gosto — que é por que
+   * fica nas configurações e não na barra de início: você seta uma vez, no dia
+   * em que montou a máquina, e nunca mais pensa nisso.
    *
-   * It reaches the corpus: a run drawn for a keyboard that cannot type "ç"
-   * must not contain one, so it travels on the SessionConfig too.
+   * Alcança o corpus: corrida sorteada pra um teclado que não digita "ç" não
+   * pode conter um, então ele viaja no SessionConfig também.
    */
   keyboardLayout: KeyboardLayout;
   /** The star-map keyboard under the text. */
   showKeyboard: boolean;
   /**
-   * How much the interface may spend on looking alive.
+   * Quanto a interface pode gastar pra parecer viva.
    *
-   * Replaced a plain `ambient` switch, which could only answer "star field or
-   * no star field" — and on the machine that actually struggles, the star field
-   * without its blur is usually affordable. See performance-tiers.ts for what
-   * each level gives up, and for the guarantee that none of them gives up any
-   * of the product.
+   * Substituiu um interruptor `ambient` simples, que só respondia "campo de
+   * estrelas ou nenhum campo de estrelas" — e na máquina que de fato sofre, o
+   * campo sem o blur costuma caber. Ver performance-tiers.ts pra o que cada
+   * nível entrega, e pra garantia de que nenhum deles entrega nada do produto.
    */
   performance: PerformanceTier;
   setLanguage: (language: Language) => void;
@@ -60,8 +59,8 @@ export const useSettings = create<Settings>()(
       kind: "words",
       syntax: "mix",
       length: 180,
-      // Matches the pt-BR default beside it: the two together are the machine
-      // most of the people this was built for are actually sitting at.
+      // Combina com o default pt-BR ao lado: os dois juntos são a máquina em
+      // que a maioria das pessoas pra quem isto foi feito está sentada.
       keyboardLayout: "abnt2",
       showKeyboard: true,
       performance: "full",
@@ -77,12 +76,12 @@ export const useSettings = create<Settings>()(
       name: "perseus:settings",
       version: 1,
       /**
-       * Carries an old `ambient: false` across to the level that means it.
+       * Leva um `ambient: false` antigo pro nível que quer dizer aquilo.
        *
-       * Somebody who turned the star field off did it for a reason, and that
-       * reason is nearly always this one. Dropping them back to 'full' on the
-       * deploy that renamed the setting would have undone a choice they made
-       * deliberately, on a machine that presumably still needs it.
+       * Quem desligou o campo de estrelas fez por um motivo, e o motivo é quase
+       * sempre este. Devolver a pessoa pro 'full' no deploy que renomeou a
+       * configuração desfaria uma escolha deliberada, numa máquina que
+       * presumivelmente ainda precisa dela.
        */
       migrate: (persisted, version) => {
         if (version >= 1) return persisted as Settings;
@@ -93,9 +92,9 @@ export const useSettings = create<Settings>()(
           performance: ambient === false ? "minimal" : "full",
         } as Settings;
       },
-      // Hydration is deferred on purpose: reading localStorage while the store
-      // is created would make the first client render disagree with the server
-      // one for anybody who has settings saved.
+      // A hidratação é adiada de propósito: ler o localStorage enquanto a store
+      // é criada faria o primeiro render do cliente discordar do do servidor pra
+      // quem tem configuração salva.
       skipHydration: true,
     },
   ),

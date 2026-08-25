@@ -2,20 +2,20 @@ import type { Transition } from "motion/react";
 import { INSTANT, SPRING } from "@/lib/springs";
 
 /**
- * How much the interface is allowed to spend on looking alive.
+ * Quanto a interface pode gastar pra parecer viva.
  *
- * Three levels rather than a switch, because the machines that struggle are not
- * one kind of machine. An older laptop usually has plenty of CPU for the
- * interface and an integrated GPU that chokes on a full-screen canvas with
- * blur; a cheap tablet is short of both. One toggle would have made the first
- * machine give up the star field entirely when dropping the glow was enough.
+ * Três níveis em vez de um interruptor, porque as máquinas que sofrem não são
+ * um tipo só de máquina. Notebook mais velho costuma ter CPU de sobra pra
+ * interface e uma GPU integrada que engasga num canvas de tela cheia com blur;
+ * tablet barato é curto nos dois. Um interruptor só faria a primeira máquina
+ * entregar o campo de estrelas inteiro quando largar o brilho bastava.
  *
- * **What a level never changes: the text, the corpus, the metrics, the
- * verification, or a single word on screen.** Everything here is the price of
- * the presentation, never the substance. A run typed at 'minimal' is the same
- * run, scored the same way, worth the same on the same leaderboard — which is
- * the only arrangement under which somebody on a slow machine is competing at
- * all rather than being quietly given a different product.
+ * **O que um nível nunca muda: o texto, o corpus, as métricas, a verificação,
+ * ou uma palavra que seja na tela.** Tudo aqui é o preço da apresentação, nunca
+ * a substância. Corrida digitada no 'minimal' é a mesma corrida, pontuada do
+ * mesmo jeito, valendo o mesmo no mesmo ranking — que é o único arranjo em que
+ * alguém numa máquina lenta está de fato competindo, em vez de estar recebendo
+ * calado um produto diferente.
  */
 export type PerformanceTier = "full" | "light" | "minimal";
 
@@ -69,14 +69,14 @@ export const TIERS: Record<PerformanceTier, TierInfo> = {
 export const TIER_ORDER = ["full", "light", "minimal"] as const;
 
 /**
- * Resolves what may actually move, given the chosen level and the reader's own
- * system preference.
+ * Resolve o que de fato pode se mover, dado o nível escolhido e a preferência
+ * de sistema de quem está lendo.
  *
- * `prefers-reduced-motion` wins over the tier in one direction only: it can
- * silence motion that the tier allows, never restore motion the tier gave up.
- * The two are answering different questions — one is "can this machine afford
- * it", the other is "does this movement make me ill" — and only the second one
- * is entitled to override a deliberate choice.
+ * `prefers-reduced-motion` ganha do nível numa direção só: pode calar movimento
+ * que o nível permite, nunca restaurar movimento que o nível entregou. Os dois
+ * respondem perguntas diferentes — uma é "esta máquina aguenta", a outra é
+ * "este movimento me deixa enjoado" — e só a segunda tem direito de passar por
+ * cima de uma escolha deliberada.
  */
 export function motionLevelOf(
   tier: PerformanceTier,
@@ -91,11 +91,11 @@ export function fieldLevelOf(tier: PerformanceTier): FieldLevel {
 }
 
 /**
- * The transition to hand a `motion` component, given the level.
+ * A transição pra entregar a um componente `motion`, dado o nível.
  *
- * 'brief' is a tween rather than a slower spring on purpose. A spring is a
- * per-frame integration; a tween is a lookup along a curve. On the machine this
- * level exists for, the difference is not the duration, it is the arithmetic.
+ * 'brief' é tween e não mola mais lenta, de propósito. Mola é integração por
+ * frame; tween é consulta ao longo de uma curva. Na máquina pra qual este nível
+ * existe, a diferença não é a duração, é a aritmética.
  */
 export function transitionFor(
   level: MotionLevel,

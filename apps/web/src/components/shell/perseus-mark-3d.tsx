@@ -11,14 +11,14 @@ type Props = {
 };
 
 /**
- * The project mark as the real thing: the 3D letter P raised off its black
- * plate, tumbling. It turns on two axes at once — one full turn sideways and
- * a slower one over the top — so the plate is seen from the right, the left,
- * from below and from above rather than only spinning like a coin.
+ * A marca do projeto como a coisa real: a letra P em 3D levantada da placa
+ * preta, cambalhotando. Gira em dois eixos ao mesmo tempo — uma volta inteira
+ * de lado e outra mais lenta por cima — pra placa ser vista pela direita, pela
+ * esquerda, de baixo e de cima, e não só rodando feito moeda.
  *
- * three.js is imported inside the effect so it lands in its own chunk and the
- * first paint is still the flat PNG; the canvas replaces the image only once
- * WebGL is actually live, which doubles as the fallback when it is not.
+ * O three.js é importado dentro do efeito pra cair no chunk dele e a primeira
+ * pintura continuar sendo o PNG chapado; o canvas substitui a imagem só quando
+ * o WebGL está de fato vivo, o que serve de fallback quando não está.
  */
 export function PerseusMark3D({ size = 48, className }: Props) {
   const holder = useRef<HTMLDivElement>(null);
@@ -28,8 +28,8 @@ export function PerseusMark3D({ size = 48, className }: Props) {
     const mount = holder.current;
     if (!mount) return;
 
-    // Set before any await: the cleanup can run while three.js is still on
-    // the wire, and then nothing built below should ever reach the DOM.
+    // Setado antes de qualquer await: a limpeza pode rodar enquanto o three.js
+    // ainda está na rede, e aí nada construído abaixo pode chegar ao DOM.
     let disposed = false;
     let teardown = () => {};
 
@@ -59,8 +59,8 @@ export function PerseusMark3D({ size = 48, className }: Props) {
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 
-      // The prototype's studio, minus the ground plane: the mark is cut out
-      // against the header, so a floor shadow would have nothing to fall on.
+      // O estúdio do protótipo, menos o plano de chão: a marca é recortada
+      // contra o cabeçalho, então sombra de chão não teria onde cair.
       scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d2c4, 1.0));
       const key = new THREE.DirectionalLight(0xffffff, 2.2);
       key.position.set(4, 7, 5);
@@ -111,8 +111,9 @@ export function PerseusMark3D({ size = 48, className }: Props) {
         return new THREE.Mesh(g, black);
       }
 
-      /** Uppercase P: a capsule stem to the baseline and a bowl ring filling
-       *  the top ~60% of the cap height, its top flush with the stem's. */
+      /** P maiúsculo: uma haste em cápsula até a linha de base e um anel de
+       *  barriga preenchendo os ~60% de cima da altura da caixa alta, com o topo
+       *  alinhado ao da haste. */
       function letterP(capH: number, stroke: number) {
         const g = new THREE.Group();
         const r = stroke;
@@ -154,8 +155,8 @@ export function PerseusMark3D({ size = 48, className }: Props) {
       halo.position.z = 0.27;
       mark.add(halo);
 
-      // Spin about the mark's own middle, not about wherever the plate's
-      // origin happens to sit, or the tumble would wobble off-centre.
+      // Gira em torno do próprio meio da marca, não de onde a origem da placa
+      // por acaso está, senão a cambalhota balançaria fora do centro.
       const box = new THREE.Box3().setFromObject(mark);
       const center = box.getCenter(new THREE.Vector3());
       mark.position.set(-center.x, -center.y, -center.z);
@@ -163,8 +164,8 @@ export function PerseusMark3D({ size = 48, className }: Props) {
       pivot.add(mark);
       scene.add(pivot);
 
-      // Frame the bounding sphere, not the flat face: every angle of the
-      // tumble has to fit the same 48px box without clipping a corner.
+      // Enquadra a esfera envolvente, não a face chapada: todo ângulo da
+      // cambalhota tem que caber na mesma caixa de 48px sem cortar um canto.
       const sphere = box.getBoundingSphere(new THREE.Sphere());
       camera.position.set(
         0,
@@ -181,7 +182,7 @@ export function PerseusMark3D({ size = 48, className }: Props) {
       ).matches;
 
       if (still) {
-        // Held at the three-quarter angle the flat mark was drawn from.
+        // Parado no ângulo de três quartos de que a marca chapada foi desenhada.
         pivot.rotation.set(-0.18, 0.5, 0);
         renderer.render(scene, camera);
       } else {

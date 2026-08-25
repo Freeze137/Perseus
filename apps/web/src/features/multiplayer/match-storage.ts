@@ -3,52 +3,52 @@
 import { MATCH_HISTORY_MAX } from "@perseus/contracts";
 
 /**
- * The browser's own record of which duels are its own.
+ * O registro que o próprio browser tem de quais duelos são dele.
  *
- * A duel has no account behind it — two friends pick names and race — so there
- * is nowhere on the server to hang "your duels" off. The seat is what lets a
- * refreshed tab walk back into the room it was already in, and the id list is
- * what the history panel asks the server about.
+ * Duelo não tem conta atrás — dois amigos escolhem nome e correm — então não há
+ * onde pendurar "seus duelos" no servidor. A cadeira é o que deixa uma aba
+ * recarregada voltar pra sala em que já estava, e a lista de ids é sobre o que o
+ * painel de histórico pergunta ao servidor.
  *
- * Both are conveniences, and both fail softly. Clearing the browser loses the
- * list and not the duels: the rows are still there, and anybody holding a link
- * can still read one back.
+ * Os dois são conveniências, e os dois falham macio. Limpar o browser perde a
+ * lista e não os duelos: as linhas continuam lá, e quem tiver um link ainda lê
+ * um de volta.
  *
  * ---
  *
- * It is written as a subscribable store rather than as a pair of functions
- * somebody calls in an effect. Local storage is state that lives outside React,
- * and the supported way to read outside state is `useSyncExternalStore` — which
- * needs three things this file provides: a subscribe, a snapshot that keeps its
- * identity while nothing changes, and a server snapshot for the render that
- * happens where there is no storage at all.
+ * É escrito como store assinável em vez de um par de funções que alguém chama
+ * num efeito. Armazenamento local é estado que vive fora do React, e o jeito
+ * suportado de ler estado de fora é o `useSyncExternalStore` — que precisa de
+ * três coisas que este arquivo fornece: um subscribe, um retrato que mantém a
+ * identidade enquanto nada muda, e um retrato de servidor pro render que
+ * acontece onde não existe armazenamento nenhum.
  */
 const SEATS_KEY = "perseus:duel-seats";
 const HISTORY_KEY = "perseus:duels";
 
-/** How many rooms a browser can be mid-duel in. Two is generous; ten is silly. */
+/** Em quantas salas um browser pode estar em duelo. Duas já é generoso; dez é bobagem. */
 const SEATS_MAX = 10;
 
 export type Seat = {
   matchId: string;
   slot: number;
-  /** Proof of being one of the two players. Meaningless once the room dies. */
+  /** Prova de ser um dos dois jogadores. Sem sentido depois que a sala morre. */
   token: string;
-  /** Epoch ms, for evicting the oldest rather than an arbitrary one. */
+  /** Epoch ms, pra despejar a mais velha em vez de uma qualquer. */
   at: number;
 };
 
-/** Seats by invite code: the code is what the URL carries. */
+/** Cadeiras por código de convite: o código é o que a URL carrega. */
 type Seats = Record<string, Seat>;
 
 const listeners = new Set<() => void>();
 
 /**
- * Parsed values, held against the raw string they came from.
+ * Valores já lidos, guardados contra a string crua de onde vieram.
  *
- * `useSyncExternalStore` compares snapshots by identity and re-renders forever
- * if a fresh object comes back every time it looks. Caching against the raw
- * text is what makes "nothing changed" observable rather than merely true.
+ * `useSyncExternalStore` compara retratos por identidade e re-renderiza pra
+ * sempre se um objeto novo voltar toda vez que ele olha. Cachear contra o texto
+ * cru é o que faz "nada mudou" ser observável em vez de apenas verdadeiro.
  */
 let seatsRaw: string | null = null;
 let seatsValue: Seats = {};
@@ -60,8 +60,8 @@ const NO_IDS: readonly string[] = [];
 
 export function subscribeDuels(listener: () => void): () => void {
   listeners.add(listener);
-  // Another tab finishing a duel is a change to the same storage; this is the
-  // event that says so.
+  // Outra aba terminando um duelo é uma mudança no mesmo armazenamento; este é
+  // o evento que avisa.
   window.addEventListener("storage", listener);
   return () => {
     listeners.delete(listener);
@@ -147,7 +147,7 @@ function parse<T>(raw: string | null): T | null {
   try {
     return JSON.parse(raw) as T;
   } catch {
-    // Corrupt storage costs the list, not the page.
+    // Armazenamento corrompido custa a lista, não a página.
     return null;
   }
 }
@@ -157,7 +157,7 @@ function write(key: string, value: unknown): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Private mode, or a full quota. Neither is a reason to fail a duel.
+    // Modo privado, ou cota cheia. Nenhum dos dois é motivo pra falhar um duelo.
   }
   for (const listener of listeners) listener();
 }

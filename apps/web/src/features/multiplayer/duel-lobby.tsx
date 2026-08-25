@@ -22,28 +22,28 @@ type Props = {
 const COPIED_MS = 1_600;
 
 /**
- * The waiting room, which is one instruction and one string.
+ * A sala de espera, que é uma instrução e uma string.
  *
- * The code is the product here, so it is set in the display face at a size
- * that survives a photograph of a screen — which is how an invite actually
- * travels between two people sitting in different rooms. The link is offered
- * next to it rather than instead of it: a link is faster when there is a chat
- * window open, and useless when there is not.
+ * O código é o produto aqui, então é composto na fonte de display num tamanho
+ * que sobrevive à foto de uma tela — que é como um convite de fato viaja entre
+ * duas pessoas sentadas em salas diferentes. O link é oferecido ao lado dele e
+ * não no lugar dele: link é mais rápido quando há uma janela de conversa
+ * aberta, e inútil quando não há.
  *
- * There is no "start" button. Both clients already hold the text, so the only
- * thing left to agree on is when — and the countdown that begins the moment the
- * second player arrives says that without anybody having to press anything.
+ * Não existe botão de "começar". Os dois clientes já têm o texto, então a única
+ * coisa que falta combinar é quando — e a regressiva que começa no instante em
+ * que o segundo jogador chega diz isso sem ninguém precisar apertar nada.
  */
 export function DuelLobby({ match, slot: yourSlot, token, onLeave }: Props) {
   const [copied, setCopied] = useState(false);
   /**
-   * Shown only when the clipboard refused.
+   * Mostrado só quando a área de transferência recusou.
    *
-   * The first version of this swallowed that refusal, on the theory that the
-   * code is on screen anyway. It is — but somebody who pressed "copiar link"
-   * wanted the link, and a button that answers nothing reads as broken rather
-   * than as declined. So the refusal now produces the link itself, selected,
-   * which is the thing the button was for.
+   * A primeira versão disto engolia a recusa, com a teoria de que o código está
+   * na tela de qualquer jeito. E está — mas quem apertou "copiar link" queria o
+   * link, e botão que não responde nada lê como quebrado e não como recusado.
+   * Então a recusa agora produz o próprio link, já selecionado, que é a coisa
+   * pra qual o botão existia.
    */
   const [manual, setManual] = useState(false);
   const manualField = useRef<HTMLInputElement>(null);
@@ -59,10 +59,10 @@ export function DuelLobby({ match, slot: yourSlot, token, onLeave }: Props) {
   const copy = useCallback(() => {
     const link = inviteLink(match.inviteCode);
 
-    // `navigator.clipboard` is missing outside a secure context and rejects
-    // when the browser or a permission policy says no. Both are ordinary — and
-    // neither is something the person pressing the button can act on unless
-    // they are handed the link.
+    // `navigator.clipboard` não existe fora de contexto seguro e rejeita quando
+    // o browser ou uma política de permissão diz não. Os dois são comuns — e
+    // nenhum é coisa sobre a qual quem apertou o botão possa agir, a não ser que
+    // o link seja entregue.
     const written = navigator.clipboard?.writeText(link);
     if (!written) {
       setManual(true);
@@ -77,18 +77,19 @@ export function DuelLobby({ match, slot: yourSlot, token, onLeave }: Props) {
       .catch(() => setManual(true));
   }, [match.inviteCode]);
 
-  // Selected on arrival: with the link already highlighted, copying it by hand
-  // is one keystroke instead of a drag across text.
+  // Selecionado ao chegar: com o link já destacado, copiar na mão é uma tecla
+  // em vez de arrastar por cima do texto.
   useEffect(() => {
     if (manual) manualField.current?.select();
   }, [manual]);
 
   /**
-   * Draws another text, and optionally another size.
+   * Sorteia outro texto, e opcionalmente outro tamanho.
    *
-   * Nothing is applied locally. The server publishes the room to both tabs, so
-   * the new text arrives the same way every other change does — which is also
-   * what keeps the guest's screen from lagging a text behind the host's.
+   * Nada é aplicado localmente. O servidor publica a sala pras duas abas, então
+   * o texto novo chega do mesmo jeito que toda outra mudança chega — que é
+   * também o que impede a tela do convidado de ficar um texto atrás da de quem
+   * criou.
    */
   const [drawing, setDrawing] = useState(false);
   const newText = useCallback(
