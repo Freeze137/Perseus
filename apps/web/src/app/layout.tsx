@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { ConsoleSignature } from "@/components/shell/console-signature";
 import { AmbientBackground } from "@/features/ambient/ambient-background";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -55,6 +56,10 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: SITE_NAME,
+  // Renders <meta name="author"> and <link rel="author">: authorship stated
+  // for a crawler, which opens neither the credits panel nor humans.txt.
+  authors: [{ name: "Rafael Souza Costa", url: "https://github.com/Freeze137" }],
+  creator: "Rafael Souza Costa",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -92,6 +97,7 @@ export default function RootLayout({
     >
       <body>
         <AmbientBackground />
+        <ConsoleSignature />
         {children}
       </body>
     </html>

@@ -1,0 +1,29 @@
+/* AUTOR */
+
+    Rafael Souza Costa
+    GitHub    github.com/Freeze137
+    Local     Brasil
+
+    Produto, engenharia e desenho: o motor de digitação, o corpus
+    determinístico, o servidor que refaz a corrida antes de acreditar nela,
+    o duelo 1v1 e a tela que some quando você começa a digitar.
+
+
+/* SITE */
+
+    Nome      PERSEUSS
+    Endereço  perseuss.tech
+    Idiomas   pt-BR, en
+
+    Front     Next.js, React, Tailwind      → Vercel
+    API       NestJS                        → Fly.io (São Paulo, gru)
+    Banco     Postgres                      → Neon
+
+    Tipografia  Space Grotesk, Inter, JetBrains Mono
+
+
+/* AGRADECIMENTOS */
+
+    Tatoeba — parte das frases de treino, escritas e revisadas por falantes
+    nativos, usadas sob CC-BY 2.0 FR. Atribuição por frase nos créditos
+    dentro do produto.
