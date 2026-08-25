@@ -31,28 +31,28 @@ function base(): string {
 }
 
 /**
- * The scoring API.
+ * A API que pontua.
  *
- * Results do not go to Supabase from here. They go through the API, which
- * regenerates the text, replays the timeline and derives the numbers itself —
- * a browser that could write its own wpm straight into the table would make the
- * leaderboard a list of whoever opened the console first.
+ * Resultado não vai daqui pro Supabase. Vai pela API, que regera o texto,
+ * reproduz a timeline e deriva os números sozinha — um browser que escrevesse o
+ * próprio ppm direto na tabela transformaria o ranking numa lista de quem abriu
+ * o console primeiro.
  *
- * Reads are a different matter and go the same way only for consistency: the
- * board is a database function, and routing it through one place keeps the
- * shape of a board defined once.
+ * Leitura é outra história e vai pelo mesmo caminho só por consistência: o
+ * ranking é uma função do banco, e passar por um lugar só mantém o formato de
+ * um ranking definido uma vez.
  */
 export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
     /**
-     * The machine-readable half of a refusal, when the server sent one.
+     * A metade legível por máquina de uma recusa, quando o servidor mandou uma.
      *
-     * The message is for a log; this is what the interface branches on. A run
-     * refused because the tab is a deploy behind needs "reload the page", and a
-     * run refused as implausible needs something else entirely — telling them
-     * apart from prose would mean reading the server's sentences.
+     * A mensagem é pra log; isto é o que a interface ramifica. Corrida recusada
+     * porque a aba está um deploy atrás precisa de "recarregue a página", e
+     * corrida recusada como implausível precisa de outra coisa inteira —
+     * separar as duas pela prosa significaria ler as frases do servidor.
      */
     readonly code: string | null = null,
   ) {
@@ -63,7 +63,7 @@ export class ApiError extends Error {
   /** True when trying again later could plausibly work. */
   get retryable(): boolean {
     if (this.status === 429 || this.status >= 500) return true;
-    // A network failure arrives with no status at all.
+    // Falha de rede chega sem status nenhum.
     return this.status === 0;
   }
 }
@@ -80,8 +80,8 @@ async function request<T extends z.ZodType>(
       headers: { "content-type": "application/json", ...init.headers },
     });
   } catch (error) {
-    // An unreachable API is not a bug in the payload. Status 0 carries that
-    // distinction to the caller, which is what decides whether to try again.
+    // API inalcançável não é bug no payload. Status 0 leva essa distinção pro
+    // chamador, que é quem decide se tenta de novo.
     throw new ApiError(
       error instanceof Error ? error.message : "network request failed",
       0,
@@ -100,8 +100,8 @@ async function request<T extends z.ZodType>(
     throw new ApiError(message, response.status, code);
   }
 
-  // Parsed on the way in as well as on the way out: a server that changed shape
-  // should fail here, loudly, rather than three components later.
+  // Validado na entrada além da saída: servidor que mudou de formato tem que
+  // quebrar aqui, alto, e não três componentes depois.
   const parsed = schema.safeParse(body);
   if (!parsed.success) throw new ApiError("unexpected response shape", 502);
   return parsed.data;
@@ -139,13 +139,13 @@ export async function readLeaderboard(
 }
 
 /**
- * Opens a run with the server, at the moment the first character is typed.
+ * Abre uma corrida com o servidor, no momento em que o primeiro caractere é
+ * digitado.
  *
- * The ticket that comes back is what the submission is filed under. It is the
- * server's own identity for this run, which is what makes filing the same run
- * twice impossible and gives the eventual duration a clock to be checked
- * against — see the run ticket service on the API side for what it does and,
- * more usefully, what it does not claim to prove.
+ * O bilhete que volta é sob o que o envio é arquivado. É a identidade que o
+ * servidor dá a esta corrida, e é o que torna impossível arquivar a mesma duas
+ * vezes e dá à duração um relógio pra ser conferida — ver o serviço de bilhete
+ * do lado da API pra o que ele faz e, mais útil, o que ele não alega provar.
  */
 export async function startRun(accessToken: string): Promise<RunTicket> {
   return request("/runs", RunTicketSchema, {
@@ -171,12 +171,12 @@ export async function readHistory(
 /* ---------------------------------------------------------------------------
  * Duels
  *
- * The same rule as the solo path, for the same reason: what goes up is the
- * timeline, and the server decides who won. The live positions that travel
- * during the race are a second, lossy channel that no result is derived from.
+ * Mesma regra do caminho solo, pelo mesmo motivo: o que sobe é a timeline, e o
+ * servidor decide quem ganhou. As posições ao vivo que viajam durante a corrida
+ * são um segundo canal, que perde pacote, e do qual nenhum resultado sai.
  * ------------------------------------------------------------------------- */
 
-/** Opens a room. The seed comes back from the server; it is not asked for. */
+/** Abre uma sala. A semente volta do servidor; não é pedida. */
 export async function createMatch(
   payload: CreateMatch,
 ): Promise<MatchCredentials> {
@@ -218,12 +218,12 @@ export async function readMatch(
 }
 
 /**
- * Publishes one caret position.
+ * Publica uma posição de cursor.
  *
- * Answered with 204, so it does not go through `request` — there is no body to
- * parse and no schema to check. Failures are swallowed by the caller on
- * purpose: this is the decorative channel, and five of these a second cannot
- * be allowed to interrupt somebody's typing to complain about one of them.
+ * Respondido com 204, então não passa pelo `request` — não há corpo pra validar
+ * nem schema pra conferir. Falha é engolida por quem chama, de propósito: este
+ * é o canal decorativo, e cinco destes por segundo não podem interromper a
+ * digitação de alguém pra reclamar de um.
  */
 export async function publishProgress(
   id: string,
@@ -254,12 +254,11 @@ export async function finishMatch(
 }
 
 /**
- * The duels this browser has played.
+ * Os duelos que este browser jogou.
  *
- * The ids come from local storage rather than from an account, because a duel
- * never asked for one. Losing the browser's storage loses the list, not the
- * duels — the server still has them, and anybody still holding a link can read
- * one back.
+ * Os ids vêm do armazenamento local e não de uma conta, porque duelo nunca
+ * pediu uma. Perder o armazenamento do browser perde a lista, não os duelos —
+ * o servidor continua com eles, e quem ainda tiver um link lê de volta.
  */
 export async function readMatchHistory(
   ids: readonly string[],
@@ -271,11 +270,11 @@ export async function readMatchHistory(
 }
 
 /**
- * Ends the duel from this side.
+ * Encerra o duelo deste lado.
  *
- * A duel is two people, so leaving does not free a seat — it closes the room.
- * The server answers with the settled match, which is what the screen renders:
- * the ending is a fact that came back, not one the client drew for itself.
+ * Duelo é duas pessoas, então sair não libera cadeira — fecha a sala. O
+ * servidor responde com a partida resolvida, que é o que a tela desenha: o fim
+ * é um fato que voltou, não um que o cliente desenhou sozinho.
  */
 export async function leaveMatch(id: string, token: string): Promise<Match> {
   return request(`/matches/${id}/leave`, MatchSchema, {
@@ -285,11 +284,11 @@ export async function leaveMatch(id: string, token: string): Promise<Match> {
 }
 
 /**
- * Draws a different text for the room, and optionally resizes it.
+ * Sorteia outro texto pra sala, e opcionalmente muda o tamanho.
  *
- * The host's, and only in the lobby — the server enforces both. Omitting the
- * length keeps the one the room already has, which is what "outro texto" means
- * when nobody touched the size.
+ * É de quem criou, e só no lobby — o servidor garante as duas coisas. Omitir o
+ * tamanho mantém o que a sala já tem, que é o que "outro texto" quer dizer
+ * quando ninguém mexeu no tamanho.
  */
 export async function reseedMatch(
   id: string,
@@ -307,11 +306,11 @@ export async function reseedMatch(
 }
 
 /**
- * Asks for another round in the same room.
+ * Pede outra rodada na mesma sala.
  *
- * The answer is the room, and which of two screens to draw is read off its
- * state: still `done` means the other person has not asked yet, `countdown`
- * means they have and the next duel is starting.
+ * A resposta é a sala, e qual das duas telas desenhar se lê no estado dela:
+ * ainda `done` quer dizer que o outro não pediu, `countdown` quer dizer que
+ * pediu e o próximo duelo está começando.
  */
 export async function requestRematch(
   id: string,
@@ -324,11 +323,11 @@ export async function requestRematch(
 }
 
 /**
- * The event stream for a duel.
+ * O stream de eventos de um duelo.
  *
- * `EventSource` cannot set headers, so the token rides in the query string —
- * the one place it does. The API redacts it from its own logs; what it is worth
- * is a seat in one ephemeral room, and it dies with the room.
+ * `EventSource` não seta header, então o token viaja na query string — o único
+ * lugar em que faz isso. A API o esconde dos próprios logs; o que ele vale é
+ * uma cadeira numa sala efêmera, e morre junto com a sala.
  */
 export function matchStreamUrl(id: string, token: string): string {
   return `${base()}/matches/${id}/stream?token=${encodeURIComponent(token)}`;

@@ -19,9 +19,9 @@ type Shape = {
   size: number;
   kind: Kind;
   /**
-   * The shape's paint, built once at scatter time. Opacity rides on
-   * globalAlpha instead of the colour, so the gradient never has to be
-   * rebuilt — see the note on FILL CACHING below.
+   * A pintura da forma, montada uma vez no espalhamento. A opacidade vai pelo
+   * globalAlpha e não pela cor, então o gradiente nunca precisa ser
+   * reconstruído — ver a nota sobre CACHE DE PREENCHIMENTO abaixo.
    */
   fill: CanvasGradient;
   /** Shadow colour for the permanent glow, pre-formatted for the same reason. */
@@ -90,9 +90,10 @@ const STREAK_ALPHA_MAX = 0.15;
 const STREAK_WIDTH_MIN = 1;
 const STREAK_WIDTH_MAX = 3;
 /**
- * The trail is drawn backwards along the velocity by this many ticks rather
- * than from the last frame's position: it keeps the streak the same length on
- * a 60Hz and a 144Hz screen, where the real per-frame step differs by 2.4x.
+ * O rastro é desenhado pra trás ao longo da velocidade por esta quantidade de
+ * ticks, e não a partir da posição do frame anterior: assim o risco tem o mesmo
+ * comprimento numa tela de 60Hz e numa de 144Hz, onde o passo real por frame
+ * difere em 2,4x.
  */
 const TRAIL_TICKS = 6;
 
@@ -129,34 +130,35 @@ const SHAKE_SHRINK = 0.22;
 const IDLE_MS = 1_400;
 
 /**
- * The ambient background: four-pointed stars, quatrefoils and points drifting
- * across the whole viewport, with a faster layer of streaks cutting through
- * them.
+ * O fundo de ambiente: estrelas de quatro pontas, quadrifólios e pontos
+ * derivando pela viewport inteira, com uma camada mais rápida de riscos
+ * cortando eles.
  *
- * It is 3D in the way that matters here — every shape carries a depth that sets
- * its size, its opacity, its spin, its softness and how fast the drift carries
- * it — but it is drawn on a 2D canvas. WebGL would cost more than the whole app
- * for an effect that lives behind text, and the canvas never touches React: the
- * loop owns its own pixels and re-renders nothing.
+ * É 3D no sentido que importa aqui — toda forma carrega uma profundidade que
+ * define tamanho, opacidade, giro, suavidade e quão rápido a deriva a leva —
+ * mas é desenhado num canvas 2D. WebGL custaria mais que o app inteiro pra um
+ * efeito que vive atrás de texto, e o canvas nunca encosta no React: o loop é
+ * dono dos próprios pixels e não re-renderiza nada.
  *
- * FILL CACHING: every shape's paint is built once, at scatter time, and its
- * opacity is applied through globalAlpha at draw time. Formatting an
- * `rgba(...)` string or building a gradient per shape per frame would allocate
- * thousands of short-lived objects a second for colours that never change.
+ * CACHE DE PREENCHIMENTO: a pintura de cada forma é montada uma vez, no
+ * espalhamento, e a opacidade é aplicada pelo globalAlpha na hora de desenhar.
+ * Formatar uma string `rgba(...)` ou montar um gradiente por forma por frame
+ * alocaria milhares de objetos de vida curta por segundo pra cores que nunca
+ * mudam.
  *
- * Mounted in the root layout, not in a page, so it belongs to the product
- * rather than to one screen.
+ * Montado no layout raiz, não numa página, pra pertencer ao produto e não a uma
+ * tela só.
  */
 /**
- * What each field level costs the machine drawing it.
+ * O que cada nível do campo custa pra máquina que o desenha.
  *
- * The three knobs are the three real costs, in the order they hurt. `blur` is
- * canvas `shadowBlur`, which is rasterised on the CPU in most engines and is by
- * some distance the most expensive call on this canvas — the code already said
- * so in a comment before there was any way to turn it off. `dpr` squares: at 2
- * on a 1920x1080 display the loop clears and repaints 8.3 million pixels every
- * frame, at 1 it clears 2.1 million. `shapes` is the merely linear one, which
- * is why it is given up last.
+ * Os três botões são os três custos reais, na ordem em que doem. `blur` é o
+ * `shadowBlur` do canvas, que na maioria dos motores é rasterizado na CPU e é
+ * de longe a chamada mais cara deste canvas — o código já dizia isso num
+ * comentário antes de existir jeito de desligar. `dpr` eleva ao quadrado: em 2
+ * numa tela 1920x1080 o loop limpa e repinta 8,3 milhões de pixels por frame,
+ * em 1 limpa 2,1 milhões. `shapes` é o meramente linear, e por isso é o último
+ * a ser entregue.
  */
 const BUDGETS = {
   rich: { maxDpr: 2, maxShapes: MAX_SHAPES, blur: true },
@@ -188,8 +190,8 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, budget.maxDpr);
-      // The viewport itself, never a parent box — this canvas is the backdrop
-      // of the whole product.
+      // A viewport em si, nunca uma caixa pai — este canvas é o fundo do
+      // produto inteiro.
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = Math.floor(width * dpr);
@@ -202,8 +204,9 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
         budget.maxShapes,
       );
       shapes = scatter(context, count, width, height);
-      // STREAK_SHARE is a share of everything on screen, not a multiple of the
-      // shape count, so it stays honest as the clamp bites on large displays.
+      // STREAK_SHARE é uma fatia de tudo que está na tela, não um múltiplo da
+      // contagem de formas, então continua honesto quando o limite morde em
+      // telas grandes.
       streaks = reduced
         ? []
         : Array.from({ length: Math.round((count * STREAK_SHARE) / (1 - STREAK_SHARE)) }, () =>
@@ -212,12 +215,12 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
     };
 
     const step = (now: number) => {
-      // Delta-timed so the drift reads the same on a 60Hz and a 144Hz screen.
+      // Por delta de tempo, pra deriva ler igual numa tela de 60Hz e numa de 144Hz.
       const delta = Math.min((now - last) / 16.667, 3);
       last = now;
 
-      // Typing pulls the field back; a pause brings it forward again. Doing this
-      // here instead of through a prop keeps React out of the animation entirely.
+      // Digitar puxa o campo pra trás; uma pausa o traz de volta. Fazer isso
+      // aqui em vez de por prop mantém o React fora da animação inteira.
       const idle = now - lastKeystroke > IDLE_MS;
       const target = idle ? 1 : 0.35;
       strength += (target - strength) * 0.06 * delta;
@@ -230,7 +233,7 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
         draw(context, shape, width, height, strength, now, budget.blur);
       }
 
-      // Drawn last, so the fast layer passes in front of the slow one.
+      // Desenhada por último, pra camada rápida passar na frente da lenta.
       context.lineCap = 'round';
       for (const streak of streaks) {
         advanceStreak(streak, delta, width, height);
@@ -246,18 +249,18 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
       frame = requestAnimationFrame(step);
     };
 
-    // Guarded, because two callers can now ask for the loop — the tab becoming
-    // visible and the last overlay closing. Without the flag the second one
-    // would schedule a parallel `requestAnimationFrame` chain and the field
-    // would quietly run at double speed for the rest of the session.
+    // Com guarda, porque agora dois chamadores podem pedir o loop — a aba
+    // ficando visível e a última camada fechando. Sem a flag o segundo agendaria
+    // uma cadeia paralela de `requestAnimationFrame` e o campo rodaria calado no
+    // dobro da velocidade pelo resto da sessão.
     let running = false;
 
     const start = () => {
       if (running) return;
       running = true;
-      // Reset rather than carry on: the delta since the last frame is however
-      // long the field was covered, and feeding that in would teleport every
-      // shape across the screen on the first frame back.
+      // Zera em vez de continuar: o delta desde o último frame é o tempo em que
+      // o campo ficou coberto, e alimentar isso teleportaria toda forma pela
+      // tela no primeiro frame de volta.
       last = performance.now();
       frame = requestAnimationFrame(step);
     };
@@ -284,8 +287,8 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
     resize();
 
     if (reduced) {
-      // Reduced motion keeps the composition and drops the movement entirely —
-      // which rules out the streaks, whose whole content is movement.
+      // Movimento reduzido mantém a composição e larga o movimento inteiro — o
+      // que descarta os riscos, cujo conteúdo inteiro é movimento.
       paintOnce();
     } else {
       start();
@@ -296,15 +299,15 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
       if (reduced) paintOnce();
     };
 
-    // A background animation has no business burning battery on a hidden tab —
-    // nor under a scrim it cannot be seen through.
+    // Animação de fundo não tem por que queimar bateria numa aba escondida —
+    // nem embaixo de um véu que não deixa ver através.
     const handleVisibility = sync;
     const unwatchOverlay = onOverlayChange(sync);
 
-    // Every keystroke lights one shape: the field belongs to the typing, not
-    // to a screensaver running beside it. A hit throws sparks off it, a miss
-    // makes it flinch — the two need to be told apart at a glance, and two
-    // colours of the same glow were not enough.
+    // Toda tecla acende uma forma: o campo pertence à digitação, não a um
+    // protetor de tela rodando ao lado. Acerto joga faísca, erro faz encolher —
+    // os dois precisam ser distinguidos de relance, e duas cores do mesmo brilho
+    // não bastavam.
     const unsubscribe = onKeystroke((keystroke) => {
       lastKeystroke = performance.now();
       if (reduced || shapes.length === 0) return;
@@ -336,8 +339,8 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-    // Re-scattered when the level changes: the budget decides the pixel ratio
-    // and the shape count, and both are read at setup rather than per frame.
+    // Reespalhado quando o nível muda: o orçamento decide a razão de pixel e a
+    // contagem de formas, e os dois são lidos no setup, não por frame.
   }, [level]);
 
   return <canvas ref={canvasRef} aria-hidden="true" className="star-field" />;
@@ -357,11 +360,11 @@ function jitter(channels: readonly [number, number, number]): [number, number, n
 }
 
 /**
- * Places the shapes on a jittered grid rather than at random points.
+ * Põe as formas numa grade tremida em vez de em pontos aleatórios.
  *
- * Pure randomness clumps: a handful of shapes land on top of each other while
- * whole regions stay empty. One shape per cell, nudged inside it, spreads them
- * across the screen while keeping the placement irregular.
+ * Aleatoriedade pura empelota: um punhado de formas cai em cima das outras
+ * enquanto regiões inteiras ficam vazias. Uma forma por célula, empurrada dentro
+ * dela, espalha pela tela mantendo a colocação irregular.
  */
 function scatter(
   context: CanvasRenderingContext2D,
@@ -378,12 +381,12 @@ function scatter(
   for (let index = 0; index < count; index += 1) {
     const column = index % columns;
     const row = Math.floor(index / columns);
-    // Kept off the cell edges so neighbours cannot end up touching.
+    // Longe das bordas da célula pra vizinhas não acabarem se encostando.
     const x = (column + 0.25 + Math.random() * 0.5) * cellWidth;
     const y = (row + 0.25 + Math.random() * 0.5) * cellHeight;
     shapes.push(make(context, x, y));
   }
-  // Far shapes first, so the near ones genuinely overlap them.
+  // Formas distantes primeiro, pras próximas de fato passarem por cima.
   shapes.sort((a, b) => a.z - b.z);
   return shapes;
 }
@@ -394,8 +397,8 @@ function make(context: CanvasRenderingContext2D, x: number, y: number): Shape {
   const hues = [EMERALD, MINT, JADE, JADE];
   const hue = jitter(hues[Math.floor(Math.random() * hues.length)] ?? EMERALD);
   const size = (7 + Math.random() * 22) * z;
-  // Parallax rides on z^1.5: near shapes have to visibly outrun far ones, and
-  // a linear falloff over this z range does not separate the layers.
+  // O parallax anda em z^1.5: forma próxima tem que visivelmente correr mais
+  // que a distante, e queda linear nesta faixa de z não separa as camadas.
   const drift = Math.pow(z, PARALLAX_EXPONENT);
 
   return {
@@ -403,7 +406,7 @@ function make(context: CanvasRenderingContext2D, x: number, y: number): Shape {
     y,
     z,
     angle: Math.random() * Math.PI * 2,
-    // Far shapes turn slower, which is most of what sells the depth.
+    // Forma distante gira mais devagar, e é isso que vende a profundidade.
     spin: (Math.random() - 0.5) * 0.006 * z,
     vx: (Math.random() - 0.5) * 0.4 * drift,
     vy: (Math.random() - 0.5) * 0.3 * drift,
@@ -418,10 +421,10 @@ function make(context: CanvasRenderingContext2D, x: number, y: number): Shape {
 }
 
 /**
- * Near shapes get a two-tone fill — a mint core cooling to their own hue —
- * because at that size a flat colour looks printed on. Far ones instead fade
- * to transparent at the rim: it is the cheapest honest stand-in for defocus,
- * and unlike shadowBlur it costs nothing per frame.
+ * Forma próxima ganha preenchimento de dois tons — um miolo mint esfriando pro
+ * tom dela — porque naquele tamanho cor chapada parece impressa. Forma distante
+ * em vez disso desvanece pra transparente na borda: é o substituto honesto mais
+ * barato pra desfoque, e ao contrário do shadowBlur não custa nada por frame.
  */
 function buildFill(
   context: CanvasRenderingContext2D,
@@ -429,9 +432,9 @@ function buildFill(
   size: number,
   hue: readonly [number, number, number],
 ): CanvasGradient {
-  // Built around the origin because the context is translated onto the shape
-  // before the fill — canvas gradients are resolved in the transform in effect
-  // when they are painted, not when they are created.
+  // Montado em volta da origem porque o contexto é transladado até a forma
+  // antes do preenchimento — gradiente de canvas é resolvido na transformação
+  // em vigor quando é pintado, não quando é criado.
   const gradient = context.createRadialGradient(0, 0, 0, 0, 0, Math.max(1, size));
   if (z > GRADIENT_Z) {
     gradient.addColorStop(0, MINT_SOLID);
@@ -457,8 +460,8 @@ function makeSpark(): Streak {
 
 function reseedStreak(streak: Streak, x: number, y: number): void {
   const heading = STREAK_HEADING + (Math.random() - 0.5) * 2 * STREAK_SPREAD;
-  // Speeds are quoted as a multiple of the slow layer's own drift, so the two
-  // populations stay in the same relationship if that drift is ever retuned.
+  // As velocidades são dadas como múltiplo da deriva da camada lenta, pras duas
+  // populações manterem a mesma relação se essa deriva for reajustada.
   const speed = 0.25 * (STREAK_SPEED_MIN + Math.random() * (STREAK_SPEED_MAX - STREAK_SPEED_MIN));
   streak.x = x;
   streak.y = y;
@@ -487,12 +490,12 @@ function igniteSpark(spark: Streak, x: number, y: number): void {
 }
 
 /**
- * Pushes apart any two shapes that drift too close.
+ * Afasta duas formas que derivaram perto demais.
  *
- * Even placement only holds at the start: independent velocities would pile the
- * shapes up within a minute. This is a soft nudge, not a collision — the pass is
- * pairwise, but at eighty shapes that is about three thousand comparisons of
- * plain arithmetic, which is far below anything a frame budget notices.
+ * Colocação parelha só vale no começo: velocidades independentes empilhariam as
+ * formas em um minuto. Isto é um empurrãozinho, não colisão — a passada é par a
+ * par, mas com oitenta formas isso dá umas três mil comparações de aritmética
+ * simples, bem abaixo de qualquer coisa que um orçamento de frame note.
  */
 function separate(shapes: readonly Shape[], delta: number): void {
   for (let i = 0; i < shapes.length; i += 1) {
@@ -529,8 +532,8 @@ function advance(shape: Shape, delta: number, width: number, height: number): vo
   shape.flash = Math.max(0, shape.flash - 0.02 * delta);
   shape.shake = Math.max(0, shape.shake - SHAKE_DECAY * delta);
 
-  // Leaving one edge means entering the opposite one, so the field never thins
-  // out and shapes are always arriving from somewhere.
+  // Sair por uma borda é entrar pela oposta, então o campo nunca rareia e
+  // sempre tem forma chegando de algum lugar.
   const margin = shape.size * 2;
   if (shape.x < -margin) shape.x = width + margin;
   if (shape.x > width + margin) shape.x = -margin;
@@ -543,12 +546,12 @@ function advanceStreak(streak: Streak, delta: number, width: number, height: num
   streak.y += streak.vy * delta;
   if (streak.decay > 0) {
     streak.life = Math.max(0, streak.life - streak.decay * delta);
-    // Sparks are an event, not scenery: let them leave rather than wrap.
+    // Faísca é evento, não cenário: deixa ir embora em vez de dar a volta.
     return;
   }
 
-  // The margin clears the drawn trail as well as the point, so a wrapping
-  // streak never leaves a stroke ruled across the whole viewport.
+  // A margem cobre o rastro desenhado além do ponto, pra risco que dá a volta
+  // nunca deixar um traço riscado pela viewport inteira.
   const margin = Math.abs(streak.vx * TRAIL_TICKS) + Math.abs(streak.vy * TRAIL_TICKS) + 8;
   if (streak.x < -margin) streak.x = width + margin;
   if (streak.x > width + margin) streak.x = -margin;
@@ -586,9 +589,8 @@ function draw(
 
   context.save();
   context.globalAlpha = alpha;
-  // A miss shifts the shape off its own centre and pulls it in — a flinch,
-  // which reads as wrong without adding light to a field that uses light to
-  // mean right.
+  // Erro tira a forma do próprio centro e a encolhe — um repuxo, que lê como
+  // errado sem acrescentar luz a um campo que usa luz pra dizer certo.
   context.translate(
     shape.x + (flinching ? Math.sin(now * SHAKE_FREQUENCY + shape.shakeSeed) * SHAKE_AMPLITUDE * shape.shake : 0),
     shape.y,
@@ -604,16 +606,16 @@ function draw(
   else context.fillStyle = shape.fill;
 
   if (!blur) {
-    // Nothing. At this level the shape keeps its colour, its size and its
-    // motion, and gives up only the halo — which is the one thing on this
-    // canvas the CPU rasterises per shape per frame.
+    // Nada. Neste nível a forma mantém cor, tamanho e movimento, e entrega só
+    // o halo — que é a única coisa deste canvas que a CPU rasteriza por forma
+    // por frame.
   } else if (flashing) {
     context.shadowColor = MINT_SOLID;
     context.shadowBlur = shape.size * 1.2;
   } else if (shape.z > GLOW_Z) {
-    // Only the nearest shapes carry a standing glow. Blur is the one expensive
-    // thing on this canvas, so it is spent on the handful of shapes big enough
-    // for it to show at all.
+    // Só as formas mais próximas carregam brilho permanente. Blur é a única
+    // coisa cara deste canvas, então é gasto no punhado de formas grande o
+    // bastante pra ele aparecer.
     context.shadowColor = shape.glow;
     context.shadowBlur = shape.size * GLOW_SCALE;
   }
@@ -644,8 +646,8 @@ function drawStreak(
 }
 
 /**
- * Four-pointed star with concave sides: the tips are the only points on the
- * path, and each side curves back through the centre.
+ * Estrela de quatro pontas com lados côncavos: as pontas são os únicos pontos
+ * do caminho, e cada lado curva de volta pelo centro.
  */
 function traceStar(context: CanvasRenderingContext2D, radius: number): void {
   context.beginPath();

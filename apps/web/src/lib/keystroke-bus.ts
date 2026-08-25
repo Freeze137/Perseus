@@ -1,12 +1,12 @@
 import type { Keystroke } from '@perseus/engine';
 
 /**
- * Side channel between the typing area and the 3D scene.
+ * Canal paralelo entre a área de digitação e a cena 3D.
  *
- * The canvas must never sit on the keystroke's critical path: if the keyboard
- * subscribed through React state, every keypress would re-render the text and
- * the scene together, and the character would land a frame late. Instead the
- * scene listens here and animates through refs inside its own render loop.
+ * O canvas não pode ficar no caminho crítico da tecla: se o teclado assinasse
+ * estado do React, cada tecla re-renderizaria texto e cena juntos, e o
+ * caractere apareceria um frame atrasado. Em vez disso a cena escuta aqui e
+ * anima por refs dentro do próprio loop de render.
  */
 export type KeystrokeListener = (keystroke: Keystroke) => void;
 

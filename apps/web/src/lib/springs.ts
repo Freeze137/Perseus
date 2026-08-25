@@ -1,43 +1,43 @@
 import type { Transition } from "motion/react";
 
 /**
- * The motion vocabulary, in one place.
+ * O vocabulário de movimento, num lugar só.
  *
- * Springs rather than durations, for the same reason the caret uses one: every
- * moving thing in this interface is an object with weight, and an object that
- * arrives on a bezier arrives on rails. A spring also survives interruption —
- * open the drawer, change your mind, close it halfway through, and it leaves
- * from wherever it actually is instead of snapping back to start a new tween.
+ * Mola em vez de duração, pelo mesmo motivo que o cursor usa uma: tudo que se
+ * move nesta interface é objeto com peso, e objeto que chega numa bezier chega
+ * sobre trilhos. Mola também sobrevive a interrupção — abre a gaveta, muda de
+ * ideia, fecha no meio, e ela sai de onde de fato está em vez de voltar pro
+ * início pra começar outra tween.
  *
- * Tuned just under critical damping. Enough overshoot to read as physical,
- * never enough to make the reader wait for it to settle.
+ * Ajustada logo abaixo do amortecimento crítico. Overshoot suficiente pra ler
+ * como físico, nunca suficiente pra fazer quem lê esperar assentar.
  */
 export const SPRING = {
   /**
-   * An overlay arriving: the settings dialog, a side drawer.
+   * Uma camada chegando: o diálogo de configurações, uma gaveta lateral.
    *
-   * The heaviest thing here, and still under 300 ms to visually settle — a
-   * panel that takes longer than that is choreography, and the user came to
-   * type.
+   * A coisa mais pesada daqui, e ainda assim assenta visualmente em menos de
+   * 300 ms — painel que demora mais que isso é coreografia, e a pessoa veio
+   * digitar.
    */
   panel: { type: "spring", stiffness: 320, damping: 34, mass: 0.9 },
   /** Something small snapping to a new position, like a selected segment. */
   snap: { type: "spring", stiffness: 560, damping: 40, mass: 0.7 },
   /**
-   * A key travelling between two groups, far enough that the eye follows it.
+   * Uma tecla viajando entre dois grupos, longe o bastante pro olho seguir.
    *
-   * Damped just past critical on purpose. This one moves twelve objects at
-   * once, and twelve things wobbling in formation reads as instability rather
-   * than as weight.
+   * Amortecida logo além do crítico, de propósito. Esta move doze objetos ao
+   * mesmo tempo, e doze coisas balançando em formação lê como instabilidade e
+   * não como peso.
    */
   migrate: { type: "spring", stiffness: 480, damping: 38, mass: 0.75 },
 } as const satisfies Record<string, Transition>;
 
 /**
- * What every spring above becomes under `prefers-reduced-motion`.
+ * No que toda mola acima vira sob `prefers-reduced-motion`.
  *
- * Zero, not "slower". The setting is a request for no vestibular motion at all,
- * and a gentle slide is still a slide. Opacity is left to cross-fade because
- * fading is not motion in that sense.
+ * Zero, não "mais devagar". A configuração é um pedido de nenhum movimento
+ * vestibular, e um deslize suave continua sendo deslize. A opacidade fica
+ * livre pra cruzar porque desvanecer não é movimento nesse sentido.
  */
 export const INSTANT = { duration: 0 } as const satisfies Transition;

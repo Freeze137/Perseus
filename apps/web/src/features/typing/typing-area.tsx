@@ -6,12 +6,12 @@ import { Caret, type CaretTarget } from './caret';
 import { Char, type CharState } from './char';
 
 /**
- * Prose wraps and is centred; code does neither.
+ * Prosa quebra linha e fica centralizada; código não faz nenhum dos dois.
  *
- * The two are one component because everything that is hard here — the hidden
- * input, dead-key composition, caret measurement, focus recovery — is identical
- * for both. Only the arrangement of the characters differs, and splitting the
- * component would have meant maintaining that hard part twice.
+ * Os dois são um componente só porque tudo que é difícil aqui — o input
+ * escondido, a composição de tecla morta, a medida do cursor, a recuperação do
+ * foco — é idêntico pros dois. Só o arranjo dos caracteres muda, e separar o
+ * componente significaria manter a parte difícil duas vezes.
  */
 export type TypingLayout = 'prose' | 'code';
 
@@ -81,20 +81,20 @@ export function TypingArea({
   const focus = useCallback(() => inputRef.current?.focus(), []);
 
   /**
-   * Where every character sits, measured once and then read.
+   * Onde cada caractere está, medido uma vez e depois lido.
    *
-   * This used to be a `querySelector` and three offset reads *per keystroke*.
-   * Reading an offset with the DOM dirty — and it is always dirty, because the
-   * character just typed changed its own class — forces the browser to lay out
-   * the whole text synchronously before it can answer. On a two-thousand
-   * character code run that is the single most expensive thing that happens
-   * between a key going down and the letter appearing, which is precisely the
-   * thing this product promises not to do.
+   * Isto era um `querySelector` e três leituras de offset *por tecla*. Ler
+   * offset com o DOM sujo — e ele está sempre sujo, porque o caractere que
+   * acabou de ser digitado mudou a própria classe — obriga o browser a fazer o
+   * layout do texto inteiro de forma síncrona antes de responder. Numa corrida
+   * de código de dois mil caracteres essa é a coisa mais cara que acontece
+   * entre a tecla descer e a letra aparecer, que é exatamente o que este
+   * produto promete não fazer.
    *
-   * Character positions do not change when the cursor moves. They change when
-   * the text changes, when the box changes width, or when the real font
-   * finishes loading and every glyph resizes — so they are measured on exactly
-   * those three events, and the keystroke path becomes an array lookup.
+   * Posição de caractere não muda quando o cursor anda. Muda quando o texto
+   * muda, quando a caixa muda de largura, ou quando a fonte de verdade termina
+   * de carregar e todo glifo redimensiona — então são medidas exatamente nesses
+   * três eventos, e o caminho da tecla vira uma consulta a array.
    */
   const positions = useRef<Placement[]>([]);
   const measuredFor = useRef<readonly string[] | null>(null);
@@ -103,10 +103,10 @@ export function TypingArea({
     const text = textRef.current;
     if (!text) return;
     const next: Placement[] = [];
-    // One pass, all reads together: the layout is flushed once for the whole
-    // text rather than once per character. Indexed off the DOM rather than off
-    // the target's length, which keeps this callback stable for the lifetime of
-    // the component — see the observer below for why that matters.
+    // Uma passada, todas as leituras juntas: o layout é resolvido uma vez pro
+    // texto inteiro em vez de uma por caractere. Indexado pelo DOM e não pelo
+    // tamanho do alvo, o que mantém este callback estável pela vida do
+    // componente — ver o observer abaixo pra por que isso importa.
     for (const element of text.querySelectorAll<HTMLElement>('[data-index]')) {
       const index = Number(element.dataset.index);
       next[index] = {
@@ -130,13 +130,12 @@ export function TypingArea({
       height: spot.height,
     });
 
-    // Prose fits on screen whole. Code does not, so the viewport follows the
-    // caret instead — and it follows with a margin, because a caret pinned to
-    // the bottom edge means typing blind into the next line.
+    // Prosa cabe inteira na tela. Código não, então a viewport segue o cursor —
+    // e segue com margem, porque cursor grudado na borda de baixo é digitar às
+    // cegas na linha seguinte.
     //
-    // Only in code: `scrollTop` and `clientHeight` are themselves layout reads,
-    // and there is no reason to make a prose run pay for a scroll that never
-    // happens.
+    // Só em código: `scrollTop` e `clientHeight` são leituras de layout, e não
+    // há motivo pra corrida de prosa pagar por um scroll que nunca acontece.
     if (!code) return;
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -149,8 +148,8 @@ export function TypingArea({
     }
   }, [code, cursor, session.target.length]);
 
-  // Same layout pass as the render that moved it, so the caret never lags a
-  // frame behind the character.
+  // Mesma passada de layout do render que o moveu, pro cursor nunca ficar um
+  // frame atrás do caractere.
   useLayoutEffect(() => {
     placeRef.current = place;
     if (measuredFor.current !== session.target) {
@@ -161,18 +160,19 @@ export function TypingArea({
   }, [cursor, session.target, measure, place]);
 
   /**
-   * The latest `place`, reachable from a callback that must not be rebuilt.
+   * O `place` mais recente, alcançável de um callback que não pode ser
+   * reconstruído.
    *
-   * `place` closes over the cursor, so it is a new function on every keystroke.
-   * An observer effect that depended on it would therefore tear down and
-   * re-create a `ResizeObserver` on every keystroke — putting back onto the
-   * critical path exactly the kind of work this whole section removed from it.
+   * `place` fecha sobre o cursor, então é uma função nova a cada tecla. Um
+   * efeito de observer que dependesse dele derrubaria e recriaria um
+   * `ResizeObserver` a cada tecla — pondo de volta no caminho crítico
+   * exatamente o tipo de trabalho que esta seção inteira tirou dele.
    */
   const placeRef = useRef(place);
 
-  // The two things that move every character at once without the cursor moving
-  // at all. A caret left on stale coordinates after a resize sits beside the
-  // letter instead of on it.
+  // As duas coisas que movem todo caractere de uma vez sem o cursor andar. Um
+  // cursor deixado em coordenada velha depois de um resize fica ao lado da
+  // letra em vez de em cima dela.
   useEffect(() => {
     const text = textRef.current;
     if (!text) return;
@@ -184,8 +184,8 @@ export function TypingArea({
 
     const observer = new ResizeObserver(remeasure);
     observer.observe(text);
-    // Web fonts land after first paint and change every glyph's width with
-    // them; without this the caret is correct only until the font arrives.
+    // Fonte web chega depois da primeira pintura e muda a largura de todo glifo
+    // junto; sem isto o cursor só está certo até a fonte chegar.
     document.fonts?.ready.then(remeasure).catch(() => undefined);
 
     return () => observer.disconnect();
@@ -195,8 +195,8 @@ export function TypingArea({
     const input = inputRef.current;
     if (!input) return;
 
-    // `beforeinput` is the only event that reports the final character: on an
-    // ABNT2 keyboard "´" then "a" fires two keydowns but composes one "á".
+    // `beforeinput` é o único evento que reporta o caractere final: num teclado
+    // ABNT2 "´" e depois "a" dispara dois keydown mas compõe um "á".
     const handleBeforeInput = (event: InputEvent) => {
       event.preventDefault();
       if (event.data) onInput(event.data);
@@ -210,9 +210,9 @@ export function TypingArea({
       }
       if (event.key === 'Enter') {
         event.preventDefault();
-        // In code, Enter is a character in the target — it cannot also be the
-        // restart shortcut. Restart moves to Ctrl+Enter there, and the button
-        // is always available in both.
+        // Em código, Enter é um caractere do alvo — não pode ser também o
+        // atalho de recomeçar. Lá recomeçar vira Ctrl+Enter, e o botão está
+        // sempre disponível nos dois.
         if (code && !event.ctrlKey && !event.metaKey) onInput('\n');
         else onRestart();
       }
@@ -230,11 +230,11 @@ export function TypingArea({
     focus();
   }, [focus, session.target, focusSignal]);
 
-  // Escape belongs to whatever sits on top. A drawer or the settings dialog
-  // owns the key while it is open, and the check reads the DOM rather than
-  // React state because the answer has to be right *in this event* — the state
-  // that closes the panel has not re-rendered yet. One press, one action: the
-  // run behind an open panel is never thrown away by the press that closes it.
+  // Escape pertence ao que estiver por cima. Uma gaveta ou o diálogo de
+  // configurações é dono da tecla enquanto está aberto, e a checagem lê o DOM e
+  // não o estado do React porque a resposta tem que estar certa *neste evento* —
+  // o estado que fecha o painel ainda não re-renderizou. Um aperto, uma ação: a
+  // corrida atrás de um painel aberto nunca é jogada fora pelo aperto que o fecha.
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -246,8 +246,9 @@ export function TypingArea({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onCancel]);
 
-  // Any key anywhere brings the caret back, which is what "press any key" has
-  // to mean. Shortcuts, Tab and open overlays are left alone.
+  // Qualquer tecla em qualquer lugar traz o cursor de volta, que é o que
+  // "aperte qualquer tecla" tem que significar. Atalho, Tab e camada aberta
+  // ficam de fora.
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if (document.activeElement === inputRef.current) return;
@@ -264,8 +265,8 @@ export function TypingArea({
     <div
       className="typing-area"
       role="presentation"
-      // preventDefault keeps the browser from moving focus to whatever was
-      // clicked — without it the click steals focus straight back from the input.
+      // preventDefault impede o browser de mover o foco pro que foi clicado —
+      // sem isso o clique rouba o foco do input na hora.
       onPointerDown={(event) => {
         event.preventDefault();
         focus();
@@ -298,9 +299,9 @@ export function TypingArea({
                 <div
                   key={line.start}
                   className="code-line"
-                  // The active line is marked in the DOM rather than computed in
-                  // CSS: the caret is absolutely positioned, so nothing about the
-                  // line itself would otherwise say which one is being typed.
+                  // A linha ativa é marcada no DOM em vez de calculada no CSS:
+                  // o cursor é posicionado de forma absoluta, então nada na
+                  // linha em si diria qual está sendo digitada.
                   data-active={isActive(line, cursor)}
                 >
                   <span aria-hidden="true" className="code-gutter">
@@ -360,8 +361,8 @@ function toWords(target: readonly string[]): Word[] {
   target.forEach((char, index) => {
     if (chars.length === 0) start = index;
     chars.push(char);
-    // The space stays attached to the word before it: it has to remain typeable
-    // and it is what lets the line break here.
+    // O espaço fica grudado na palavra anterior: ele tem que continuar
+    // digitável e é o que permite a linha quebrar ali.
     if (char === ' ') {
       words.push({ start, chars });
       chars = [];
@@ -373,10 +374,11 @@ function toWords(target: readonly string[]): Word[] {
 }
 
 /**
- * Splits the target on newlines, keeping each newline on the line it ends.
+ * Quebra o alvo nas quebras de linha, mantendo cada uma na linha que ela
+ * encerra.
  *
- * The newline is a character the typist has to produce, so it stays in the
- * stream and keeps its index — it is only its glyph that is missing.
+ * A quebra de linha é um caractere que a pessoa tem que produzir, então fica no
+ * fluxo e mantém o índice — o que falta é só o glifo dela.
  */
 function toLines(target: readonly string[]): Line[] {
   const lines: Line[] = [];

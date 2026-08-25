@@ -1,22 +1,22 @@
 /**
- * Side channel telling the star field when something is sitting on top of it.
+ * Canal paralelo que avisa o campo de estrelas quando tem algo em cima dele.
  *
- * The same reasoning as the keystroke bus, for the opposite direction: the
- * canvas must not subscribe to React state, so the shell says out here whether
- * an overlay is covering it and the field reads it inside its own loop.
+ * Mesmo raciocínio do barramento de teclas, na direção oposta: o canvas não
+ * pode assinar estado do React, então a casca diz aqui fora se uma camada está
+ * cobrindo, e o campo lê isso dentro do próprio loop.
  *
- * What it buys is a frame budget. A drawer or the settings dialog covers the
- * whole field with a scrim it cannot be seen through, and a `requestAnimationFrame`
- * loop redrawing several hundred shapes underneath an opaque sheet is work
- * nobody can see — work that competes for frames with the panel animating on
- * top of it, which is the one thing on screen anybody is looking at.
+ * O que isso compra é orçamento de frame. Uma gaveta ou o diálogo de
+ * configurações cobre o campo inteiro com um véu que não deixa ver através, e
+ * um loop de `requestAnimationFrame` redesenhando centenas de formas embaixo de
+ * uma folha opaca é trabalho que ninguém vê — trabalho que disputa frame com o
+ * painel animando por cima, que é a única coisa na tela que alguém está olhando.
  */
 export type OverlayListener = (covered: boolean) => void;
 
 const listeners = new Set<OverlayListener>();
 
-/** How many overlays are open. Counted, not flagged: a drawer can be opened
- *  over the settings dialog, and the field stays down until the last one goes. */
+/** Quantas camadas estão abertas. Contadas, não sinalizadas: dá pra abrir uma
+ *  gaveta em cima do diálogo, e o campo fica parado até a última sair. */
 let depth = 0;
 
 export function setOverlayOpen(open: boolean, id: string): void {
