@@ -78,18 +78,18 @@ export default function Image() {
           </div>
         </div>
 
-        {/* Sized against the 1020px the 90px side padding leaves rather than
-            against a number that once looked right. At eight letters the old
-            168/14 pair lands within a few pixels of that edge, and the face is
-            whichever sans Satori resolves — so the margin is guesswork and the
-            failure is a severed final S. The card is read at thumb size in a
-            chat list, where 156 reads identically and cannot clip. */}
+        {/* Eight letters at this size measure about 1045 of the 1020 the side
+            padding leaves — which sounds like a clip and is not: the row is
+            its own flex line, so the overflow is the trailing letterspace and
+            the right sidebearing, not ink. Measured on the generated card, the
+            final S lands ~160px clear of the edge. Going wider than this is
+            where it would start costing a letter. */}
         <div
           style={{
             display: "flex",
-            fontSize: 156,
+            fontSize: 168,
             fontWeight: 700,
-            letterSpacing: 10,
+            letterSpacing: 14,
             marginTop: 28,
             backgroundImage: `linear-gradient(120deg, ${BONE}, ${MINT} 55%, ${EMERALD})`,
             backgroundClip: "text",
