@@ -5,11 +5,12 @@ import { TATOEBA_PT_BR } from './data/tatoeba-pt-br';
 import type { Phrase } from './data/types';
 
 /**
- * A problem found in a bank, named precisely enough to fix without hunting.
+ * Um problema achado num banco, nomeado com precisão suficiente pra consertar
+ * sem caçar.
  *
- * `rule` is the machine-readable half and `detail` the human one: a report that
- * only said "bad phrase" would send somebody back to re-derive what the checker
- * already knew.
+ * `rule` é a metade que a máquina lê e `detail` a que a pessoa lê. Relatório
+ * que só dissesse "frase ruim" mandaria alguém redescobrir o que o validador
+ * já sabia.
  */
 export type Finding = {
   readonly bank: string;
@@ -19,13 +20,13 @@ export type Finding = {
 };
 
 /**
- * A word that is spelled correctly either way, so only a reader can say which
- * one this sentence meant.
+ * Palavra que está certa dos dois jeitos, então só quem lê sabe qual a frase
+ * quis dizer.
  *
- * Kept apart from `Finding` because the two demand opposite handling: an error
- * is fixed, an ambiguity is *asked about*. Auto-correcting "esta" to "está"
- * would silently rewrite sentences that were already right, which is a worse
- * failure than leaving them alone — it changes meaning while reporting success.
+ * Separado de `Finding` porque os dois pedem tratamento oposto: erro se
+ * conserta, ambiguidade se *pergunta*. Corrigir "esta" pra "está" sozinho
+ * reescreveria calado frases que já estavam certas, o que é pior que deixar
+ * quieto — muda o sentido enquanto reporta sucesso.
  */
 export type Review = {
   readonly bank: string;
@@ -40,16 +41,15 @@ export type Report = {
 };
 
 /**
- * Portuguese words that do not exist without their accent.
+ * Palavras que não existem em português sem o acento.
  *
- * Every entry is the *misspelling* — the bare form. Seeing one as a whole word
- * is proof of a dropped accent, with no sentence in which it could have been
- * intended.
+ * Toda entrada é a *grafia errada*, a forma pelada. Ver uma delas como palavra
+ * inteira prova acento caído: não existe frase em que fosse intencional.
  *
- * Words whose bare form is also a real word are deliberately absent; they live
- * in AMBIGUOUS instead. "ideia" is absent from both: it has carried no accent
- * since the 1990 orthographic agreement, and a list that demanded one would
- * have flagged correct spelling as an error.
+ * Palavras cuja forma pelada também é palavra de verdade ficam de fora de
+ * propósito; moram em AMBIGUOUS. "ideia" não está em nenhuma das duas: não leva
+ * acento desde o acordo de 1990, e uma lista que exigisse um marcaria a grafia
+ * certa como erro.
  */
 const NEVER_UNACCENTED = new Set([
   'voce', 'voces', 'nao', 'tambem', 'alem', 'portugues', 'ninguem', 'alguem',
@@ -67,17 +67,16 @@ const NEVER_UNACCENTED = new Set([
 ]);
 
 /**
- * Words whose accented and bare forms are both real Portuguese.
+ * Palavras cuja forma com e sem acento são as duas português de verdade.
  *
- * Reported for a human to read, never corrected. "sabia" (knew), "sabiá" (a
- * bird) and "sábia" (wise) are three different words that no checker can tell
- * apart without understanding the sentence.
+ * Reportadas pra alguém ler, nunca corrigidas. "sabia", "sabiá" e "sábia" são
+ * três palavras diferentes que validador nenhum separa sem entender a frase.
  *
- * "e"/"é" and "por"/"pôr" are the most common accent errors in Portuguese and
- * are still absent on purpose: they appear in nearly every sentence, so listing
- * them would bury the twenty cases worth reading under two hundred that are
- * not. Their failure mode also breaks the grammar of the sentence around them,
- * which the read-through in 1.2 catches.
+ * "e"/"é" e "por"/"pôr" são os erros de acento mais comuns do português e mesmo
+ * assim ficam de fora de propósito: aparecem em quase toda frase, então listá-las
+ * enterraria os vinte casos que valem leitura embaixo de duzentos que não valem.
+ * O jeito que elas quebram também estraga a gramática em volta, e a leitura da
+ * 1.2 pega isso.
  */
 const AMBIGUOUS = new Set([
   'esta', 'estas', 'pratica', 'praticas', 'secretaria', 'duvida', 'sabia',
@@ -100,7 +99,7 @@ const AMBIGUOUS = new Set([
 const EUROPEAN_SPELLING =
   /\b(factos?|actos?|[óo]ptim[oa]s?|object[oa]s?|direct[oa]s?|correct[oa]s?|exact[oa]s?|activ[oa]s?|adopt\w*|baptis\w*|Egipto|h[úu]mid[oa]s?|connosco|reflect\w*|arquitect\w*|electr[óo]nic\w*|espect[áa]cul\w*|ac[çc][ãa]o|sec[çc][ãa]o|comboio|autocarro|telem[óo]vel|rapariga)\b/iu;
 
-/** Unambiguous markers that a sentence strayed into the wrong bank. */
+/** Marcas inequívocas de que a frase foi parar no banco errado. */
 const PT_MARKERS = new Set([
   'você', 'não', 'também', 'então', 'porque', 'quando', 'sempre', 'ainda',
   'depois', 'muito', 'pouco', 'cada', 'uma',
@@ -110,22 +109,22 @@ const EN_MARKERS = new Set([
   'which', 'their', 'would', 'about', 'there',
 ]);
 
-/** Mojibake: UTF-8 read as Latin-1, which is how a bad paste arrives. */
+/** Mojibake: UTF-8 lido como Latin-1, que é como chega um colar mal feito. */
 const MOJIBAKE = /Ã.|Â.|â€/u;
-/** Control characters and the invisibles that survive a copy from a browser. */
+/** Caracteres de controle e os invisíveis que sobrevivem a um copiar do browser. */
 const INVISIBLE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u00ad\u200b-\u200d\ufeff]/u;
-/** Typographic quotes. The banks are standardized on straight ones. */
+/** Aspas tipográficas. Os bancos são padronizados nas retas. */
 const CURLY_QUOTES = /[‘’“”]/u;
 const EMOJI = /\p{Extended_Pictographic}/u;
 
-/** The band the Portuguese bank's own docstring promises: 40–140 characters. */
+/** A faixa que a própria docstring do banco em português promete: 40–140 caracteres. */
 const MIN_LENGTH = 40;
 const MAX_LENGTH = 140;
 
-/** Above this share of shared words, two sentences are the same sentence. */
+/** Acima desta fatia de palavras em comum, duas frases são a mesma frase. */
 const NEAR_DUPLICATE = 0.8;
 
-/** Lowercased, unaccented, stripped of punctuation — for comparing meaning. */
+/** Minúscula, sem acento, sem pontuação — pra comparar sentido. */
 function normalize(text: string): string {
   return text
     .toLowerCase()
@@ -136,12 +135,12 @@ function normalize(text: string): string {
     .trim();
 }
 
-/** Words as written, accents intact. */
+/** Palavras como escritas, acento intacto. */
 function words(text: string): string[] {
   return text.toLowerCase().match(/[\p{L}\p{M}]+/gu) ?? [];
 }
 
-/** How many sentences of a bank each word appears in. */
+/** Em quantas frases do banco cada palavra aparece. */
 function documentFrequency(phrases: readonly Phrase[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const phrase of phrases) {
@@ -152,7 +151,7 @@ function documentFrequency(phrases: readonly Phrase[]): Map<string, number> {
   return counts;
 }
 
-/** How many of a sentence's rarest words it gets indexed under. */
+/** Sob quantas das palavras mais raras da frase ela é indexada. */
 const INDEX_WIDTH = 3;
 
 function rarest(
@@ -212,8 +211,8 @@ function checkPhrase(
   const written = words(text);
 
   if (language === 'pt-BR') {
-    // NEVER_UNACCENTED holds bare spellings, so a raw word that matches one is
-    // a word that lost its accent. "café" never matches; "cafe" always does.
+    // NEVER_UNACCENTED guarda grafia pelada, então palavra crua que bate com
+    // uma delas é palavra que perdeu o acento. "café" nunca bate; "cafe" sempre.
     const european = EUROPEAN_SPELLING.exec(text);
     if (european)
       push('spelling', `"${european[0]}" is European Portuguese, not Brazilian`);
@@ -236,11 +235,11 @@ function checkPhrase(
 }
 
 /**
- * Reads both banks and reports everything wrong with them.
+ * Lê os dois bancos e reporta tudo que está errado neles.
  *
- * Pure: it returns findings rather than printing or throwing, so the same code
- * backs the test that guards the banks in CI and any script that writes a
- * report out of them.
+ * Pura: devolve achados em vez de imprimir ou lançar, então o mesmo código
+ * serve o teste que guarda os bancos no CI e qualquer script que escreva um
+ * relatório a partir deles.
  */
 export function validate(): Report {
   return validateBanks([
@@ -250,11 +249,10 @@ export function validate(): Report {
       phrases: PHRASES_PT_BR,
     },
     { bank: 'phrases-en', language: 'en' as const, phrases: PHRASES_EN },
-    // The ingested banks are checked by exactly the same rules as the written
-    // ones. They are machine-selected, which is a reason to check them harder
-    // rather than to trust them: the filters in ingest-tatoeba.mjs and the
-    // rules here were written separately, and this is where they are made to
-    // agree.
+    // Os bancos importados passam exatamente pelas mesmas regras dos escritos.
+    // Foram selecionados por máquina, o que é motivo pra checar mais e não pra
+    // confiar: os filtros do ingest-tatoeba.mjs e as regras daqui foram escritos
+    // separados, e é aqui que os dois são obrigados a concordar.
     {
       bank: 'tatoeba-pt-br',
       language: 'pt-BR' as const,
@@ -264,7 +262,7 @@ export function validate(): Report {
   ]);
 }
 
-/** One bank as the checker sees it: a name, a language, and its sentences. */
+/** Um banco como o validador vê: nome, língua e as frases. */
 export type Bank = {
   readonly bank: string;
   readonly language: 'pt-BR' | 'en';
@@ -272,12 +270,12 @@ export type Bank = {
 };
 
 /**
- * The checker itself, over whatever banks it is handed.
+ * O validador em si, sobre quaisquer bancos que recebe.
  *
- * Split out from `validate` so the tests can feed it sentences that are broken
- * on purpose. A checker that has only ever been run against clean input has not
- * been shown to detect anything — "zero errors" and "no working rules" produce
- * exactly the same output.
+ * Separado do `validate` pros testes conseguirem passar frases quebradas de
+ * propósito. Validador que só rodou contra entrada limpa não provou detectar
+ * nada — "zero erros" e "nenhuma regra funcionando" dão exatamente a mesma
+ * saída.
  */
 export function validateBanks(banks: readonly Bank[]): Report {
   const errors: Finding[] = [];
@@ -286,7 +284,7 @@ export function validateBanks(banks: readonly Bank[]): Report {
   for (const { bank, language, phrases } of banks) {
     const seenIds = new Set<string>();
     const seenText = new Map<string, string>();
-    /** Word -> the ids of the sentences indexed under it, for the near-dup scan. */
+    /** Palavra -> ids das frases indexadas nela, pra varredura de quase-duplicata. */
     const index = new Map<string, string[]>();
     const bags = new Map<string, string[]>();
     const frequency = documentFrequency(phrases);
@@ -306,14 +304,14 @@ export function validateBanks(banks: readonly Bank[]): Report {
       if (twin) push('duplicate', `same sentence as ${twin}`);
       else seenText.set(key, phrase.id);
 
-      // Near-duplicates are looked for only among sentences that share one of
-      // this sentence's rarest words. Comparing every sentence with every other
-      // is quadratic — twenty-five million set intersections at five thousand a
-      // bank — and indexing on every word barely helps, because "de" and "que"
-      // link almost the whole corpus to almost the whole corpus.
+      // Quase-duplicata só é procurada entre frases que dividem uma das
+      // palavras mais raras desta. Comparar todas com todas é quadrático —
+      // vinte e cinco milhões de interseções com cinco mil por banco — e
+      // indexar por toda palavra quase não ajuda, porque "de" e "que" ligam
+      // quase o corpus inteiro a quase o corpus inteiro.
       //
-      // Rare words are the discriminating ones: two sentences alike enough to
-      // be near-copies share their unusual vocabulary, not just their articles.
+      // Palavra rara é a que discrimina: duas frases parecidas o bastante pra
+      // serem quase-cópias dividem o vocabulário incomum, não só os artigos.
       const bag = key.split(' ').filter(Boolean);
       const neighbours = new Set<string>();
       for (const word of rarest(bag, frequency)) {
@@ -348,7 +346,7 @@ export function validateBanks(banks: readonly Bank[]): Report {
   return { errors, review };
 }
 
-/** The ambiguous cases as the Markdown the manual review reads. */
+/** Os casos ambíguos como o Markdown que a revisão manual lê. */
 export function reviewMarkdown(review: readonly Review[]): string {
   const lines = [
     '# Casos ambíguos para revisão manual',

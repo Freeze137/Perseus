@@ -1,13 +1,13 @@
 /**
- * Seeded pseudo-random numbers.
+ * Números pseudo-aleatórios com semente.
  *
- * The generator has to be deterministic: a test is identified by its seed, so
- * two people opening the same link must get the exact same text, and a replay
- * must reproduce the run it came from.
+ * Tem que ser determinístico: um teste é identificado pelo seed, então duas
+ * pessoas abrindo o mesmo link recebem exatamente o mesmo texto, e um replay
+ * reproduz a corrida de onde veio.
  */
 export type Random = () => number;
 
-/** FNV-1a, to turn an arbitrary seed string into a 32-bit state. */
+/** FNV-1a, pra virar uma string de seed qualquer em estado de 32 bits. */
 function hashSeed(seed: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < seed.length; i += 1) {
@@ -17,7 +17,7 @@ function hashSeed(seed: string): number {
   return hash >>> 0;
 }
 
-/** mulberry32: small, fast, good enough for picking words. */
+/** mulberry32: pequeno, rápido, suficiente pra escolher palavra. */
 export function createRandom(seed: string): Random {
   let state = hashSeed(seed);
   return () => {
@@ -35,7 +35,7 @@ export function pick<T>(random: Random, items: readonly T[]): T {
   return item;
 }
 
-/** A seed short enough to sit in a URL. */
+/** Seed curto o bastante pra caber numa URL. */
 export function randomSeed(): string {
   return Math.random().toString(36).slice(2, 10);
 }

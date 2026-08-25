@@ -1,6 +1,6 @@
 import type { Phrase } from './types';
 
-/** English counterpart to the Portuguese bank, same rules and same registers. */
+/** Contraparte em inglês do banco em português. Mesmas regras, mesmos registros. */
 export const PHRASES_EN: readonly Phrase[] = [
   { id: 'en-001', text: 'The coffee went cold while I looked for the keys on the table.', tags: ['everyday'] },
   { id: 'en-002', text: 'She got off the bus two stops early just to walk for a while.', tags: ['everyday'] },
@@ -63,7 +63,7 @@ export const PHRASES_EN: readonly Phrase[] = [
   { id: 'en-059', text: 'The road ran straight as far as anyone could see.', tags: ['literary'] },
   { id: 'en-060', text: 'His handwriting changed with how much of a hurry he was in.', tags: ['literary'] },
 
-  /* The numbers batch. Written for English rather than translated from the
+  /* A leva dos números. Escrita pro inglês, não traduzida do
      Portuguese one: the two banks share the rule, not the sentences. */
   { id: 'en-061', text: 'The 6:12 bus never shows up, so most people walk the 20 minutes.', tags: ['numbers', 'everyday'] },
   { id: 'en-062', text: 'Rent went up 90 pounds this year and the boiler still leaks.', tags: ['numbers', 'everyday'] },

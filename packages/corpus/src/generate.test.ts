@@ -21,10 +21,10 @@ function config(overrides: Partial<SessionConfig> = {}): SessionConfig {
 }
 
 /**
- * Whether a plain US keyboard could have produced every character.
+ * Se um teclado US comum conseguiria produzir todo caractere.
  *
- * Written against code points rather than as a regex so the range it means is
- * on screen: printable ASCII, plus the newline and tab that code carries.
+ * Escrito contra code points em vez de regex pra faixa ficar visível na tela:
+ * ASCII imprimível, mais a quebra de linha e o tab que código carrega.
  */
 function isAsciiTypeable(text: string): boolean {
   return [...text].every((char) => {
@@ -62,8 +62,8 @@ describe('generate', () => {
   });
 
   it('gives ABNT2 and US-International the same text', () => {
-    // They reach the same characters. A typist who switches between the two
-    // has not changed which sentences they can type, so the draw must not move.
+    // Os dois alcançam os mesmos caracteres. Quem troca de um pro outro não
+    // mudou quais frases consegue digitar, então o sorteio não pode mudar.
     expect(generate(config({ keyboardLayout: 'abnt2' }))).toBe(
       generate(config({ keyboardLayout: 'us-intl' })),
     );
@@ -82,16 +82,16 @@ describe('generate', () => {
   });
 
   it('leaves the English corpus untouched by the layout', () => {
-    // Nothing in it is outside ASCII, so every layout draws the same bank.
+    // Nada nele está fora do ASCII, então todo layout sorteia o mesmo banco.
     expect(generate(config({ language: 'en' }))).toBe(
       generate(config({ language: 'en', keyboardLayout: 'us' })),
     );
   });
 
   it('keeps every snippet typeable on every layout', () => {
-    // The code seed leaves the keyboard out on the strength of this. If a
-    // snippet ever arrives carrying an accent, this fails before the seed
-    // silently starts handing two keyboards the same unreachable text.
+    // A semente do código deixa o teclado de fora apoiada nisto. Se um dia
+    // entrar snippet com acento, isto quebra antes de a semente começar a
+    // entregar calada o mesmo texto inalcançável pros dois teclados.
     for (const snippet of SNIPPETS) {
       expect(isAsciiTypeable(snippet.code)).toBe(true);
     }
@@ -114,23 +114,23 @@ describe('generate', () => {
 });
 
 /**
- * The rule the whole corpus exists to keep: nothing reaches the user that was
- * not written as a sentence by a person.
+ * A regra que o corpus inteiro existe pra manter: nada chega na pessoa que não
+ * tenha sido escrito como frase por alguém.
  *
- * This is the test that has to fail the day somebody reintroduces a builder
- * that concatenates random tokens. It does not inspect the builders — it takes
- * the output apart and proves every piece of it came out of the phrase bank,
- * which no amount of shuffled words can satisfy.
+ * É o teste que tem que quebrar no dia em que alguém reintroduzir um builder
+ * que concatena token aleatório. Ele não olha os builders — desmonta a saída e
+ * prova que todo pedaço saiu do banco de frases, coisa que nenhuma quantidade
+ * de palavra embaralhada satisfaz.
  */
 /**
- * Consumes the text from the left, one bank sentence at a time. Longest first,
- * so a sentence that happens to start with a shorter one cannot be mis-consumed
- * and report a false failure.
+ * Come o texto da esquerda pra direita, uma frase do banco por vez. Da mais
+ * longa pra mais curta, senão uma frase que por acaso comece igual a outra
+ * seria consumida errado e reprovaria um sorteio bom.
  *
- * Whole sentences rather than clauses. A bank entry can hold two of them — "O
- * que ele está fazendo aí fora? Convide-o para entrar!" is one phrase — so
- * splitting the generated text on terminal punctuation and looking each piece
- * up would fail on an entry that is perfectly well drawn.
+ * Frases inteiras, não orações. Uma entrada do banco pode trazer duas — "O que
+ * ele está fazendo aí fora? Convide-o para entrar!" é uma frase só — então
+ * dividir o texto gerado pela pontuação final e procurar cada pedaço reprovaria
+ * uma entrada perfeitamente bem sorteada.
  */
 function consumedBy(text: string, pieces: readonly string[]): boolean {
   const ordered = [...pieces].sort((a, b) => b.length - a.length);
@@ -147,7 +147,7 @@ describe('every builder draws from the phrase bank', () => {
   const KINDS = ['words', 'quote', 'punctuation', 'numbers'] as const;
   const LANGUAGES = ['pt-BR', 'en'] as const;
 
-  /** The same transform the `words` mode applies, so its output can match. */
+  /** A mesma transformação que o modo `words` aplica, pra saída dele bater. */
   const stripped = (text: string) => text.toLowerCase().replaceAll('.', '');
 
   for (const language of LANGUAGES) {
@@ -203,11 +203,11 @@ describe('generate: numbers mode', () => {
 });
 
 describe('generate: code mode', () => {
-  // Read off the contract rather than listed here: a syntax added to the enum
-  // with no snippets behind it fails this file instead of slipping past it.
+  // Lido do contrato em vez de listado aqui: sintaxe adicionada no enum sem
+  // snippet atrás reprova este arquivo em vez de passar batido.
   const SYNTAXES = SyntaxSchema.options;
 
-  /** The snippet counterpart of the phrase-bank rule: whole units, or nothing. */
+  /** A contraparte da regra do banco de frases, pra snippet: unidade inteira ou nada. */
   function consumedBySnippets(text: string, pool: readonly Snippet[]): boolean {
     const ordered = [...pool].sort((a, b) => b.code.length - a.code.length);
     let rest = text;
@@ -292,8 +292,8 @@ describe('snippet bank', () => {
         .split('\n')
         .map((line) => line.match(/^[\t ]*/)?.[0] ?? '')
         .filter((indent) => indent.length > 0);
-      // Go is written with tabs because gofmt is; everything else with spaces.
-      // A snippet that mixed the two would put an invisible trap on screen.
+      // Go se escreve com tab porque o gofmt escreve; o resto com espaço.
+      // Snippet que misturasse os dois poria uma armadilha invisível na tela.
       const usesTabs = indents.some((indent) => indent.includes('\t'));
       const usesSpaces = indents.some((indent) => indent.includes(' '));
       expect(usesTabs && usesSpaces).toBe(false);

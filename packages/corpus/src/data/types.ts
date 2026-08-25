@@ -1,4 +1,4 @@
-/** A complete, correctly punctuated sentence — never a fragment. */
+/** Frase completa e bem pontuada. Nunca fragmento. */
 export type Phrase = {
   readonly id: string;
   readonly text: string;

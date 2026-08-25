@@ -2,35 +2,35 @@ import type { Phrase } from './data/types';
 import { createRandom } from './random';
 
 /**
- * Where a typist is inside their shuffle bag.
+ * Onde a pessoa está dentro da sacola de sorteio.
  *
- * The whole point of this type is that it travels *inside the seed*. A run's
- * text has to stay a pure function of its config, because the server regenerates
- * that text from the config alone in order to score the run — see
- * `ResultsService.score`. A bag kept in `localStorage` and consulted at draw
- * time would make the client's text depend on state the server cannot see, and
- * every submission would be rejected as an invalid timeline.
+ * A razão deste tipo existir é ele viajar *dentro do seed*. O texto de uma
+ * corrida tem que ser função pura da config, porque o servidor regera esse
+ * texto só a partir da config pra pontuar — ver `ResultsService.score`. Uma
+ * sacola guardada no `localStorage` e consultada na hora do sorteio faria o texto do
+ * cliente depender de estado que o servidor não enxerga, e todo envio seria
+ * recusado como timeline inválida.
  *
- * So the browser remembers the *position*, not the result. The position goes
- * into the seed, the seed goes to the server with the run, and the server deals
- * the same bag from the same id and arrives at the same sentences.
+ * Então o browser lembra a *posição*, não o resultado. A posição entra no seed,
+ * o seed vai pro servidor junto com a corrida, e o servidor distribui a mesma
+ * sacola a partir do mesmo id e chega nas mesmas frases.
  */
 export type BagPosition = {
-  /** Identifies the shuffle. Fixed for as long as a typist keeps their bag. */
+  /** Identifica o embaralhamento. Fixo enquanto a pessoa mantém a sacola. */
   readonly id: string;
-  /** How many sentences have already been dealt out of it. */
+  /** Quantas frases já saíram dele. */
   readonly cursor: number;
 };
 
-/** How a position is written into a seed: the id, a dot, the cursor. */
+/** Como a posição é escrita no seed: id, ponto, cursor. */
 const SEED = /^(.+)\.(\d+)$/;
 
 /**
- * Reads a position out of a seed.
+ * Lê a posição de dentro de um seed.
  *
- * A seed with no cursor is position zero of a bag named by the whole seed. That
- * is what keeps duels working untouched: the server picks a plain seed for a
- * room and never advances it, and both clients deal the top of that bag.
+ * Seed sem cursor é a posição zero de uma sacola com o nome do seed inteiro. É o
+ * que deixa o duelo funcionar sem mexer em nada: o servidor escolhe um seed
+ * simples pra sala e nunca avança, e os dois clientes tiram do topo da sacola.
  */
 export function positionOf(seed: string): BagPosition {
   const match = SEED.exec(seed);
@@ -39,21 +39,21 @@ export function positionOf(seed: string): BagPosition {
   return { id, cursor: Number.parseInt(cursor, 10) };
 }
 
-/** Writes a position back into a seed. */
+/** Escreve a posição de volta no seed. */
 export function seedFor(position: BagPosition): string {
   return `${position.id}.${position.cursor}`;
 }
 
-/** The position after a run that dealt `drawn` sentences. */
+/** A posição depois de uma corrida que tirou `drawn` frases. */
 export function advance(position: BagPosition, drawn: number): BagPosition {
   return { id: position.id, cursor: position.cursor + Math.max(0, drawn) };
 }
 
 /**
- * One pass of a bag: every index of the pool, in a shuffled order.
+ * Uma passada da sacola: todo índice do pool, embaralhado.
  *
- * Memoized per (base, epoch) because a single run asks for three or four
- * sentences and would otherwise reshuffle the whole pool for each of them.
+ * Memoizado por (base, epoch) porque uma corrida pede três ou quatro frases e
+ * senão reembaralharia o pool inteiro pra cada uma.
  */
 const ORDERS = new Map<string, readonly number[]>();
 
@@ -64,11 +64,11 @@ function orderFor(size: number, base: string, epoch: number): readonly number[] 
 
   const order = shuffle(size, `${base}:${epoch}`);
 
-  // The rule that makes a wrap feel like a wrap: the sentence that ended the
-  // last pass must not open the next one. Without this, emptying a bag has a
-  // one-in-`size` chance of showing the same sentence twice in a row, which is
-  // the exact thing the bag exists to prevent — and it would happen at the most
-  // visible moment, across the seam.
+  // A regra que faz a virada parecer virada: a frase que fechou a passada
+  // anterior não pode abrir a próxima. Sem isso, esvaziar a sacola tem uma chance
+  // em `size` de mostrar a mesma frase duas vezes seguidas — que é exatamente o
+  // que a sacola existe pra evitar, e aconteceria no momento mais visível, bem na
+  // emenda.
   if (epoch > 0) {
     const previous = shuffle(size, `${base}:${epoch - 1}`);
     if (order[0] === previous[previous.length - 1] && size > 1) {
@@ -80,7 +80,7 @@ function orderFor(size: number, base: string, epoch: number): readonly number[] 
   return order;
 }
 
-/** Fisher-Yates over the indices, driven by the seeded generator. */
+/** Fisher-Yates nos índices, tocado pelo gerador semeado. */
 function shuffle(size: number, seed: string): number[] {
   const random = createRandom(seed);
   const order = Array.from({ length: size }, (_, i) => i);
@@ -92,12 +92,12 @@ function shuffle(size: number, seed: string): number[] {
 }
 
 /**
- * The sentence at an absolute position in the endless stream of bags.
+ * A frase numa posição absoluta do fluxo infinito de sacolas.
  *
- * Positions past the end of one pass roll into the next, reshuffled. A run that
- * starts near the end of a bag therefore finishes in the following one instead
- * of being cut short, and the typist never sees a run end early because their
- * bag happened to be nearly empty.
+ * Posição além do fim de uma passada rola pra próxima, reembaralhada. Corrida
+ * que começa perto do fim da sacola termina na passada seguinte em vez de ser
+ * cortada, e ninguém vê corrida acabar cedo só porque a sacola estava quase
+ * vazia.
  */
 export function phraseAt(
   pool: readonly Phrase[],

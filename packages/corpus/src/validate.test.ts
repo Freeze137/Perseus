@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Phrase } from './data/types';
 import { validate, validateBanks, type Finding } from './validate';
 
-/** One finding per line, grouped so a fix can be done bank by bank. */
+/** Um achado por linha, agrupado pra dar pra consertar banco por banco. */
 function format(errors: readonly Finding[]): string {
   const byBank = new Map<string, Finding[]>();
   for (const error of errors) {
@@ -21,7 +21,7 @@ function format(errors: readonly Finding[]): string {
   return lines.join('\n');
 }
 
-/** The rules fired by one sentence, for asserting on a single case. */
+/** As regras que uma frase dispara, pra afirmar em cima de um caso só. */
 function rulesFor(
   language: 'pt-BR' | 'en',
   text: string,
@@ -40,11 +40,11 @@ describe('the banks', () => {
 });
 
 /**
- * Negative controls.
+ * Controles negativos.
  *
- * Every rule is shown failing on a sentence built to break it. Without these,
- * a clean run of the real banks proves nothing: a checker whose regexes never
- * match reports zero errors just as loudly as one that works.
+ * Toda regra aparece falhando numa frase construída pra quebrá-la. Sem isso,
+ * uma rodada limpa nos bancos de verdade não prova nada: um validador cujas
+ * regex nunca casam reporta zero erros com a mesma convicção de um que funciona.
  */
 describe('the checker', () => {
   it('accepts a sentence that is actually correct', () => {

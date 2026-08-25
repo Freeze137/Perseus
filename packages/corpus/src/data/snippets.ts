@@ -1,28 +1,28 @@
 import type { Syntax } from '@perseus/contracts';
 
 /**
- * A whole, working piece of code — never an excerpt.
+ * Um pedaço de código inteiro e funcionando. Nunca um trecho.
  *
- * The prose banks promise complete sentences for the same reason this promises
- * complete functions: a fragment teaches the fingers a shape that does not
- * exist. `code` is stored exactly as it should appear, indentation included,
- * because the indentation is part of what is being typed.
+ * Os bancos de prosa prometem frase completa pelo mesmo motivo que aqui se
+ * promete função completa: fragmento ensina ao dedo um formato que não existe.
+ * O `code` é guardado exatamente como deve aparecer, indentação incluída,
+ * porque a indentação faz parte do que está sendo digitado.
  */
 export type Snippet = {
   readonly id: string;
   readonly syntax: Syntax;
   readonly code: string;
-  /** Register, same idea as the phrase tags: what kind of code this is. */
+  /** Registro, mesma ideia das tags de frase: que tipo de código é este. */
   readonly tags: readonly string[];
 };
 
 /*
- * Every snippet below compiles and runs on its own — no imports elided, no
- * bodies replaced by a comment. Indentation follows what each language's own
- * formatter produces, because that is the shape the fingers will meet in a
- * real file: four spaces where the community writes four, two where it writes
- * two, and tabs in Go because gofmt produces tabs and typing Go any other way
- * would drill a habit the toolchain undoes.
+ * Todo snippet abaixo compila e roda sozinho: nenhum import omitido, nenhum
+ * corpo trocado por comentário. A indentação segue o que o formatador de cada
+ * linguagem produz, porque é o formato que o dedo vai encontrar num arquivo de
+ * verdade: quatro espaços onde a comunidade escreve quatro, dois onde escreve
+ * dois, e tab em Go porque o gofmt gera tab e digitar Go de outro jeito
+ * treinaria um hábito que a toolchain desfaz.
  */
 export const SNIPPETS: readonly Snippet[] = [
   {

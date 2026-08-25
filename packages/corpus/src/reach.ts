@@ -1,18 +1,18 @@
 import type { KeyboardLayout } from '@perseus/contracts';
 
 /**
- * What a keyboard can put on screen, as far as the corpus is concerned.
+ * O que um teclado consegue pôr na tela, do ponto de vista do corpus.
  *
- * Layouts are collapsed into this rather than filtered one by one on purpose:
- * ABNT2 and US-International arrange their keys quite differently and reach
- * exactly the same characters, so a text drawn for one must be the text drawn
- * for the other. Splitting the pools per layout name would instead have given
- * them two different texts for the same seed, and made every layout added later
- * a fresh corpus version even when it could type nothing new.
+ * Os layouts são reduzidos a isto em vez de filtrados um por um de propósito:
+ * ABNT2 e US-International arrumam as teclas bem diferente e alcançam
+ * exatamente os mesmos caracteres, então texto sorteado pra um tem que ser o
+ * texto sorteado pro outro. Separar os pools por nome de layout daria dois
+ * textos diferentes pro mesmo seed, e faria cada layout novo virar versão nova
+ * de corpus mesmo sem digitar nada novo.
  *
- * 'full'  — every character in the banks, accents included.
- * 'ascii' — printable ASCII, plus the newline and tab that code is made of.
- *           No dead keys, so no "á", no "ç", no "ã".
+ * 'full'  — todo caractere dos bancos, acento incluído.
+ * 'ascii' — ASCII imprimível, mais a quebra de linha e o tab de que código é
+ *           feito. Sem tecla morta, então nada de "á", "ç", "ã".
  */
 export type Reach = 'full' | 'ascii';
 
@@ -23,11 +23,11 @@ const REACH: Record<KeyboardLayout, Reach> = {
 };
 
 /**
- * Printable ASCII and the two whitespace characters a snippet contains.
+ * ASCII imprimível e os dois espaços em branco que um snippet contém.
  *
- * Written as a range rather than a list of the characters it excludes: the
- * question is what a plain US keyboard *can* produce, and that is a contiguous
- * block. Anything outside it needs a dead key or a compose sequence.
+ * Escrito como faixa em vez de lista do que exclui: a pergunta é o que um
+ * teclado US comum *consegue* produzir, e isso é um bloco contíguo. Qualquer
+ * coisa fora dele precisa de tecla morta ou sequência de composição.
  */
 const ASCII = /^[\x20-\x7E\n\t]*$/;
 
@@ -35,7 +35,7 @@ export function reachOf(layout: KeyboardLayout): Reach {
   return REACH[layout];
 }
 
-/** Whether every character of `text` can be typed at this reach. */
+/** Se todo caractere de `text` dá pra digitar com esse alcance. */
 export function reaches(reach: Reach, text: string): boolean {
   return reach === 'full' || ASCII.test(text);
 }

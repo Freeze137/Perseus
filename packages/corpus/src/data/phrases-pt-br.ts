@@ -1,10 +1,10 @@
 import type { Phrase } from './types';
 
 /**
- * Natural Brazilian Portuguese sentences, 40–140 characters, written to be
- * typed: correct orthography, real capitalization and real punctuation. The
- * registers are mixed on purpose — everyday speech drills different keys than
- * technical prose does.
+ * Frases de português brasileiro natural, 40–140 caracteres, escritas pra serem
+ * digitadas: ortografia certa, maiúscula de verdade, pontuação de verdade. Os
+ * registros são misturados de propósito — fala do dia a dia treina teclas
+ * diferentes de prosa técnica.
  */
 export const PHRASES_PT_BR: readonly Phrase[] = [
   { id: 'pt-001', text: 'O café esfriou enquanto eu procurava as chaves em cima da mesa.', tags: ['cotidiano'] },
@@ -108,7 +108,7 @@ export const PHRASES_PT_BR: readonly Phrase[] = [
   { id: 'pt-099', text: 'Levei o computador para consertar e voltei com outro problema.', tags: ['cotidiano'] },
   { id: 'pt-100', text: 'A gente ri disso hoje, mas na hora ninguém achou graça alguma.', tags: ['cotidiano'] },
 
-  /* Sentences that carry their own numbers. The digits belong to what is being
+  /* Frases que já trazem os próprios números. Os dígitos pertencem ao que está
      said — a delay of eighteen minutes, a bill in reais — so the top row is
      drilled inside a phrase the fingers can anticipate instead of after a coin
      flip. The `numbers` tag is what the generator selects on. */
