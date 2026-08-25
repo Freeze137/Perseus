@@ -30,30 +30,30 @@ const QUEUE_KEY = "perseus:pending-results";
 const QUEUE_MAX = 10;
 
 /**
- * Sends a finished run up for scoring, once.
+ * Manda uma corrida terminada pra ser pontuada, uma vez.
  *
- * What goes over the wire is the keystroke timeline, not the numbers on screen.
- * The server regenerates the text from the config and derives the result
- * itself, so the figures the typist just read are a local preview of what the
- * server will independently conclude — and if the two ever disagree, the
- * server is right, because it is the one nobody can edit.
+ * O que vai pela rede é a timeline de teclas, não os números da tela. O
+ * servidor regera o texto a partir da config e deriva o resultado sozinho,
+ * então os números que a pessoa acabou de ler são uma prévia local do que o
+ * servidor vai concluir por conta própria — e se os dois discordarem, o
+ * servidor está certo, porque é o que ninguém edita.
  *
- * Two things happen here that used to be one. A ticket is taken out the moment
- * the first character lands, which is what gives the run a server-issued
- * identity and a clock; the submission that follows carries it. And a run the
- * network refused is kept rather than dropped: it goes to a queue in local
- * storage and is offered again on the next visit, because the alternative is
- * losing somebody's personal best to a dropped connection.
+ * Duas coisas acontecem aqui que já foram uma. Um bilhete é tirado no instante
+ * em que o primeiro caractere cai, e é ele que dá à corrida uma identidade
+ * emitida pelo servidor e um relógio; o envio seguinte o carrega. E corrida que
+ * a rede recusou é guardada em vez de descartada: vai pra uma fila no
+ * armazenamento local e é oferecida de novo na próxima visita, porque a
+ * alternativa é perder o recorde pessoal de alguém pra uma conexão que caiu.
  */
 export function useResultSync(session: Session, config: SessionConfig): SyncState {
   const { session: auth, configured } = useAuth();
   const [state, setState] = useState<SyncState>(configured ? "idle" : "off");
   const sent = useRef<Session | null>(null);
   /**
-   * The ticket for the run in progress, held as the promise rather than the
-   * value. A short text finished by a fast typist can beat its own ticket over
-   * the network, and a run refused because the paperwork was still in flight
-   * would be the most annoying possible way to lose a personal best.
+   * O bilhete da corrida em andamento, guardado como a promise e não como o
+   * valor. Texto curto terminado por gente rápida chega antes do próprio
+   * bilhete pela rede, e corrida recusada porque o papel ainda estava em voo
+   * seria o jeito mais irritante possível de perder um recorde pessoal.
    */
   const ticket = useRef<{
     startedAt: number;
@@ -62,26 +62,26 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
   const token = auth?.access_token ?? null;
 
   /**
-   * Takes out the ticket at the first keystroke.
+   * Tira o bilhete na primeira tecla.
    *
-   * Not when the text is drawn: somebody pressing Escape through five texts
-   * looking for one they like would open five runs, and the clock on each would
-   * have started before any typing did.
+   * Não quando o texto é sorteado: alguém apertando Escape por cinco textos
+   * procurando um que goste abriria cinco corridas, e o relógio de cada uma
+   * teria começado antes de qualquer digitação.
    */
   useEffect(() => {
     if (!configured || !token) return;
     const startedAt = session.startedAt;
     if (startedAt === null) {
-      // A reset clears it: the next run is a different run and must not be
-      // filed under the ticket of the one that was abandoned.
+      // Um reset limpa: a próxima corrida é outra corrida e não pode ser
+      // arquivada sob o bilhete da que foi abandonada.
       ticket.current = null;
       return;
     }
     if (ticket.current?.startedAt === startedAt) return;
 
     const pending = startRun(token).catch((error: unknown) => {
-      // Nothing to show yet — the run is still being typed. The submission
-      // below is where the absence of a ticket becomes visible.
+      // Nada a mostrar ainda — a corrida ainda está sendo digitada. O envio
+      // abaixo é onde a falta de bilhete fica visível.
       console.warn(`could not open the run: ${describe(error)}`);
       return null;
     });
@@ -96,8 +96,8 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
         return "sent";
       } catch (error: unknown) {
         if (!(error instanceof ApiError)) throw error;
-        // Already stored is not a failure: a retry after a dropped response
-        // lands here, and the run it is asking about is on the board.
+        // Já guardado não é falha: uma retentativa depois de resposta perdida
+        // cai aqui, e a corrida pela qual ela pergunta está no ranking.
         if (error.code === "duplicate") return "sent";
         if (error.code === "corpus_version") return "stale";
         if (error.retryable) {
@@ -111,9 +111,9 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     [token],
   );
 
-  // Anything left over from a previous visit goes up before anything new does,
-  // so a queued personal best is not overtaken on the board by the run that
-  // followed it.
+  // O que sobrou de uma visita anterior sobe antes de qualquer coisa nova, pra
+  // um recorde pessoal na fila não ser ultrapassado no ranking pela corrida que
+  // veio depois dele.
   useEffect(() => {
     if (!configured || !token) return;
     let alive = true;
@@ -122,9 +122,9 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
       for (const payload of drainQueue()) {
         if (!alive) return;
         const outcome = await deliver(payload);
-        // Still no network: it went back on the queue inside `deliver`, and
-        // pushing the rest at a connection that is not there wastes the tab's
-        // first seconds. Try again next visit.
+        // Ainda sem rede: voltou pra fila dentro do `deliver`, e empurrar o
+        // resto contra uma conexão que não existe desperdiça os primeiros
+        // segundos da aba. Tenta de novo na próxima visita.
         if (outcome === "queued") return;
       }
     })();
@@ -135,9 +135,9 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
   }, [configured, token, deliver]);
 
   /**
-   * Guarded by the session identity rather than a boolean: a re-render, a
-   * restart on the same text or a second finish must not file the same run
-   * twice.
+   * Guardado pela identidade da sessão e não por um booleano: um re-render, um
+   * recomeço no mesmo texto ou um segundo fim não podem arquivar a mesma
+   * corrida duas vezes.
    */
   useEffect(() => {
     if (!configured || !token) return;
@@ -153,8 +153,8 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
       const run = pending ? await pending : null;
       if (!alive) return;
       if (!run) {
-        // No ticket, no submission. The run stays on screen and stays honest
-        // about not having been filed; inventing a ticket is not on the table.
+        // Sem bilhete, sem envio. A corrida fica na tela e fica honesta sobre
+        // não ter sido arquivada; inventar um bilhete não está em jogo.
         setState("failed");
         console.warn("no run ticket for this run — it was not sent");
         return;
@@ -164,10 +164,10 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
         config,
         corpusVersion: CORPUS_VERSION,
         run,
-        // `correct` is left off: the server recomputes it, and sending it would
-        // only invite somebody to try setting it. `at` is rounded to whole
-        // milliseconds — the decimals of performance.now() change no score and
-        // are a sixth of the size of a long run's request.
+        // `correct` fica de fora: o servidor recalcula, e mandar só convidaria
+        // alguém a tentar setar. `at` é arredondado pra milissegundo inteiro —
+        // as casas do performance.now() não mudam pontuação nenhuma e são um
+        // sexto do tamanho da requisição de uma corrida longa.
         keystrokes: session.keystrokes.map(({ char, at, index }) => ({
           char,
           at: Math.round(at),
@@ -195,11 +195,11 @@ function enqueue(payload: SubmitResult): void {
 }
 
 /**
- * Takes everything worth retrying and empties the store.
+ * Pega tudo que vale retentar e esvazia o armazenamento.
  *
- * Tickets that have outlived the server's window are dropped here rather than
- * sent: they would be refused, and a refusal the typist can do nothing about is
- * not worth a request.
+ * Bilhete que passou da janela do servidor é descartado aqui em vez de enviado:
+ * seria recusado, e recusa sobre a qual a pessoa não pode fazer nada não vale
+ * uma requisição.
  */
 function drainQueue(): SubmitResult[] {
   const now = Date.now();
@@ -216,8 +216,9 @@ function readQueue(): SubmitResult[] {
     const raw = window.localStorage.getItem(QUEUE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    // Shape-checked loosely on purpose: the server validates properly, and a
-    // corrupted entry should cost one run rather than throw on every load.
+    // Formato checado de leve de propósito: o servidor valida direito, e
+    // entrada corrompida tem que custar uma corrida em vez de lançar em todo
+    // carregamento.
     return Array.isArray(parsed) ? (parsed as SubmitResult[]) : [];
   } catch {
     return [];
@@ -229,8 +230,8 @@ function write(queue: SubmitResult[]): void {
   try {
     window.localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
   } catch {
-    // A full or disabled local storage is not a reason to lose the run that is
-    // on screen. The queue is a best effort by definition.
+    // Armazenamento local cheio ou desligado não é motivo pra perder a corrida
+    // que está na tela. A fila é melhor esforço por definição.
   }
 }
 

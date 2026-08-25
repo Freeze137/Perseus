@@ -34,10 +34,10 @@ type Props = {
 type Submission = "idle" | "sending" | "sent" | "failed";
 
 /**
- * How long the start word stays on screen after the keys unlock.
+ * Quanto tempo a palavra de largada fica na tela depois de as teclas liberarem.
  *
- * Under a second, and gone before anybody has typed a word. A start signal that
- * outlives the start is a start signal in the way.
+ * Menos de um segundo, e some antes de alguém digitar uma palavra. Sinal de
+ * largada que sobrevive à largada é sinal de largada atrapalhando.
  */
 const GO_MS = 900;
 
@@ -45,9 +45,9 @@ const GO_MS = 900;
 const ZERO_MS = 340;
 
 /**
- * A number arriving. Exponential ease-out: fast off the mark, settling into
- * place with no bounce — the count is a clock, and a clock that overshoots is
- * telling a joke nobody asked for.
+ * Um número chegando. Ease-out exponencial: rápido na saída, assentando sem
+ * quicar — a contagem é um relógio, e relógio que passa do ponto está contando
+ * uma piada que ninguém pediu.
  */
 const ARRIVE = { duration: 0.42, ease: [0.16, 1, 0.3, 1] } as const;
 
@@ -55,18 +55,18 @@ const ARRIVE = { duration: 0.42, ease: [0.16, 1, 0.3, 1] } as const;
 const CROSS = { duration: 0.62, ease: [0.16, 1, 0.3, 1] } as const;
 
 /**
- * The duel itself: countdown, text, both carets, result.
+ * O duelo em si: regressiva, texto, os dois cursores, resultado.
  *
- * The text is generated here from the config the server handed both players.
- * It is never transmitted — same seed, same corpus version, same characters, by
- * construction — which is the property the whole feature rests on and the
- * reason a duel costs no more bandwidth than a solo run plus two small numbers
- * a second.
+ * O texto é gerado aqui a partir da config que o servidor entregou aos dois
+ * jogadores. Nunca trafega — mesma semente, mesma versão de corpus, mesmos
+ * caracteres, por construção — que é a propriedade sobre a qual a
+ * funcionalidade inteira se apoia e o motivo de um duelo não custar mais banda
+ * que uma corrida solo mais dois numerozinhos por segundo.
  *
- * Three things are deliberately kept off the keystroke path: the progress
- * publisher runs on its own interval and reads the caret from a ref, the
- * opponent's bar is a transform, and the submission happens once, after the
- * last character. Nothing in this component may make the next letter wait.
+ * Três coisas ficam de propósito fora do caminho da tecla: o publicador de
+ * progresso roda no intervalo dele e lê o cursor de um ref, a barra do
+ * adversário é um transform, e o envio acontece uma vez, depois do último
+ * caractere. Nada neste componente pode fazer a próxima letra esperar.
  */
 export function DuelScreen({
   match,
@@ -95,13 +95,13 @@ export function DuelScreen({
   );
 
   /**
-   * The window the start word lives in, counted off the same server clock as
-   * everything else.
+   * A janela em que a palavra de largada vive, contada do mesmo relógio do
+   * servidor que todo o resto.
    *
-   * Deliberately derived from `startsAt` rather than from a local timer started
-   * when the state flipped. The whole point of the countdown is that the two
-   * screens are counting the same instant; a second clock in here would let one
-   * of them drift, and the drift would show up as somebody starting late.
+   * Derivada de `startsAt` de propósito, e não de um timer local começado
+   * quando o estado virou. O ponto inteiro da regressiva é as duas telas
+   * contarem o mesmo instante; um segundo relógio aqui deixaria uma delas
+   * derivar, e a deriva apareceria como alguém largando atrasado.
    */
   const level = useMotionLevel();
   const still = level === "none";
@@ -112,10 +112,10 @@ export function DuelScreen({
   );
   const showGo = running && go > 0;
   /**
-   * The zero the old version skipped: `Math.ceil` goes 5, 4, 3, 2, 1 and then
-   * the state flips, so the number the whole count was heading for never
-   * appeared. It shows now, for a third of a second, and the start word arrives
-   * on top of it — the last thing the count does is get swallowed.
+   * O zero que a versão antiga pulava: `Math.ceil` vai 5, 4, 3, 2, 1 e aí o
+   * estado vira, então o número pro qual a contagem inteira ia nunca aparecia.
+   * Agora aparece, por um terço de segundo, e a palavra de largada chega em
+   * cima dele — a última coisa que a contagem faz é ser engolida.
    */
   const showDigit = match.state === "countdown" || (showGo && go > GO_MS - ZERO_MS);
   const digit =
@@ -128,9 +128,9 @@ export function DuelScreen({
   const [submission, setSubmission] = useState<Submission>("idle");
   const [refusal, setRefusal] = useState<string | null>(null);
 
-  // A rematch is a new duel in the same component: nothing is remounted, so the
-  // last round's status line would still be on screen while this one is being
-  // typed. The round is what changes between them, and it is what resets this.
+  // Revanche é duelo novo no mesmo componente: nada é remontado, então a linha
+  // de status da rodada anterior ainda estaria na tela enquanto esta é
+  // digitada. A rodada é o que muda entre as duas, e é o que zera isto.
   const [round, setRound] = useState(match.roundId);
   if (round !== match.roundId) {
     setRound(match.roundId);
@@ -139,9 +139,9 @@ export function DuelScreen({
   }
 
   /**
-   * Read by the publisher below without being one of its dependencies: the
-   * interval must not be torn down and rebuilt on every character. Written in
-   * an effect rather than during render, which is the rule for refs.
+   * Lido pelo publicador abaixo sem ser dependência dele: o intervalo não pode
+   * ser derrubado e reconstruído a cada caractere. Escrito num efeito e não
+   * durante o render, que é a regra pra ref.
    */
   const caret = useRef(0);
   useEffect(() => {
@@ -155,17 +155,17 @@ export function DuelScreen({
       const index = caret.current;
       if (index === last) return;
       last = index;
-      // Failures are swallowed on purpose. This is the decorative channel, and
-      // a dropped position costs one frame of somebody else's progress bar.
+      // Falha é engolida de propósito. Este é o canal decorativo, e uma posição
+      // perdida custa um frame da barra de progresso do outro.
       void publishProgress(match.id, token, index).catch(() => undefined);
     }, MATCH_PROGRESS_MS);
     return () => window.clearInterval(id);
   }, [running, match.id, token]);
 
   /**
-   * Sends the timeline, once, guarded by the session's identity rather than a
-   * boolean — the same rule the solo sync uses, for the same reason: a
-   * re-render must not file the same run twice.
+   * Manda a timeline, uma vez, guardada pela identidade da sessão e não por um
+   * booleano — mesma regra do sync solo, pelo mesmo motivo: um re-render não
+   * pode arquivar a mesma corrida duas vezes.
    */
   const sent = useRef<Session | null>(null);
   useEffect(() => {
@@ -216,8 +216,8 @@ export function DuelScreen({
         lanes={[
           {
             name: me?.displayName ?? "Você",
-            // The local caret rather than the number last published: it is the
-            // same value a beat earlier, and this lane is about your own text.
+            // O cursor local em vez do último número publicado: é o mesmo valor
+            // uma batida antes, e esta pista é sobre o seu próprio texto.
             index: session.typed.length,
             finished: isFinished(session),
             mine: true,
@@ -304,18 +304,18 @@ export function DuelScreen({
       <TypingArea
         session={session}
         layout={isCode ? "code" : "prose"}
-        // The keys are the server's to unlock. Before that the input is real,
-        // focused and inert — which is a different thing from being absent, and
-        // the difference is that nothing jumps when the countdown ends.
+        // Quem destrava as teclas é o servidor. Antes disso o input é real,
+        // focado e inerte — que é coisa diferente de estar ausente, e a
+        // diferença é que nada pula quando a regressiva acaba.
         onInput={running ? input : swallow}
         onBackspace={running ? backspace : swallow}
-        // A duel has no restart and no escape: the run you are in is the run.
+        // Duelo não tem recomeçar nem escapar: a corrida em que você está é a corrida.
         onRestart={swallow}
         onCancel={swallow}
         swapping={false}
-        // Changes exactly once, when the keys unlock. Focusing the hidden input
-        // during the countdown would swallow the keystrokes of somebody warming
-        // their hands up on it.
+        // Muda exatamente uma vez, quando as teclas destravam. Focar o input
+        // escondido durante a regressiva engoliria as teclas de quem está
+        // esquentando a mão nela.
         focusSignal={running ? 1 : 0}
       />
 
@@ -343,13 +343,13 @@ export function DuelScreen({
 }
 
 /**
- * One line, saying the truest thing available.
+ * Uma linha, dizendo a coisa mais verdadeira disponível.
  *
- * Order matters: a refusal outranks the clock, the clock outranks the network,
- * and "connecting" is only worth saying when nothing more interesting is
- * happening. A stream that dropped is stated rather than hidden — the duel
- * continues, the other player's bar is simply frozen, and somebody watching a
- * bar that has stopped deserves to know which of the two it means.
+ * A ordem importa: recusa vale mais que o relógio, o relógio vale mais que a
+ * rede, e "conectando" só vale ser dito quando nada mais interessante está
+ * acontecendo. Stream que caiu é dito, não escondido — o duelo continua, a
+ * barra do outro simplesmente congela, e quem está olhando uma barra parada
+ * merece saber qual das duas coisas ela quer dizer.
  */
 function status(state: {
   running: boolean;
