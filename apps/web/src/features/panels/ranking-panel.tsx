@@ -19,23 +19,23 @@ type Board =
   | { status: "ready"; entries: LeaderboardEntry[] };
 
 /**
- * The board for whatever the typist is currently set to.
+ * O ranking do que a pessoa estiver configurada agora.
  *
- * It follows the settings rather than offering its own filters: the question
- * somebody opens this panel to ask is "how am I doing at *this*", and a panel
- * that answers about a different mode than the one on screen is a panel that
- * has to be re-configured before it can be read.
+ * Segue as configurações em vez de oferecer filtros próprios: a pergunta que
+ * alguém abre este painel pra fazer é "como eu vou *nisto*", e um painel que
+ * responde sobre um modo diferente do que está na tela é um painel que precisa
+ * ser reconfigurado antes de poder ser lido.
  */
 export function RankingPanel({ kind, language, syntax }: Props) {
   const { configured, session } = useAuth();
   /**
-   * Answers are stored against the question they answer.
+   * As respostas são guardadas junto da pergunta que respondem.
    *
-   * Switching mode has to show "loading" again, but writing that state from the
-   * effect would mean a render, an effect, and a second render on every change.
-   * Keying the stored answer instead makes staleness something the render can
-   * see for itself: a board whose key no longer matches simply is not an answer
-   * to the question on screen.
+   * Trocar de modo tem que mostrar "carregando" de novo, mas escrever esse
+   * estado a partir do efeito daria um render, um efeito e um segundo render a
+   * cada mudança. Chavear a resposta guardada em vez disso faz o "está velha"
+   * ser coisa que o render enxerga sozinho: um ranking cuja chave não bate mais
+   * simplesmente não é resposta pra pergunta que está na tela.
    */
   const queryKey = `${kind}|${language}|${kind === "code" ? syntax : ""}`;
   const [answer, setAnswer] = useState<{ key: string; board: Board } | null>(null);
@@ -52,9 +52,9 @@ export function RankingPanel({ kind, language, syntax }: Props) {
     })
       .then((response) => {
         if (!alive) return;
-        // The server now says whether it is answering with a board or with an
-        // outage. An empty list used to mean both, and "seja o primeiro a
-        // ranquear" is a strange thing to tell somebody whose database is down.
+        // O servidor agora diz se está respondendo com um ranking ou com uma
+        // queda. Lista vazia significava as duas coisas, e "seja o primeiro a
+        // ranquear" é coisa estranha de dizer pra quem está com o banco fora.
         setAnswer({
           key: queryKey,
           board:

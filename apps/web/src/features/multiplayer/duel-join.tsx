@@ -12,16 +12,16 @@ type Props = {
 };
 
 /**
- * The invite screen: what this duel is, and who you want to be in it.
+ * A tela de convite: o que é este duelo, e quem você quer ser nele.
  *
- * The name is asked for here rather than taken from an account because a duel
- * has no account — and because the name is per match on purpose. It is what
- * shows on the other person's screen and what ends up in both histories, so it
- * is the first and only thing this screen collects.
+ * O nome é pedido aqui em vez de tirado de uma conta porque duelo não tem conta
+ * — e porque o nome é por partida, de propósito. É o que aparece na tela do
+ * outro e o que acaba nos dois históricos, então é a primeira e única coisa que
+ * esta tela coleta.
  *
- * The room is previewed before the name is asked. Typing a name into a form for
- * a room that is already full, or already running, is a worse way to find out
- * than being told before you start.
+ * A sala é mostrada antes de o nome ser pedido. Digitar um nome num formulário
+ * pra uma sala que já está cheia, ou já rodando, é um jeito pior de descobrir do
+ * que ser avisado antes de começar.
  */
 export function DuelJoin({ code, onJoined }: Props) {
   const [room, setRoom] = useState<Match | null>(null);
@@ -51,8 +51,8 @@ export function DuelJoin({ code, onJoined }: Props) {
     setJoining(true);
     setProblem(null);
     joinMatch(code, { displayName: chosen })
-      // Storing the seat is the page's job — it is the thing that has to
-      // survive a reload, and one writer per key is the whole rule.
+      // Guardar a cadeira é trabalho da página — é o que tem que sobreviver a
+      // um recarregamento, e um escritor por chave é a regra inteira.
       .then(onJoined)
       .catch((error: unknown) => {
         setProblem(explain(error));
@@ -123,11 +123,11 @@ export function DuelJoin({ code, onJoined }: Props) {
 }
 
 /**
- * The refusal, in the words of the person it happened to.
+ * A recusa, nas palavras de quem passou por ela.
  *
- * The server's codes are for branching, not for reading — "match_full" is a
- * fact about a room, and what somebody standing outside it needs is what to do
- * about that.
+ * Os códigos do servidor são pra ramificar, não pra ler — "match_full" é um
+ * fato sobre uma sala, e o que quem está do lado de fora precisa é o que fazer
+ * a respeito.
  */
 function explain(error: unknown): string {
   if (!(error instanceof ApiError)) {

@@ -17,17 +17,17 @@ type State = {
 };
 
 /**
- * React's view of the engine. All the rules live in `@perseus/engine`; this
- * hook only carries state across renders and announces keystrokes to whoever
- * listens outside React.
+ * A vista do React sobre o motor. As regras todas vivem no `@perseus/engine`;
+ * este hook só carrega estado entre renders e anuncia teclas pra quem escuta
+ * fora do React.
  */
 export function useTypingSession(
   target: string,
   options: Partial<SessionOptions> = {},
 ) {
-  // Destructured to primitives before anything compares them. Callers pass an
-  // object literal, which is a new reference on every render — comparing the
-  // object itself would rebuild the session sixty times a second.
+  // Desestruturado em primitivos antes de qualquer comparação. Quem chama passa
+  // um literal de objeto, que é referência nova a cada render — comparar o
+  // objeto reconstruiria a sessão sessenta vezes por segundo.
   const { autoIndent = false, stopOnError = false } = options;
   const settings: Partial<SessionOptions> = { autoIndent, stopOnError };
 
@@ -36,8 +36,8 @@ export function useTypingSession(
     session: createSession(target, settings),
   }));
 
-  // Adjusting state during render is the supported way to reset on a prop
-  // change — an effect would render the old text once before clearing it.
+  // Ajustar estado durante o render é o jeito suportado de zerar numa prop que
+  // mudou — um efeito renderizaria o texto antigo uma vez antes de limpá-lo.
   const stale =
     state.target !== target ||
     state.session.options.autoIndent !== autoIndent ||
@@ -52,7 +52,7 @@ export function useTypingSession(
   const commit = useCallback(
     (next: Session) => {
       setState((current) => ({ ...current, session: next }));
-      // Announce only what is new, so a re-render never replays old keystrokes.
+      // Anuncia só o que é novo, pra um re-render nunca repetir teclas antigas.
       next.keystrokes.slice(session.keystrokes.length).forEach(emitKeystroke);
     },
     [session.keystrokes.length],

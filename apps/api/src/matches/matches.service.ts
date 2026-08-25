@@ -48,7 +48,7 @@ import { MatchTokenService } from './match-token.service';
  */
 const KEEP_AFTER_DONE_MS = 5 * 60_000;
 
-/** A room that died before anybody typed is worth even less time than that. */
+/** Sala que morreu antes de alguém digitar vale ainda menos tempo que isso. */
 const KEEP_AFTER_ABANDONED_MS = 60_000;
 
 /**
@@ -141,7 +141,7 @@ export class MatchesService {
     };
   }
 
-  /** The room behind an invite code, for the screen that asks for a name. */
+  /** A sala atrás de um código de convite, pra tela que pede um nome. */
   preview(code: string): Match {
     const room = this.registry.byCode(code);
     if (!room) throw this.gone();
@@ -569,7 +569,7 @@ export class MatchesService {
     };
   }
 
-  /** The room and the player the token speaks for, or an exception. */
+  /** A sala e o jogador por quem o token fala, ou uma exceção. */
   private authorise(
     id: string,
     token: string | undefined,
@@ -690,7 +690,7 @@ export class MatchesService {
     });
   }
 
-  /** One sentence for every way a room can be missing. */
+  /** Uma frase pra cada jeito de uma sala estar faltando. */
   private gone(): NotFoundException {
     return new NotFoundException({
       code: 'match_not_found' satisfies MatchErrorCode,

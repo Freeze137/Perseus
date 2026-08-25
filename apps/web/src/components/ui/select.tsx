@@ -16,10 +16,10 @@ type Props<T extends string> = Omit<
 };
 
 /**
- * A native `<select>` under our own skin.
+ * Um `<select>` nativo debaixo da nossa pele.
  *
- * A hand-rolled listbox would cost keyboard navigation, screen-reader support
- * and the mobile picker, and buy nothing the design needs.
+ * Uma listbox feita à mão custaria navegação por teclado, suporte a leitor de
+ * tela e o seletor do celular, e não compraria nada de que o desenho precisa.
  */
 export function Select<T extends string>({
   value,

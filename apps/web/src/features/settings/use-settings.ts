@@ -32,7 +32,7 @@ export type Settings = {
    * pode conter um, então ele viaja no SessionConfig também.
    */
   keyboardLayout: KeyboardLayout;
-  /** The star-map keyboard under the text. */
+  /** O teclado em mapa estelar embaixo do texto. */
   showKeyboard: boolean;
   /**
    * Quanto a interface pode gastar pra parecer viva.

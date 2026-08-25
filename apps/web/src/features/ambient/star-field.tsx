@@ -10,7 +10,7 @@ type Kind = 'star' | 'quatrefoil' | 'dot';
 type Shape = {
   x: number;
   y: number;
-  /** Depth, Z_FAR (far) to Z_NEAR (near): drives size, speed, opacity and spin. */
+  /** Profundidade, de Z_FAR a Z_NEAR: manda no tamanho, velocidade, opacidade e giro. */
   z: number;
   angle: number;
   spin: number;
@@ -24,13 +24,13 @@ type Shape = {
    * reconstruído — ver a nota sobre CACHE DE PREENCHIMENTO abaixo.
    */
   fill: CanvasGradient;
-  /** Shadow colour for the permanent glow, pre-formatted for the same reason. */
+  /** Cor da sombra do brilho permanente, pré-formatada pelo mesmo motivo. */
   glow: string;
-  /** 0..1, a brief brightening triggered by a correct keystroke. */
+  /** 0..1, um clareamento curto disparado por uma tecla certa. */
   flash: number;
-  /** 0..1, a brief shudder triggered by a wrong one. */
+  /** 0..1, um tremor curto disparado por uma tecla errada. */
   shake: number;
-  /** Phase offset, so two shapes shuddering at once never do it in lockstep. */
+  /** Deslocamento de fase, pra duas formas tremendo juntas nunca tremerem em sincronia. */
   shakeSeed: number;
 };
 
@@ -42,14 +42,14 @@ type Streak = {
   width: number;
   alpha: number;
   colour: string;
-  /** 1 while alive, 0 when retired. Ambient streaks hold at 1 forever. */
+  /** 1 enquanto viva, 0 quando aposentada. Risco de ambiente fica em 1 pra sempre. */
   life: number;
-  /** Life lost per tick. Zero for ambient streaks, which never retire. */
+  /** Vida perdida por tick. Zero pros riscos de ambiente, que nunca aposentam. */
   decay: number;
 };
 
-/* Channels, not strings, because every shape jitters its own hue off these —
-   four literal colours repeated across eighty shapes reads as a pattern. */
+/* Canais, não strings, porque toda forma treme o próprio matiz a partir destes
+   — quatro cores literais repetidas em oitenta formas lê como padrão. */
 const EMERALD = [29, 185, 129] as const;
 const MINT = [125, 245, 196] as const;
 const JADE = [15, 92, 74] as const;
@@ -66,23 +66,23 @@ const RUST_SOLID = rgb(RUST);
 const AREA_PER_SHAPE = 34_000;
 const MIN_SHAPES = 24;
 const MAX_SHAPES = 80;
-/** Clear space every shape keeps around itself, on top of its own radius. */
+/** Espaço livre que toda forma mantém em volta de si, além do próprio raio. */
 const BREATHING_ROOM = 28;
 
-/* ---- the fast layer ----
-   The slow shapes cross the screen in minutes, which reads as a still image
-   you happen to catch moving. A second, much faster population fixes that
-   without touching the first: these are small, dim, and gone in seconds, so
-   they register as travel through the field rather than as more objects in it.
+/* ---- a camada rápida ----
+   As formas lentas atravessam a tela em minutos, o que lê como imagem parada
+   que você por acaso pega se mexendo. Uma segunda população, bem mais rápida,
+   resolve isso sem encostar na primeira: são pequenas, fracas e somem em
+   segundos, então registram como viagem pelo campo e não como mais objetos nele.
 
-   They share one heading — the eye reads a common direction as motion through
-   space, and independent directions as noise. They also skip separate()
-   entirely: being overtaken and passed is the whole point, and colliding a
-   layer that exists to cut through the other one would cancel the effect. */
+   Dividem um rumo só — o olho lê direção comum como movimento pelo espaço, e
+   direções independentes como ruído. Também pulam o separate() inteiro: ser
+   ultrapassado é o ponto todo, e colidir uma camada que existe pra cortar a
+   outra cancelaria o efeito. */
 const STREAK_SHARE = 0.4;
 const STREAK_SPEED_MIN = 6;
 const STREAK_SPEED_MAX = 14;
-/** Up and to the right, roughly 24° — off-axis enough to not read as a wipe. */
+/** Pra cima e pra direita, uns 24° — fora do eixo o bastante pra não ler como varrida. */
 const STREAK_HEADING = -0.42;
 const STREAK_SPREAD = 0.22;
 const STREAK_ALPHA_MIN = 0.05;
@@ -102,11 +102,11 @@ const TRAIL_TICKS = 6;
    hangs off it: size, opacity, spin, softness and parallax. */
 const Z_FAR = 0.12;
 const Z_NEAR = 1.15;
-/** Drift scales by z to this power. Linear parallax is too flat to read. */
+/** A deriva escala com z nesta potência. Parallax linear é chapado demais pra ler. */
 const PARALLAX_EXPONENT = 1.5;
-/** Above this depth a shape gets the two-tone fill instead of the soft one. */
+/** Acima desta profundidade a forma ganha o preenchimento de dois tons, não o suave. */
 const GRADIENT_Z = 0.7;
-/** Above this depth it also gets a permanent glow, sized off its own radius. */
+/** Acima desta profundidade ela também ganha brilho permanente, do tamanho do próprio raio. */
 const GLOW_Z = 1.0;
 const GLOW_SCALE = 0.4;
 
@@ -126,7 +126,7 @@ const SHAKE_AMPLITUDE = 3.5;
 const SHAKE_FREQUENCY = 0.05;
 const SHAKE_SHRINK = 0.22;
 
-/** How long after the last keystroke the field comes back to full strength. */
+/** Quanto tempo depois da última tecla o campo volta à força total. */
 const IDLE_MS = 1_400;
 
 /**
@@ -177,8 +177,8 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let shapes: Shape[] = [];
     let streaks: Streak[] = [];
-    /* Sparks are recycled round-robin: at four per keystroke and twenty ticks
-       of life, the pool outlasts anything a human can type. */
+    /* As faíscas são recicladas em rodízio: a quatro por tecla e vinte ticks de
+       vida, o pool sobrevive a qualquer coisa que uma pessoa digite. */
     const bursts: Streak[] = Array.from({ length: BURST_POOL }, makeSpark);
     let burstCursor = 0;
     let width = 0;
@@ -271,7 +271,7 @@ export function StarField({ level }: { level: Exclude<FieldLevel, 'off'> }) {
       cancelAnimationFrame(frame);
     };
 
-    /** The field runs only when it is both on screen and actually visible. */
+    /** O campo só roda quando está na tela e de fato visível. */
     const sync = () => {
       if (reduced) return;
       if (document.hidden || isOverlayOpen()) stop();
@@ -350,7 +350,7 @@ function rgb(channels: readonly [number, number, number] | number[]): string {
   return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
 }
 
-/** Nudges a colour off its literal value so no two shapes share a hue exactly. */
+/** Empurra a cor pra fora do valor literal pra duas formas nunca dividirem o mesmo matiz. */
 function jitter(channels: readonly [number, number, number]): [number, number, number] {
   return [
     clamp(Math.round(channels[0] * (0.92 + Math.random() * 0.16)), 0, 255),
@@ -453,7 +453,7 @@ function makeStreak(width: number, height: number): Streak {
   return streak;
 }
 
-/** A blank streak, shaped for the pool. Both populations share the record. */
+/** Um risco em branco, no formato do pool. As duas populações dividem o registro. */
 function makeSpark(): Streak {
   return { x: 0, y: 0, vx: 0, vy: 0, width: 1, alpha: 0, colour: MINT_SOLID, life: 0, decay: 0 };
 }
@@ -474,7 +474,7 @@ function reseedStreak(streak: Streak, x: number, y: number): void {
   streak.decay = 0;
 }
 
-/** Reuses a pooled streak as a spark thrown off a shape that was just hit. */
+/** Reusa um risco do pool como faísca jogada por uma forma que acabou de ser acertada. */
 function igniteSpark(spark: Streak, x: number, y: number): void {
   const heading = Math.random() * Math.PI * 2;
   const speed = BURST_SPEED_MIN + Math.random() * (BURST_SPEED_MAX - BURST_SPEED_MIN);
@@ -559,7 +559,7 @@ function advanceStreak(streak: Streak, delta: number, width: number, height: num
   if (streak.y > height + margin) streak.y = -margin;
 }
 
-/** Fades a shape out as it approaches an edge, so nothing pops in or out. */
+/** Apaga a forma conforme ela chega na borda, pra nada aparecer ou sumir de estalo. */
 function edgeFade(shape: Shape, width: number, height: number): number {
   const margin = shape.size * 3;
   const distance = Math.min(
@@ -659,7 +659,7 @@ function traceStar(context: CanvasRenderingContext2D, radius: number): void {
   context.closePath();
 }
 
-/** Four petals around a centre — the same rotational symmetry, filled out. */
+/** Quatro pétalas em volta de um centro — a mesma simetria de rotação, preenchida. */
 function traceQuatrefoil(context: CanvasRenderingContext2D, radius: number): void {
   const petal = radius * 0.42;
   const offset = radius * 0.5;

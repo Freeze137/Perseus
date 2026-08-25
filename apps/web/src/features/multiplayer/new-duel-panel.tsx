@@ -11,14 +11,14 @@ import { MatchHistoryPanel } from "./match-history-panel";
 import { rememberSeat } from "./match-storage";
 
 /**
- * Opening a duel, or walking into one.
+ * Abrir um duelo, ou entrar num.
  *
- * The room inherits whatever the trainer is currently set to. That is the whole
- * configuration step: the settings on screen are the settings somebody just
- * chose to practise against, and asking them to choose again — in a second
- * form, for the same run — would be a worse version of a decision they have
- * already made. The one thing this asks for is the name, because a duel is the
- * only place in the product where somebody else reads it.
+ * A sala herda o que o treinador estiver configurado no momento. É esse o passo
+ * de configuração inteiro: as configurações na tela são as que alguém acabou de
+ * escolher pra treinar, e pedir pra escolher de novo — num segundo formulário,
+ * pra mesma corrida — seria uma versão pior de uma decisão já tomada. A única
+ * coisa que isto pede é o nome, porque duelo é o único lugar do produto em que
+ * outra pessoa o lê.
  */
 export function NewDuelPanel() {
   const router = useRouter();
@@ -67,8 +67,9 @@ export function NewDuelPanel() {
     event.preventDefault();
     const trimmed = code.trim().toUpperCase();
     if (trimmed.length !== INVITE_CODE_LENGTH) return;
-    // The invite screen asks for the name: whoever is joining has not been
-    // asked yet, and asking here would mean asking twice on a bad code.
+    // A tela de convite pede o nome: quem está entrando ainda não foi
+    // perguntado, e perguntar aqui significaria perguntar duas vezes num código
+    // errado.
     router.push(`/duelo/${trimmed}`);
   };
 

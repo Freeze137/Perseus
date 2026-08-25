@@ -34,7 +34,7 @@ import { TypingArea } from "@/features/typing/typing-area";
 import { useTypingSession } from "@/features/typing/use-typing-session";
 import { bagSeed, useBag, useBagHydration } from "@/features/typing/use-bag";
 
-/** Live metrics refresh rate — fast enough to feel live, cheap enough to be free. */
+/** Taxa de atualização das métricas ao vivo — rápida o bastante pra parecer viva, barata o bastante pra ser de graça. */
 const TICK_MS = 100;
 /**
  * Quanto tempo o texto fica abaixado enquanto um cancelamento o troca. Longo o
@@ -42,7 +42,7 @@ const TICK_MS = 100;
  * cancelamento que só substitui a tela parece que o app perdeu a corrida.
  */
 const SWAP_MS = 150;
-/** Long enough for the cleared live region to register as a change. */
+/** Longo o bastante pra região viva limpa registrar como mudança. */
 const ANNOUNCE_MS = 60;
 
 type Drawers = "ranking" | "stats" | null;

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import perseusMark from "@/assets/perseus-mark.png";
 
 type Props = {
-  /** Rendered size in CSS pixels — the canvas is square. */
+  /** Tamanho renderizado em pixels CSS — o canvas é quadrado. */
   size?: number;
   className?: string;
 };
@@ -85,7 +85,7 @@ export function PerseusMark3D({ size = 48, className }: Props) {
         metalness: 0.22,
       });
 
-      /** Rounded square plate (squircle) with soft bevelled edges. */
+      /** Placa quadrada arredondada (squircle) com bordas chanfradas suaves. */
       function plate(sizeUnits: number, radius: number, depth: number) {
         const h = sizeUnits / 2;
         const r = radius;

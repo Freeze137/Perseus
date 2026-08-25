@@ -88,7 +88,7 @@ export class MatchesController {
     return this.matches.summaries(query.ids);
   }
 
-  /** The room, for a tab that has just reloaded and still holds its token. */
+  /** A sala, pra aba que acabou de recarregar e ainda tem o token dela. */
   @Get(':id')
   @RateLimit({ limit: 60, windowMs: 60_000 })
   mine(
@@ -224,7 +224,7 @@ export class MatchesController {
     return this.matches.leave(id, bearer(authorization));
   }
 
-  /** The finished timeline, scored the same way a solo run is. */
+  /** A timeline terminada, pontuada do mesmo jeito que uma corrida solo. */
   @Post(':id/finish')
   @RateLimit({ limit: 20, windowMs: 60_000 })
   finish(

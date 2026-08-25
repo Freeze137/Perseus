@@ -1,11 +1,10 @@
 import { TextKindSchema, type TextKind } from "@perseus/contracts";
 
 /**
- * How each kind of text is written on screen.
+ * Como cada tipo de texto é escrito na tela.
  *
- * Lifted out of the start bar so the labels live in one place: two
- * hand-written lists would have drifted the first time one of them was
- * translated.
+ * Tirado da barra de início pros rótulos morarem num lugar só: duas listas
+ * escritas à mão teriam descolado na primeira vez que uma delas fosse traduzida.
  */
 export const KIND_LABELS: Record<TextKind, string> = {
   words: "Palavras",
@@ -15,6 +14,6 @@ export const KIND_LABELS: Record<TextKind, string> = {
   code: "Código",
 };
 
-/** In contract order, so the picker can never disagree with the generator. */
+/** Na ordem do contrato, pro seletor nunca discordar do gerador. */
 export const KIND_OPTIONS: readonly { value: TextKind; label: string }[] =
   TextKindSchema.options.map((value) => ({ value, label: KIND_LABELS[value] }));

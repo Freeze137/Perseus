@@ -7,12 +7,12 @@ import { signInWithEmail, signOut, useAuth } from "./use-auth";
 type Status = "idle" | "sending" | "sent" | "failed";
 
 /**
- * Sign-in, such as it is.
+ * Login, no que ele é.
  *
- * Email only, no password. There is nothing here worth stealing — a typing
- * speed and a display name — so asking somebody to invent and store a password
- * for it would be collecting a liability in exchange for nothing. A one-time
- * link is also the only flow with no reset flow behind it.
+ * Só e-mail, sem senha. Não há nada aqui que valha roubar — uma velocidade de
+ * digitação e um nome de exibição — então pedir pra alguém inventar e guardar
+ * uma senha pra isso seria acumular passivo em troca de nada. Link de uso único
+ * também é o único fluxo que não tem um fluxo de recuperação atrás dele.
  */
 export function AccountPanel() {
   const { session, loading, configured } = useAuth();

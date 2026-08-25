@@ -24,7 +24,7 @@ import { ResultsService } from '../results/results.service';
 import { RunTicketService } from '../runs/run-ticket.service';
 import type { SupabaseService } from '../supabase/supabase.service';
 
-/** Scoring is pure; the database is only ever written to. */
+/** A pontuação é pura; no banco só se escreve. */
 const offline = { enabled: false } as unknown as SupabaseService;
 
 const REQUEST: CreateMatch = {
@@ -109,7 +109,7 @@ function build() {
   return { registry, save, service };
 }
 
-/** A room with both players in and the countdown already spent. */
+/** Uma sala com os dois jogadores dentro e a regressiva já gasta. */
 function running(service: MatchesService) {
   const host = service.create(REQUEST);
   const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });

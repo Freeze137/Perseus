@@ -13,19 +13,19 @@ import { KeyboardLayoutSchema, type KeyboardLayout } from "@perseus/contracts";
 export type KeyReach = "direct" | "dead" | "none";
 
 export type KeySample = {
-  /** The character as it lands in the text. */
+  /** O caractere como ele cai no texto. */
   char: string;
   reach: KeyReach;
-  /** The actual sequence, for the tooltip and the screen reader. */
+  /** A sequência de verdade, pro tooltip e pro leitor de tela. */
   how: string;
 };
 
 export type LayoutInfo = {
-  /** Full name, for prose. */
+  /** Nome completo, pra prosa. */
   label: string;
-  /** Short name, for the segmented control where three must fit on one row. */
+  /** Nome curto, pro controle segmentado onde três têm que caber numa linha. */
   short: string;
-  /** How to recognise this keyboard without looking it up. */
+  /** Como reconhecer este teclado sem ir procurar. */
   tell: string;
   keys: readonly KeySample[];
 };

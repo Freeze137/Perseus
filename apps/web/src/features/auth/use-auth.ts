@@ -5,19 +5,19 @@ import { useEffect, useState } from "react";
 import { supabase, syncConfigured } from "@/lib/supabase";
 
 export type AuthState = {
-  /** Null while unknown, and null forever when sync is not configured. */
+  /** Null enquanto não se sabe, e null pra sempre quando não há sync configurado. */
   session: AuthSession | null;
-  /** False once we know one way or the other. */
+  /** False assim que se sabe de um jeito ou de outro. */
   loading: boolean;
   configured: boolean;
 };
 
 /**
- * Whether anybody is signed in.
+ * Se tem alguém logado.
  *
- * Deliberately thin: sign-in is email-only, so there is no password to hold, no
- * token to refresh by hand and nothing here that would be a liability if it
- * leaked. Supabase owns the session; this only mirrors it into React.
+ * Fino de propósito: o login é só por e-mail, então não há senha pra guardar,
+ * token pra renovar na mão, nem nada aqui que fosse passivo se vazasse. O dono
+ * da sessão é o Supabase; isto só a espelha no React.
  */
 export function useAuth(): AuthState {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -46,7 +46,7 @@ export function useAuth(): AuthState {
   return { session, loading, configured: syncConfigured };
 }
 
-/** Sends a one-time sign-in link. No password is ever created or stored. */
+/** Manda um link de login de uso único. Nenhuma senha é criada ou guardada. */
 export async function signInWithEmail(email: string): Promise<void> {
   if (!supabase) throw new Error("sync is not configured");
   const { error } = await supabase.auth.signInWithOtp({

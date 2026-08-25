@@ -21,7 +21,7 @@ export const SPRING = {
    * digitar.
    */
   panel: { type: "spring", stiffness: 320, damping: 34, mass: 0.9 },
-  /** Something small snapping to a new position, like a selected segment. */
+  /** Algo pequeno estalando pra uma posição nova, como um segmento selecionado. */
   snap: { type: "spring", stiffness: 560, damping: 40, mass: 0.7 },
   /**
    * Uma tecla viajando entre dois grupos, longe o bastante pro olho seguir.

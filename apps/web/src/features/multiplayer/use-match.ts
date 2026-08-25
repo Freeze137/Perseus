@@ -6,11 +6,11 @@ import { ApiError, matchStreamUrl, readMatch } from "@/lib/api";
 
 export type MatchLink = {
   match: Match | null;
-  /** Which player this browser is. Null until the room answers. */
+  /** Qual jogador este browser é. Null até a sala responder. */
   slot: number | null;
-  /** Whether the event stream is currently open. */
+  /** Se o stream de eventos está aberto agora. */
   connected: boolean;
-  /** Set when the room refused us or is gone. Terminal — no retry will help. */
+  /** Preenchido quando a sala recusou ou já era. Terminal: retentar não ajuda. */
   error: string | null;
   /**
    * O relógio do servidor, até onde este browser consegue saber.

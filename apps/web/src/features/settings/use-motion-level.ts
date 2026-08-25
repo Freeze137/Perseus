@@ -5,11 +5,12 @@ import { useSettings } from "./use-settings";
 import { motionLevelOf, type MotionLevel } from "./performance-tiers";
 
 /**
- * What this reader's interface is allowed to animate with, right now.
+ * Com o que a interface desta pessoa pode animar, agora.
  *
- * One hook so the two inputs — the performance level they chose and the motion
- * preference their system carries — are combined in one place. Components that
- * asked `useReducedMotion()` on their own could only ever see half the answer.
+ * Um hook só pras duas entradas — o nível de desempenho que ela escolheu e a
+ * preferência de movimento que o sistema dela carrega — serem combinadas num
+ * lugar. Componente que perguntasse `useReducedMotion()` sozinho só conseguiria
+ * ver metade da resposta.
  */
 export function useMotionLevel(): MotionLevel {
   const reduced = useReducedMotion();

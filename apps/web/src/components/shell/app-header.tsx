@@ -10,40 +10,40 @@ type Props = {
   onOpenDuel: () => void;
   onOpenStats: () => void;
   onOpenSettings: () => void;
-  /** Header steps back during a run, like everything that is not the text. */
+  /** O cabeçalho recua durante a corrida, como tudo que não é o texto. */
   dimmed: boolean;
 };
 
-/** Which side of the wordmark the 3D mark leans on. */
+/** De que lado do nome a marca 3D se encosta. */
 type Placement = "before" | "after";
 
 /**
- * Pin the lockup here once the side is decided.
+ * Fixe o conjunto aqui quando o lado estiver decidido.
  *
- * `null` alternates the mark from week to week so both arrangements can be
- * lived with before one is chosen. A logo that moves is not a logo, so this is
- * a trial and not a feature: set it to "before" or "after" and everything
- * below stops mattering.
+ * `null` alterna a marca de semana em semana pros dois arranjos serem vividos
+ * antes de um ser escolhido. Logo que se move não é logo, então isto é um teste
+ * e não uma funcionalidade: ponha "before" ou "after" e tudo abaixo deixa de
+ * importar.
  */
 const PINNED: Placement | null = null;
 
 const WEEK_MS = 604_800_000;
 
-/** Nothing to subscribe to: the week does not turn over mid-run. */
+/** Nada pra assinar: a semana não vira no meio de uma corrida. */
 const noSubscribe = () => () => {};
-/** Stable for a week at a time, which is what makes it a snapshot at all. */
+/** Estável por uma semana de cada vez, que é o que faz disto um retrato. */
 const readWeek = (): Placement =>
   Math.floor(Date.now() / WEEK_MS) % 2 === 0 ? "before" : "after";
 const serverWeek = (): Placement => "before";
 
 /**
- * The trial runs on the calendar rather than on a coin toss: the mark has to
- * stay put long enough to be judged, and a side that changes on every reload
- * is a glitch rather than a variant.
+ * O teste roda pelo calendário e não no cara ou coroa: a marca precisa ficar
+ * parada tempo suficiente pra ser julgada, e um lado que muda a cada
+ * recarregamento é defeito, não variante.
  *
- * Client-only on purpose. The prerender has no week it can trust — it would
- * be reading one in UTC for a typist who lives three hours west of it — so it
- * writes "before" and hydration settles the real answer.
+ * Só no cliente, de propósito. O prerender não tem semana em que confiar — leria
+ * uma em UTC pra alguém que vive três horas a oeste — então escreve "before" e a
+ * hidratação resolve a resposta de verdade.
  */
 function usePlacement(): Placement {
   const week = useSyncExternalStore(noSubscribe, readWeek, serverWeek);

@@ -13,7 +13,7 @@ const BASE =
   "disabled:pointer-events-none disabled:opacity-40";
 
 const VARIANTS: Record<Variant, string> = {
-  // The default action: a 1px gradient edge, never a filled green slab.
+  // A ação padrão: uma borda de 1px com gradiente, nunca um bloco verde cheio.
   edge: "bg-obsidian text-bone shadow-[inset_0_0_0_1px] shadow-emerald/60 hover:shadow-mint/80 hover:text-mint",
   ghost: "text-ash hover:text-bone hover:bg-obsidian",
   quiet: "text-ash hover:text-mint",

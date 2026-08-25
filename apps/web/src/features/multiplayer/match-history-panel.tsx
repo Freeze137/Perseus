@@ -13,20 +13,20 @@ import {
 type State =
   | { status: "loading" }
   | { status: "error" }
-  /** The server has no database behind duels, so nothing was kept. */
+  /** O servidor não tem banco atrás dos duelos, então nada foi guardado. */
   | { status: "unstored"; matches: MatchSummary[] }
   | { status: "ready"; matches: MatchSummary[] };
 
 /**
- * Past duels, as this browser remembers them.
+ * Duelos passados, como este browser os lembra.
  *
- * The list of ids is local and the rows are the server's — which is the honest
- * arrangement when there is no account: the duel belongs to both players, and
- * the only thing that is really "yours" is the knowledge that you were in it.
- * Clearing this browser loses the list and not the duels.
+ * A lista de ids é local e as linhas são do servidor — que é o arranjo honesto
+ * quando não existe conta: o duelo pertence aos dois jogadores, e a única coisa
+ * que é de fato "sua" é saber que você esteve nele. Limpar este browser perde a
+ * lista e não os duelos.
  */
 export function MatchHistoryPanel() {
-  // Which duels are this browser's is state outside React; it is read as such.
+  // Quais duelos são deste browser é estado fora do React; é lido como tal.
   const ids = useSyncExternalStore(subscribeDuels, readMatchIds, noMatchIds);
   const [state, setState] = useState<State>({ status: "loading" });
 
@@ -51,8 +51,8 @@ export function MatchHistoryPanel() {
     };
   }, [ids]);
 
-  // Derived rather than stored: an empty list is something the render can see
-  // for itself, and a state for it would be a second copy of the same fact.
+  // Derivado em vez de guardado: lista vazia é coisa que o render enxerga
+  // sozinho, e um estado pra isso seria uma segunda cópia do mesmo fato.
   if (ids.length === 0 || (state.status === "ready" && state.matches.length === 0)) {
     return (
       <p className="text-sm leading-relaxed text-ash">
@@ -125,7 +125,7 @@ function outcome(match: MatchSummary): string {
   return winner ? `${winner.displayName} venceu` : "Encerrado";
 }
 
-/** Short and local. A duel from this afternoon does not need a year on it. */
+/** Curto e local. Duelo desta tarde não precisa de ano. */
 function when(iso: string | null): string {
   if (!iso) return "—";
   const date = new Date(iso);

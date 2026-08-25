@@ -23,15 +23,15 @@ import { useMotionLevel } from "@/features/settings/use-motion-level";
  */
 const SETTLE = { duration: 0.44, ease: [0.16, 1, 0.3, 1] } as const;
 
-/** How long each row waits behind the one above it. */
+/** Quanto cada linha espera atrás da de cima. */
 const STEP_MS = 0.09;
 
-/** The speed the counters run at. Long enough to read as counting. */
+/** A velocidade em que os contadores correm. Longa o bastante pra ler como contagem. */
 const COUNT = { duration: 0.85, ease: [0.16, 1, 0.3, 1] } as const;
 
 type Props = {
   match: Match;
-  /** Which player is reading this. Null when neither — a spectator's link. */
+  /** Qual jogador está lendo isto. Null quando nenhum — link de espectador. */
   slot: number | null;
   /** A cadeira desta aba, quando ela tem uma. Espectador não tem e não recebe
    *  oferta de revanche. */

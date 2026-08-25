@@ -25,7 +25,7 @@ import { z } from "zod";
 const CONFIGURED_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-/** Where the scoring API is. */
+/** Onde a API de pontuação está. */
 function base(): string {
   return CONFIGURED_BASE;
 }
@@ -60,7 +60,7 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 
-  /** True when trying again later could plausibly work. */
+  /** True quando tentar de novo mais tarde tem chance de funcionar. */
   get retryable(): boolean {
     if (this.status === 429 || this.status >= 500) return true;
     // Falha de rede chega sem status nenhum.
@@ -154,7 +154,7 @@ export async function startRun(accessToken: string): Promise<RunTicket> {
   });
 }
 
-/** Your own past runs, newest first, with the best of them alongside. */
+/** Suas corridas passadas, da mais nova, com as melhores ao lado. */
 export async function readHistory(
   accessToken: string,
   query: Partial<HistoryQuery> = {},
@@ -186,7 +186,7 @@ export async function createMatch(
   });
 }
 
-/** What is behind an invite code, before the visitor commits to a name. */
+/** O que tem atrás de um código de convite, antes de a pessoa escolher um nome. */
 export async function previewMatch(code: string): Promise<Match> {
   return request(`/matches/code/${encodeURIComponent(code)}`, MatchSchema);
 }
@@ -207,7 +207,7 @@ const MatchSeatSchema = z.object({
   slot: z.int().min(1).max(2),
 });
 
-/** The room as this player sees it — what a reloaded tab asks for. */
+/** A sala como este jogador a vê — o que uma aba recarregada pede. */
 export async function readMatch(
   id: string,
   token: string,
@@ -240,7 +240,7 @@ export async function publishProgress(
   });
 }
 
-/** The finished timeline. Scored server-side, exactly like a solo run. */
+/** A timeline terminada. Pontuada no servidor, exatamente como corrida solo. */
 export async function finishMatch(
   id: string,
   token: string,

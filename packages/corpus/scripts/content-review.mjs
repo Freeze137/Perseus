@@ -1,9 +1,9 @@
-// Writes the ambiguous-accent cases out for a human to read.
+// Escreve os casos de acento ambíguo pra uma pessoa ler.
 //
-// Runs against dist rather than src so the corpus package itself never needs
-// @types/node: it ships to a browser bundle, and a filesystem import in its
-// source would be a dependency the browser can neither use nor tree-shake away
-// with confidence.
+// Roda contra o dist e não contra o src pro pacote do corpus nunca precisar de
+// @types/node: ele vai pra um bundle de browser, e um import de sistema de
+// arquivos no fonte dele seria uma dependência que o browser não usa nem
+// consegue remover por tree-shaking com confiança.
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -8,7 +8,7 @@ type Props = {
   now: number;
 };
 
-/** Keys shown in the weak-keys list — enough to act on, few enough to read. */
+/** Teclas mostradas na lista de teclas fracas — o bastante pra agir, poucas o bastante pra ler. */
 const WEAK_KEYS = 5;
 
 export function LiveStatsPanel({ session, now }: Props) {

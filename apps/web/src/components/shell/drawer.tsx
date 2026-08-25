@@ -16,18 +16,19 @@ type Props = {
 };
 
 /**
- * A side panel that stays out of the way until asked for.
+ * Um painel lateral que fica fora do caminho até ser chamado.
  *
- * The screen belongs to the text: anything permanently parked beside it is
- * something the eye has to keep dismissing while typing.
+ * A tela pertence ao texto: qualquer coisa estacionada em permanência ao lado é
+ * coisa que o olho tem que ficar dispensando enquanto digita.
  *
- * It stays mounted and slides on a spring rather than unmounting, so that a
- * panel caught halfway — opened, reconsidered, closed again — leaves from where
- * it actually is. A tween would snap back to the start of a new one.
+ * Fica montado e desliza numa mola em vez de desmontar, pra um painel pego no
+ * meio — aberto, repensado, fechado de novo — sair de onde de fato está. Uma
+ * tween voltaria pro início de outra.
  *
- * Mounted is not the same as reachable: `inert` takes the whole subtree out of
- * the tab order and off the accessibility tree while it is closed. Before it,
- * every control inside a shut drawer was still tabbable from the typing screen.
+ * Montado não é a mesma coisa que alcançável: o `inert` tira a subárvore inteira
+ * da ordem de tabulação e da árvore de acessibilidade enquanto está fechado.
+ * Antes dele, todo controle dentro de uma gaveta fechada ainda era tabulável a
+ * partir da tela de digitação.
  */
 export function Drawer({ open, onClose, title, side, children }: Props) {
   const level = useMotionLevel();
@@ -47,10 +48,10 @@ export function Drawer({ open, onClose, title, side, children }: Props) {
     return () => setOverlayOpen(false, `drawer:${title}`);
   }, [open, title]);
 
-  // Focus follows the panel in. Without it the drawer opens somewhere a
-  // keyboard cannot get to, and the tab order carries on behind it as though
-  // nothing had happened. Going back out is the page's job — it hands focus to
-  // the typing input, which is where the next keystroke should land anyway.
+  // O foco entra junto com o painel. Sem isso a gaveta abre num lugar onde o
+  // teclado não chega, e a ordem de tabulação segue atrás dela como se nada
+  // tivesse acontecido. Sair de volta é trabalho da página — ela entrega o foco
+  // ao input de digitação, que é onde a próxima tecla deve cair de qualquer jeito.
   useEffect(() => {
     if (open) closeRef.current?.focus();
   }, [open]);

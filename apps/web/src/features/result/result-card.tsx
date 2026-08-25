@@ -10,14 +10,14 @@ import { TIERS, type PerformanceTier } from '@/features/settings/performance-tie
 
 type Props = {
   session: Session;
-  /** Only used to say what the numbers mean — code and prose do not compare. */
+  /** Só serve pra dizer o que os números querem dizer — código e prosa não se comparam. */
   kind: TextKind;
-  /** Whether this run made it onto the board, and honestly when it did not. */
+  /** Se esta corrida entrou no ranking, e honestamente quando não entrou. */
   sync: SyncState;
-  /** What the machine actually managed during the run. Null if unmeasured. */
+  /** O que a máquina de fato conseguiu durante a corrida. Null se não medido. */
   frames: FrameReport | null;
   tier: PerformanceTier;
-  /** Steps the interface down one level. Offered, never taken. */
+  /** Desce a interface um nível. Oferecido, nunca tomado. */
   onEase: () => void;
   onRestart: () => void;
   onNewText: () => void;
@@ -26,8 +26,8 @@ type Props = {
 const WEAK_KEYS = 8;
 
 /**
- * Shown the instant the last character lands — nobody should have to click to
- * find out how they did. Enter repeats the same text, N draws a new one.
+ * Aparece no instante em que o último caractere cai — ninguém devia ter que
+ * clicar pra saber como foi. Enter repete o mesmo texto, N sorteia outro.
  */
 export function ResultCard({
   session,
@@ -45,9 +45,9 @@ export function ResultCard({
     () => keyStats(session).filter((key) => key.errors > 0).slice(0, WEAK_KEYS),
     [session],
   );
-  // Offered only when the machine genuinely missed frames its own display was
-  // ready to give it, and there is a lighter level left to move to. A steady
-  // 30 fps on a 30 Hz panel is not a problem and is never mentioned.
+  // Oferecido só quando a máquina de fato perdeu frames que a própria tela
+  // estava pronta pra dar, e ainda existe um nível mais leve pra onde ir. Um
+  // 30 fps firme numa tela de 30 Hz não é problema e nunca é mencionado.
   const struggled = frames !== null && frames.struggling && tier !== 'minimal';
   const nextTier: PerformanceTier = tier === 'full' ? 'light' : 'minimal';
 
@@ -64,7 +64,7 @@ export function ResultCard({
   }, [onRestart, onNewText]);
 
   return (
-    // Announced once, at the end — reading metrics aloud mid-run would be noise.
+    // Anunciado uma vez, no fim — ler métrica em voz alta no meio seria ruído.
     <section aria-live="polite" className="flex flex-col gap-8">
       <Block delay={0} className="flex items-end gap-8">
         <p className="flex items-baseline gap-2">
@@ -251,7 +251,7 @@ function Stat({
 }: {
   label: string;
   value: string;
-  /** 'lead' marks the figure that actually matters for this run. */
+  /** 'lead' marca o número que de fato importa nesta corrida. */
   tone?: 'plain' | 'warm' | 'lead';
 }) {
   const colour =

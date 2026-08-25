@@ -1,19 +1,19 @@
-// Builds the phrase banks from the Tatoeba sentence exports.
+// Monta os bancos de frases a partir dos exports de frases do Tatoeba.
 //
-// Tatoeba is the right source for a typing trainer because of what it *is*:
-// standalone sentences, written and reviewed by native speakers, one per line.
-// A news corpus or a book dump would have needed sentence segmentation first,
-// and segmentation is where fragments come from — "he said, and then" is a
-// perfectly good half-sentence and a terrible thing to ask somebody to type.
+// O Tatoeba é a fonte certa pra um treinador de digitação por causa do que ele
+// *é*: frases soltas, escritas e revisadas por falantes nativos, uma por linha.
+// Um corpus de notícia ou um despejo de livro precisaria de segmentação antes,
+// e segmentação é de onde vêm os fragmentos — "ele disse, e então" é uma
+// meia-frase perfeitamente boa e uma coisa péssima de pedir pra alguém digitar.
 //
 //   node scripts/ingest-tatoeba.mjs <dir-with-por.tsv-and-eng.tsv>
 //
-// Deterministic: the same exports produce the same banks, because the shuffle
-// is seeded. Re-running it after a Tatoeba refresh is a reviewable diff rather
-// than a wholesale replacement.
+// Determinístico: os mesmos exports produzem os mesmos bancos, porque o
+// embaralhamento tem semente. Rodar de novo depois de uma atualização do Tatoeba
+// dá um diff revisável em vez de uma substituição inteira.
 //
-// Licence: Tatoeba sentences are CC-BY 2.0 FR. See ATTRIBUTION.md — the credit
-// is a condition of use, not a courtesy.
+// Licença: as frases do Tatoeba são CC-BY 2.0 FR. Ver ATTRIBUTION.md — o crédito
+// é condição de uso, não cortesia.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,16 +25,16 @@ if (!source) {
   process.exit(2);
 }
 
-/** Sentence length band, matching what the banks already promise. */
+/** Faixa de tamanho da frase, batendo com o que os bancos já prometem. */
 const MIN_LENGTH = 40;
 const MAX_LENGTH = 140;
 
 /**
- * How many sentences each pool should end up with.
+ * Com quantas frases cada pool deve terminar.
  *
- * Split by pool rather than as one total because the pools are what a run
- * actually draws from: ten thousand sentences with no commas would leave the
- * punctuation mode exactly as starved as it is today.
+ * Dividido por pool em vez de um total só porque é das pools que uma corrida
+ * de fato sorteia: dez mil frases sem vírgula deixariam o modo de pontuação
+ * exatamente tão faminto quanto ele é hoje.
  */
 const TARGETS = { simple: 3000, punctuated: 2000, numbers: 600 };
 
@@ -59,15 +59,15 @@ const TARGETS = { simple: 3000, punctuated: 2000, numbers: 600 };
  */
 const PT_ASCII_SHARE = 0.45;
 
-/** Characters a sentence may contain. Everything else drops the sentence. */
+/** Caracteres que uma frase pode conter. Qualquer outro derruba a frase. */
 const ALLOWED = /^[\p{L}\p{M}\p{N} ,.;:!?'-]+$/u;
 
 /**
- * Words that make a sentence a bad thing to hand somebody at random.
+ * Palavras que fazem de uma frase coisa ruim de entregar a alguém no sorteio.
  *
- * Politics, religion, war, crime, illness and sex are all out — not because
- * the sentences are wrong, but because a typing drill is not the place to be
- * confronted with them, and a random draw cannot read the room.
+ * Política, religião, guerra, crime, doença e sexo ficam de fora — não porque
+ * as frases estejam erradas, mas porque um treino de digitação não é lugar de
+ * ser confrontado com elas, e um sorteio aleatório não lê o ambiente.
  */
 const BLOCKED = new RegExp(
   [
@@ -91,35 +91,35 @@ const BLOCKED = new RegExp(
     'sex|sexual|naked|whore|prostitut|shit|fuck|damn',
     'governor|mayor|senator|minister|candidate|army|soldier|battle',
     'invasion|revolution|protest|strike|tax|taxes|slave|slavery',
-    // Phrasings that carry the same weight without any of the words above:
-    // "He made the decision to end his life" got through the first pass.
+    // Construções que carregam o mesmo peso sem nenhuma das palavras acima:
+    // "He made the decision to end his life" passou na primeira peneira.
     'depress|lonely|grief|funeral|grave|end (his|her|my|their) life|dying',
   ].join('|'),
   'iu',
 );
 
 /**
- * European Portuguese, which the `por` export mixes in with Brazilian.
+ * Português europeu, que o export `por` mistura com o brasileiro.
  *
- * The bank is pt-BR, and second-person-singular conjugation is the cleanest
- * signal: "preocupas", "queres", "tens" are not how a Brazilian writes, and a
- * typing drill that teaches them is teaching the wrong language to the person
- * who chose Portuguese expecting their own.
+ * O banco é pt-BR, e a conjugação de segunda pessoa do singular é o sinal mais
+ * limpo: "preocupas", "queres", "tens" não é como um brasileiro escreve, e um
+ * treino de digitação que ensina isso está ensinando a língua errada pra quem
+ * escolheu português esperando a própria.
  */
 const EUROPEAN_PT = new RegExp(
   [
-    // Second-person-singular pronouns and possessives.
+    // Pronomes e possessivos de segunda pessoa do singular.
     '\\b(tu|teu|teus|tua|tuas|contigo)\\b',
-    // Second-person-singular verbs, listed rather than matched by suffix: a
-    // rule like /\\w+este\\b/ would also swallow "deste", "neste" and "leste",
-    // which are ordinary Brazilian words.
+    // Verbos de segunda pessoa do singular, listados em vez de casados por
+    // sufixo: uma regra tipo /\\w+este\\b/ engoliria também "deste", "neste" e
+    // "leste", que são palavras brasileiras comuns.
     '\\b(est[áa]s|queres|podes|tens|fazes|vais|sabes|dizes|v[êe]s|d[áa]s|' +
       'preocupas|gostas|achas|pensas|falas|moras|trabalhas|precisas|' +
       'conseguires|possas|vou-me|d[áa]-me|diz-me)\\b',
-    // Vocabulary that differs outright between the two countries.
+    // Vocabulário que difere de vez entre os dois países.
     '\\b(comboio|autocarro|telem[óo]vel|ecr[ãa]|pequeno-almo[çc]o|' +
       'frigor[íi]fico|rapariga|autoclismo|sandes|talho|rel[vw]ado)\\b',
-    // Spellings the 1990 agreement left different on the two sides.
+    // Grafias que o acordo de 1990 deixou diferentes dos dois lados.
     '\\b(aspeto|rece[çc][ãa]o|conce[çc][ãa]o|dete[çc][ãa]o|perce[çc][ãa]o|' +
       'contacto|fato de banho|casa de banho)\\b',
     // Consoantes mudas que o Brasil não escreve. Cuidado com a direção: o
@@ -131,20 +131,20 @@ const EUROPEAN_PT = new RegExp(
       'Egipto|h[úu]mid[oa]s?|connosco|reflect\\w*|arquitect\\w*|' +
       'electr[óo]nic\\w*|espect[áa]cul\\w*|ac[çc][ãa]o|sec[çc][ãa]o|' +
       'infec[çc]\\w*|selec[çc]\\w*|colec[çc]\\w*|direc[çc][ãa]o)\\b',
-    // The joins matter: these are alternatives to each other, not a sequence.
-    // Building this with .join('') concatenated the groups instead, which
-    // demanded all of them in one sentence and so matched nothing at all.
+    // Os joins importam: estes são alternativas entre si, não uma sequência.
+    // Montar isto com .join('') concatenava os grupos, o que exigia todos eles
+    // numa frase só e portanto não casava com nada.
   ].join('|'),
   'iu',
 );
 
 /**
- * Portuguese words that never exist without their accent.
+ * Palavras que nunca existem em português sem o acento.
  *
- * Duplicated from validate.ts rather than imported: this script runs before
- * the package is built, and a stale dist would silently let the misspellings
- * through. The validator is the authority — anything that slips past here is
- * caught by `pnpm validate:content` before it can be committed.
+ * Duplicadas do validate.ts em vez de importadas: este script roda antes de o
+ * pacote ser construído, e um dist velho deixaria as grafias erradas passarem
+ * caladas. A autoridade é o validador — o que escapar daqui é pego pelo
+ * `pnpm validate:content` antes de poder ser commitado.
  */
 const NEVER_UNACCENTED = new Set(
   ('voce voces nao tambem alem portugues ninguem alguem apos atraves musica ' +
@@ -168,10 +168,10 @@ const NEVER_UNACCENTED = new Set(
 const ENGLISH_IN_PT =
   /\b(the|and|with|that|this|from|they|have|been|which|their|would|about|there)\b/i;
 
-/** English words that mark a sentence as being about a named person. */
+/** Palavras em inglês que marcam a frase como sendo sobre uma pessoa com nome. */
 const NAME_HINT = /\b(Tom|Mary|John|Jane|Bob|Alice|Ken|Yumi|Taro)\b/;
 
-/** Mulberry32, so a rerun of this script reshuffles nothing. */
+/** Mulberry32, pra rodar este script de novo não reembaralhar nada. */
 function createRandom(seed) {
   let state = seed >>> 0;
   return () => {
@@ -205,11 +205,11 @@ function normalize(text) {
 const isAscii = (text) => /^[\x20-\x7e]*$/.test(text);
 
 /**
- * Whether a capital letter appears where a new sentence did not begin.
+ * Se aparece maiúscula onde não começou frase nova.
  *
- * This is the filter that makes Tatoeba usable. Its most common sentence shape
- * is "Tom told Mary that…", and a bank full of two names nobody knows reads as
- * machine output no matter how correct each sentence is.
+ * É este o filtro que torna o Tatoeba usável. O formato de frase mais comum
+ * dele é "Tom told Mary that…", e um banco cheio de dois nomes que ninguém
+ * conhece lê como saída de máquina por mais correta que cada frase esteja.
  */
 function hasInteriorCapital(text) {
   const words = text.split(' ');
@@ -236,7 +236,7 @@ function accepts(text, language) {
   if (NAME_HINT.test(text)) return false;
   if (BLOCKED.test(text)) return false;
 
-  // A sentence that is mostly one long word teaches one long word.
+  // Frase que é quase toda uma palavra longa ensina uma palavra longa.
   const words = text.split(' ');
   if (words.length < 6) return false;
 
@@ -256,16 +256,16 @@ function accepts(text, language) {
 }
 
 /**
- * How often each word appears lowercase, away from the start of a sentence.
+ * Com que frequência cada palavra aparece em minúscula, longe do começo da frase.
  *
- * This is what separates "Roy aparenta…" from "Acho que…" without shipping a
- * list of every first name on earth. A capitalized first word whose lowercase
- * form is common elsewhere in the corpus is an ordinary word that happened to
- * open a sentence; one that is almost never seen lowercase is a name.
+ * É isto que separa "Roy aparenta…" de "Acho que…" sem embarcar uma lista de
+ * todo primeiro nome do mundo. Primeira palavra com maiúscula cuja forma em
+ * minúscula é comum no resto do corpus é palavra comum que por acaso abriu a
+ * frase; a que quase nunca é vista em minúscula é nome.
  *
- * The corpus checks itself here, which is the property that matters: a name
- * list would go stale, and Tatoeba's names are not the ones a hand-written
- * list would have guessed anyway.
+ * O corpus se confere sozinho aqui, e é essa a propriedade que importa: lista
+ * de nome envelheceria, e os nomes do Tatoeba não são os que uma lista escrita
+ * à mão teria adivinhado de qualquer jeito.
  */
 function lowercaseFrequency(sentences) {
   const counts = new Map();
@@ -291,8 +291,9 @@ function opensWithAName(text, frequency) {
 
 function poolOf(text) {
   if (/\p{N}/u.test(text)) return 'numbers';
-  // Inner punctuation only, matching POOLS.punctuated in generate.ts: a plain
-  // question drills no comma, and Tatoeba has tens of thousands of them.
+  // Só pontuação interna, batendo com POOLS.punctuated no generate.ts: uma
+  // pergunta simples não treina vírgula nenhuma, e o Tatoeba tem dezenas de
+  // milhares delas.
   if (/[,;:!?]/.test(text.slice(0, -1))) return 'punctuated';
   if (/^[\p{L}\p{M} ]+\.$/u.test(text)) return 'simple';
   return null;
@@ -305,12 +306,12 @@ function jaccard(a, b) {
 }
 
 /**
- * Picks sentences that are not near-copies of the ones already picked.
+ * Escolhe frases que não são quase-cópias das já escolhidas.
  *
- * The comparison is restricted to candidates that share a word with the one
- * under test, through an inverted index. A full pairwise pass over tens of
- * thousands of candidates is quadratic and pointless: two sentences with no
- * word in common cannot be near-duplicates of each other.
+ * A comparação é restrita a candidatas que dividem uma palavra com a que está
+ * sendo testada, por um índice invertido. Uma passada par a par completa sobre
+ * dezenas de milhares de candidatas é quadrática e inútil: duas frases sem
+ * palavra em comum não podem ser quase-duplicatas uma da outra.
  */
 function selectDistinct(candidates, target, taken, index) {
   const chosen = [];
@@ -361,8 +362,9 @@ function load(file, language) {
     passed.push(text);
   }
 
-  // The name filter needs the whole surviving corpus before it can judge any
-  // one sentence, so it runs as a second pass rather than inside `accepts`.
+  // O filtro de nome precisa do corpus sobrevivente inteiro antes de julgar
+  // qualquer frase, então roda numa segunda passada em vez de dentro do
+  // `accepts`.
   const frequency = lowercaseFrequency(passed);
   const kept = [];
   let names = 0;
@@ -388,16 +390,16 @@ function load(file, language) {
 }
 
 /**
- * Writes the ingested sentences to their own file, beside the curated banks.
+ * Escreve as frases importadas num arquivo próprio, ao lado dos bancos curados.
  *
- * Additive on purpose. The 197 hand-written sentences carry register tags and
- * a voice that a corpus dump does not have, and overwriting them to gain
- * volume would trade something nobody can rebuild for something that can be
- * regenerated any time by rerunning this script.
+ * Aditivo de propósito. As 197 frases escritas à mão carregam tags de registro
+ * e uma voz que despejo de corpus não tem, e sobrescrevê-las pra ganhar volume
+ * trocaria algo que ninguém reconstrói por algo que dá pra regerar a qualquer
+ * momento rodando este script.
  *
- * The `tat-` prefix keeps the two id spaces apart: `pt-001` and `pt-0001` are
- * different strings, which is exactly the kind of near-collision that reads as
- * fine right up until a result is filed against the wrong sentence.
+ * O prefixo `tat-` mantém os dois espaços de id separados: `pt-001` e `pt-0001`
+ * são strings diferentes, que é exatamente o tipo de quase-colisão que parece
+ * bem até um resultado ser arquivado contra a frase errada.
  */
 function emit(language, phrases) {
   const prefix = language === 'pt-BR' ? 'tat-pt' : 'tat-en';
@@ -411,16 +413,16 @@ function emit(language, phrases) {
   const header = `import type { Phrase } from './types';
 
 /**
- * ${label} drawn from the Tatoeba corpus, 40-140 characters each.
+ * ${label} tiradas do corpus Tatoeba, 40-140 caracteres cada.
  *
- * Generated by scripts/ingest-tatoeba.mjs — do not edit by hand, rerun the
- * script. Every sentence here was written and reviewed by a native speaker on
- * Tatoeba and then put through the filters in that script: length, real final
- * punctuation, no interior capitals (which is what keeps the corpus's endless
- * "Tom told Mary" sentences out), no named people, no politics or religion or
- * violence, and no near-duplicates of each other.
+ * Gerado por scripts/ingest-tatoeba.mjs — não edite na mão, rode o script de
+ * novo. Toda frase daqui foi escrita e revisada por falante nativo no Tatoeba e
+ * depois passou pelos filtros daquele script: tamanho, pontuação final de
+ * verdade, sem maiúscula no meio (que é o que segura as infinitas frases "Tom
+ * disse a Mary" do corpus), sem nome de pessoa, sem política, religião ou
+ * violência, e sem quase-duplicata entre si.
  *
- * Licence: CC-BY 2.0 FR. The credit in ATTRIBUTION.md is a condition of use.
+ * Licença: CC-BY 2.0 FR. O crédito no ATTRIBUTION.md é condição de uso.
  */
 export const ${constant}: readonly Phrase[] = [
 `;

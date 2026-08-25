@@ -1,19 +1,19 @@
 /**
- * The origin this deploy answers from.
+ * A origem de onde este deploy responde.
  *
- * Only ever read for absolute URLs that leave the page — Open Graph images, the
- * canonical link, the JSON-LD. Everything the browser fetches for itself stays
- * relative, so a preview deploy never links back at production.
+ * Só é lida pra URL absoluta que sai da página — imagem de Open Graph, o link
+ * canônico, o JSON-LD. Tudo que o browser busca pra si mesmo fica relativo, pra
+ * um deploy de preview nunca apontar de volta pra produção.
  *
- * The Vercel variable is the fallback rather than the source: it names the
- * deployment, which for production is the project domain but for a preview is a
- * hash nobody will ever type. A custom domain belongs in NEXT_PUBLIC_SITE_URL.
+ * A variável da Vercel é o fallback e não a fonte: ela nomeia o deploy, que em
+ * produção é o domínio do projeto mas num preview é um hash que ninguém vai
+ * digitar. Domínio próprio é lugar do NEXT_PUBLIC_SITE_URL.
  *
- * Empty counts as absent, and that is the whole reason this is written with a
- * helper rather than with `??`. A variable declared and left blank is what a
- * .env.example produces the first time somebody copies it, and `??` would hand
- * that empty string to `new URL()` — which fails the build with "Invalid URL"
- * and says nothing about where the empty string came from.
+ * Vazio conta como ausente, e é esse o motivo inteiro disto ser escrito com um
+ * helper em vez de com `??`. Variável declarada e deixada em branco é o que um
+ * .env.example produz na primeira vez que alguém o copia, e o `??` entregaria
+ * essa string vazia pro `new URL()` — que quebra o build com "Invalid URL" e não
+ * diz nada sobre de onde a string vazia veio.
  */
 function set(value: string | undefined): string | undefined {
   const trimmed = value?.trim();

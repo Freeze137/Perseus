@@ -21,33 +21,33 @@ type Props = {
   onInput: (text: string) => void;
   onBackspace: () => void;
   onRestart: () => void;
-  /** Escape: abandon the run. The page decides whether that is allowed. */
+  /** Escape: abandona a corrida. A página decide se isso é permitido. */
   onCancel: () => void;
-  /** Dips the text for one beat while a cancel swaps the target underneath. */
+  /** Abaixa o texto por uma batida enquanto um cancelamento troca o alvo embaixo. */
   swapping: boolean;
-  /** Bumped by the page whenever an overlay closes, to take focus back. */
+  /** Incrementado pela página sempre que uma camada fecha, pra retomar o foco. */
   focusSignal: number;
 };
 
 type Word = {
-  /** Index of this word's first character in the target. */
+  /** Índice do primeiro caractere desta palavra no alvo. */
   start: number;
   chars: readonly string[];
 };
 
 type Line = {
-  /** Index of this line's first character in the target. */
+  /** Índice do primeiro caractere desta linha no alvo. */
   start: number;
   chars: readonly string[];
-  /** How many leading characters are whitespace, for the indent guides. */
+  /** Quantos caracteres iniciais são espaço, pras guias de indentação. */
   indent: number;
 };
 
-/** A character's measured box. `width` is what puts the caret past the last one. */
+/** A caixa medida de um caractere. `width` é o que põe o cursor depois do último. */
 type Placement = { x: number; y: number; width: number; height: number };
 
 const EMPTY_CARET: CaretTarget = { x: 0, y: 0, height: 0 };
-/** Lines of code kept visible above and below the caret while it scrolls. */
+/** Linhas de código mantidas visíveis acima e abaixo do cursor enquanto ele rola. */
 const SCROLL_MARGIN = 3;
 
 export function TypingArea({
@@ -405,11 +405,11 @@ function leadingIndent(chars: readonly string[]): number {
 }
 
 /**
- * Whether this leading-whitespace column gets a guide.
+ * Se esta coluna de espaço inicial ganha uma guia.
  *
- * A tab is one indent level, so every tab gets one. Spaces are two per level
- * across this corpus, so every other one does — a rule on all of them would
- * turn the margin into a fence.
+ * Tab é um nível de indentação, então todo tab ganha uma. Espaço é dois por
+ * nível neste corpus, então um sim e um não — uma régua em todos transformaria
+ * a margem numa cerca.
  */
 function isGuide(line: Line, offset: number): boolean {
   if (offset >= line.indent) return false;

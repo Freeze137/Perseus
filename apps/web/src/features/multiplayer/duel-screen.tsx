@@ -23,11 +23,11 @@ type Props = {
   slot: number;
   token: string;
   serverNow: () => number;
-  /** Whether the event stream is open. Shown, not hidden — see below. */
+  /** Se o stream de eventos está aberto. Mostrado, não escondido — ver abaixo. */
   connected: boolean;
-  /** Hands the settled room up when the submission answers before the stream. */
+  /** Entrega a sala resolvida pra cima quando o envio responde antes do stream. */
   onMatch: (match: Match) => void;
-  /** Closes the room and goes home. See the page, which owns the seat. */
+  /** Fecha a sala e vai pra casa. Ver a página, que é dona da cadeira. */
   onLeave: () => void;
 };
 
@@ -41,7 +41,7 @@ type Submission = "idle" | "sending" | "sent" | "failed";
  */
 const GO_MS = 900;
 
-/** How long the zero survives the word that swallows it. */
+/** Quanto tempo o zero sobrevive à palavra que o engole. */
 const ZERO_MS = 340;
 
 /**
@@ -51,7 +51,7 @@ const ZERO_MS = 340;
  */
 const ARRIVE = { duration: 0.42, ease: [0.16, 1, 0.3, 1] } as const;
 
-/** The start word crossing. Slower than the digits, and it only happens once. */
+/** A palavra de largada atravessando. Mais lenta que os dígitos, e só acontece uma vez. */
 const CROSS = { duration: 0.62, ease: [0.16, 1, 0.3, 1] } as const;
 
 /**

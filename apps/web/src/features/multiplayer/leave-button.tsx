@@ -5,26 +5,26 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   onLeave: () => void;
-  /** What the first press offers, before it becomes a confirmation. */
+  /** O que o primeiro aperto oferece, antes de virar confirmação. */
   label?: string;
   disabled?: boolean;
 };
 
-/** How long the armed state waits before going back to offering. */
+/** Quanto o estado armado espera antes de voltar a oferecer. */
 const ARMED_MS = 4_000;
 
 /**
- * Ends the duel, on the second press.
+ * Encerra o duelo, no segundo aperto.
  *
- * The confirmation lives in the button rather than in a dialog. A `confirm()`
- * here would be the platform's grey box over a black screen, stealing focus in
- * the middle of a run and asking a question in a voice that is not this
- * product's — and the thing being confirmed is small enough that a second
- * press says it just as clearly.
+ * A confirmação mora no botão e não num diálogo. Um `confirm()` aqui seria a
+ * caixa cinza da plataforma sobre uma tela preta, roubando foco no meio de uma
+ * corrida e fazendo uma pergunta numa voz que não é a deste produto — e o que
+ * está sendo confirmado é pequeno o bastante pra um segundo aperto dizer com a
+ * mesma clareza.
  *
- * It disarms itself after a few seconds. An armed button that stays armed is a
- * trap: somebody comes back to the tab, presses what they think is "leave",
- * and has already left.
+ * Ele se desarma sozinho depois de alguns segundos. Botão armado que continua
+ * armado é armadilha: a pessoa volta pra aba, aperta o que acha que é "sair", e
+ * já saiu.
  */
 export function LeaveButton({
   onLeave,
@@ -58,8 +58,8 @@ export function LeaveButton({
         size="sm"
         onClick={press}
         disabled={disabled}
-        // The accessible name carries the consequence, because the visible
-        // label is short by design and a screen reader hears it out of context.
+        // O nome acessível carrega a consequência, porque o rótulo visível é
+        // curto por desenho e um leitor de tela o ouve fora de contexto.
         aria-label={
           armed ? "Confirmar: encerrar o duelo para os dois" : label
         }

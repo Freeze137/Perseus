@@ -2,10 +2,10 @@
 
 type Lane = {
   name: string;
-  /** Characters committed. The bar is this over the length of the text. */
+  /** Caracteres confirmados. A barra é isto sobre o tamanho do texto. */
   index: number;
   finished: boolean;
-  /** True for the lane belonging to whoever is looking at the screen. */
+  /** True pra pista de quem está olhando a tela. */
   mine: boolean;
 };
 
@@ -15,19 +15,19 @@ type Props = {
 };
 
 /**
- * Two lanes, one text, no numbers.
+ * Duas pistas, um texto, nenhum número.
  *
- * The temptation here is a live wpm for each player, and it is worth saying why
- * it is refused: a speed computed in the browser is the one figure in this whole
- * product the server does not stand behind, and putting two of them side by
- * side would be inviting a comparison out of exactly the numbers that are not
- * comparable yet. Position in the text is a fact both clients agree on — the
- * text is the same by construction — and it is the only thing being raced.
+ * A tentação aqui é um ppm ao vivo pra cada jogador, e vale dizer por que é
+ * recusado: velocidade calculada no browser é o único número deste produto
+ * inteiro pelo qual o servidor não responde, e pôr dois lado a lado seria
+ * convidar uma comparação feita exatamente dos números que ainda não são
+ * comparáveis. Posição no texto é um fato com que os dois clientes concordam —
+ * o texto é o mesmo por construção — e é a única coisa sendo disputada.
  *
- * Nothing here animates on a spring. The bar is a transform on a fixed element,
- * updated at the rate the positions arrive, and the keystroke path must not
- * wait on it: the character lands in the same frame as the keypress, and the
- * bar can be a frame behind without anybody noticing.
+ * Nada aqui anima em mola. A barra é um transform num elemento fixo, atualizado
+ * no ritmo em que as posições chegam, e o caminho da tecla não pode esperar por
+ * ela: o caractere cai no mesmo frame da tecla, e a barra pode ficar um frame
+ * atrás sem ninguém notar.
  */
 export function DuelTrack({ lanes, total }: Props) {
   return (
@@ -59,9 +59,9 @@ export function DuelTrack({ lanes, total }: Props) {
             >
               <div
                 data-mine={lane.mine}
-                // scaleX rather than width: width is a layout property and this
-                // moves five times a second, next to a text that must not be
-                // relaid out while somebody is typing into it.
+                // scaleX e não width: width é propriedade de layout e isto se
+                // move cinco vezes por segundo, ao lado de um texto que não
+                // pode ter o layout refeito enquanto alguém digita nele.
                 style={{ transform: `scaleX(${share})` }}
                 className="h-full origin-left bg-jade transition-transform duration-150 ease-snap data-[mine=true]:bg-mint"
               />

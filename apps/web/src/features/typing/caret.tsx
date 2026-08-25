@@ -13,11 +13,11 @@ const CHASE = { stiffness: 900, damping: 42, mass: 0.55 } as const;
 const INSTANT = { stiffness: 4_000, damping: 120, mass: 0.2 } as const;
 
 /**
- * The caret is the only thing on screen with real physics.
+ * O cursor é a única coisa da tela com física de verdade.
  *
- * It chases the character position instead of teleporting to it, and the
- * spring is tuned just under critical damping — enough overshoot to feel like
- * an object with weight, not enough to blur where the next letter goes.
+ * Ele persegue a posição do caractere em vez de teleportar até ela, e a mola
+ * está ajustada logo abaixo do amortecimento crítico — overshoot suficiente pra
+ * parecer objeto com peso, não o bastante pra embaçar onde a próxima letra vai.
  */
 export function Caret({ target }: { target: CaretTarget }) {
   const reduced = useReducedMotion();

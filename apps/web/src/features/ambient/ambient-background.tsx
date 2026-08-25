@@ -5,13 +5,13 @@ import { fieldLevelOf } from '@/features/settings/performance-tiers';
 import { StarField } from './star-field';
 
 /**
- * Sits in the root layout so the field spans every screen of the product, not
- * one page inside a box. The setting lives here rather than inside the canvas,
- * which keeps the animation free of React entirely.
+ * Fica no layout raiz pro campo cobrir toda tela do produto, e não uma página
+ * dentro de uma caixa. A configuração mora aqui e não dentro do canvas, o que
+ * mantém a animação livre do React por inteiro.
  *
- * At 'off' the canvas is not rendered at all — not hidden, not paused. A
- * machine that cannot afford the field should not be paying for the element,
- * the context, or the resize listener either.
+ * No 'off' o canvas não é renderizado — não escondido, não pausado. Máquina que
+ * não aguenta o campo também não pode estar pagando pelo elemento, pelo contexto
+ * ou pelo listener de resize.
  */
 export function AmbientBackground() {
   useSettingsHydration();

@@ -12,13 +12,13 @@ import { LeaveButton } from "./leave-button";
 type Props = {
   match: Match;
   slot: number;
-  /** This tab's seat. The host's is what lets it redraw the text. */
+  /** A cadeira desta aba. A de quem criou é o que deixa sortear outro texto. */
   token: string;
-  /** Closes the room and goes home. See the page, which owns the seat. */
+  /** Fecha a sala e vai pra casa. Ver a página, que é dona da cadeira. */
   onLeave: () => void;
 };
 
-/** How long "copiado" stays on the button before it goes back to offering. */
+/** Quanto tempo "copiado" fica no botão antes de voltar a oferecer. */
 const COPIED_MS = 1_600;
 
 /**

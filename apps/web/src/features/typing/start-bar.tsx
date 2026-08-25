@@ -17,7 +17,7 @@ const LANGUAGES = [
 
 type Props = {
   onNewText: () => void;
-  /** Fades out once the run is underway — the choices are already made. */
+  /** Desaparece assim que a corrida começa — as escolhas já foram feitas. */
   dimmed: boolean;
 };
 
@@ -32,8 +32,8 @@ export function StartBar({ onNewText, dimmed }: Props) {
     setSyntax,
     setLength,
   } = useSettings();
-  // Enter is a character in code, so it cannot also be the restart shortcut
-  // there. The hint has to say the truth for the mode you are actually in.
+  // Enter é um caractere em código, então lá ele não pode ser também o atalho
+  // de recomeçar. A dica tem que dizer a verdade do modo em que você está.
   const isCode = kind === "code";
 
   return (

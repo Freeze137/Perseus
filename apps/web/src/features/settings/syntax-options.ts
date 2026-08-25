@@ -1,12 +1,12 @@
 import { SyntaxSchema, type SyntaxChoice } from "@perseus/contracts";
 
 /**
- * How each syntax is written on screen.
+ * Como cada sintaxe é escrita na tela.
  *
- * Spelled out by hand rather than derived from the enum value: nobody writes
- * "Csharp" or "Cpp", and a picker that does is a picker that reads like a
- * database column. Keyed by `SyntaxChoice`, so adding a syntax to the contract
- * without naming it here is a type error rather than a blank option.
+ * Escrito na mão em vez de derivado do valor do enum: ninguém escreve "Csharp"
+ * ou "Cpp", e um seletor que escreve é um seletor que lê como coluna de banco.
+ * Chaveado por `SyntaxChoice`, então adicionar uma sintaxe no contrato sem
+ * nomeá-la aqui é erro de tipo e não opção em branco.
  */
 export const SYNTAX_LABELS: Record<SyntaxChoice, string> = {
   mix: "Mistura",
@@ -28,9 +28,9 @@ export const SYNTAX_LABELS: Record<SyntaxChoice, string> = {
 };
 
 /**
- * The picker's options, in contract order with 'mix' in front — it is the
- * default and the one most people want to start on. Built from the schema so
- * the list can never drift from what the generator will actually accept.
+ * As opções do seletor, na ordem do contrato com 'mix' na frente — é o padrão e
+ * o que a maioria quer pra começar. Montadas a partir do schema pra lista nunca
+ * descolar do que o gerador de fato aceita.
  */
 export const SYNTAX_OPTIONS = [
   { value: "mix", label: SYNTAX_LABELS.mix },

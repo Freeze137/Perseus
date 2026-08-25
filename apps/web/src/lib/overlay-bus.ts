@@ -28,7 +28,7 @@ export function setOverlayOpen(open: boolean, id: string): void {
   if (was !== now) for (const listener of listeners) listener(now);
 }
 
-/** Named rather than counted so a double-open of the same panel cannot leak. */
+/** Com nome em vez de contado, pra abrir o mesmo painel duas vezes não vazar. */
 const open_ = new Set<string>();
 
 export function isOverlayOpen(): boolean {

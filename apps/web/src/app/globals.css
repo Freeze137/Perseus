@@ -10,8 +10,9 @@
    which is why an error reads instantly.
 --------------------------------------------------------------------------- */
 @theme {
-  /* True black. The surfaces above it lean green rather than blue — a blue-grey
-     tint on a black page reads as washed out, not as depth. */
+  /* Preto de verdade. As superfícies acima dele puxam pro verde e não pro azul —
+     um tom azul-acinzentado numa página preta lê como lavado, não como
+     profundidade. */
   --color-void: #000000;
   --color-obsidian: #070b0a;
   --color-slate: #101917;
@@ -50,9 +51,9 @@ body {
 }
 
 body {
-  /* No gradient and no grain: both lift pure black into grey. The atmosphere
-     comes from the star field instead, which is light on black rather than
-     black made lighter. */
+  /* Sem gradiente e sem granulado: os dois levantam o preto puro pra cinza. A
+     atmosfera vem do campo de estrelas, que é luz sobre preto e não preto
+     clareado. */
   background-color: var(--color-void);
   color: var(--color-bone);
   font-family: var(--font-sans);
@@ -136,7 +137,7 @@ body {
 
 .typing-viewport {
   position: relative;
-  /* The whole text stays on screen: the typist has to see what is coming. */
+  /* O texto inteiro fica na tela: a pessoa tem que ver o que vem. */
   transition: filter 160ms var(--ease-snap), opacity 160ms var(--ease-snap);
 }
 
@@ -145,9 +146,10 @@ body {
   opacity: 0.5;
 }
 
-/* Cancelling replaces the text under the caret. Swapping it outright reads as
-   a glitch — the dip is what turns the same pixels into an action the user
-   performed. Declared after the blur rule so it wins when both apply. */
+/* Cancelar substitui o texto debaixo do cursor. Trocar de uma vez lê como
+   defeito — o mergulho é o que transforma os mesmos pixels numa ação que a
+   pessoa fez. Declarado depois da regra de blur pra ganhar quando os dois
+   valem. */
 .typing-viewport[data-swapping="true"] {
   opacity: 0.12;
 }
@@ -161,8 +163,8 @@ body {
   color: var(--color-ash);
 }
 
-/* Words are the wrapping unit. Without this every character would be its own
-   break opportunity, and the text would snap mid-word. */
+/* A palavra é a unidade de quebra. Sem isto todo caractere seria uma
+   oportunidade de quebra, e o texto partiria no meio da palavra. */
 .word {
   display: inline-block;
   white-space: pre;
@@ -189,12 +191,12 @@ body {
   line-height: 1.75;
   letter-spacing: 0;
   text-align: left;
-  /* Tabs are Go's own indent unit, so they are shown at Go's own width. */
+  /* Tab é a unidade de indentação do próprio Go, então aparece na largura do Go. */
   tab-size: 4;
-  /* JetBrains Mono ligates "=>" into a single arrow and "!==" into one glyph.
-     In an editor that is a nicety; here it is a lie — the typist has to press
-     two keys for something drawn as one character, and the per-character
-     feedback would land on a glyph that does not exist in the target. */
+  /* JetBrains Mono liga "=>" numa flecha só e "!==" num glifo só. Num editor
+     isso é um agrado; aqui é mentira — a pessoa tem que apertar duas teclas por
+     algo desenhado como um caractere, e o retorno por caractere cairia num
+     glifo que não existe no alvo. */
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
 }
@@ -206,8 +208,8 @@ body {
   border-radius: 2px;
 }
 
-/* The caret is absolutely positioned and the text is monospaced, so nothing
-   else on screen says which line is live. This does. */
+/* O cursor é posicionado de forma absoluta e o texto é monoespaçado, então nada
+   mais na tela diz qual linha está viva. Isto diz. */
 .code-line[data-active="true"] {
   background: color-mix(in oklab, var(--color-slate) 55%, transparent);
 }
@@ -230,14 +232,14 @@ body {
   white-space: pre;
 }
 
-/* The indent guide. A left border on the whitespace itself, so it lines up with
-   the column exactly and costs no extra element. */
+/* A guia de indentação. Uma borda esquerda no próprio espaço em branco, pra
+   alinhar exatamente com a coluna e não custar elemento extra. */
 .char[data-guide="true"] {
   box-shadow: inset 1px 0 0 color-mix(in oklab, var(--color-slate) 90%, transparent);
 }
 
-/* A newline has no glyph, but it is still a character that can be got wrong —
-   it needs a box for the error mark and for the caret to park on. */
+/* Quebra de linha não tem glifo, mas continua sendo um caractere que dá pra
+   errar — precisa de caixa pra marca de erro e pro cursor estacionar. */
 .char[data-newline="true"] {
   display: inline-block;
   width: 0.6ch;
@@ -249,8 +251,9 @@ body {
   color: var(--color-ash);
 }
 
-/* Inline code anywhere in the product, not only in the typing area. A page that
-   explains why "!==" is three keystrokes cannot draw it as one glyph. */
+/* Código embutido em qualquer lugar do produto, não só na área de digitação.
+   Uma página que explica por que "!==" são três teclas não pode desenhá-lo como
+   um glifo. */
 code {
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
@@ -260,8 +263,8 @@ code {
   color: var(--color-bone);
 }
 
-/* Errors carry a second signal beyond colour — the wavy underline — so the
-   feedback survives colour blindness and low-contrast screens. */
+/* Erro carrega um segundo sinal além da cor — o sublinhado ondulado — pro
+   retorno sobreviver a daltonismo e a tela de baixo contraste. */
 .char[data-state="wrong"] {
   color: var(--color-rust);
   text-decoration: underline wavy var(--color-rust);
@@ -288,8 +291,8 @@ code {
   pointer-events: none;
 }
 
-/* The result arrives as a rise and a fade, staggered block by block, so the eye
-   is led down the numbers instead of hit with all of them at once. */
+/* O resultado chega subindo e aparecendo, escalonado bloco a bloco, pro olho
+   ser levado pelos números em vez de ser atingido por todos de uma vez. */
 .result-block {
   animation: result-in 260ms var(--ease-snap) both;
 }

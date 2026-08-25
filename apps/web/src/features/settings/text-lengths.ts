@@ -1,13 +1,13 @@
 /**
- * The three sizes a text comes in, named rather than numbered.
+ * Os três tamanhos em que um texto vem, com nome em vez de número.
  *
- * Here rather than inside the training bar because the duel lobby offers the
- * same choice, and two lists would be two lists to keep in step — "Médio"
- * meaning 180 characters in one screen and 200 in the other is the kind of
- * drift nobody notices until somebody compares two runs that were never
+ * Aqui e não dentro da barra de treino porque o lobby do duelo oferece a mesma
+ * escolha, e duas listas seriam duas listas pra manter em dia — "Médio" valendo
+ * 180 caracteres numa tela e 200 na outra é o tipo de desvio que ninguém nota
+ * até alguém comparar duas corridas que nunca foram
  * comparable.
  *
- * Strings because that is what a `Select` speaks; the callers convert.
+ * Strings porque é o que um `Select` fala; quem chama converte.
  */
 export const TEXT_LENGTHS = [
   { value: "90", label: "Curto" },

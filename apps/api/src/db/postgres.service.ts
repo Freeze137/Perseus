@@ -73,7 +73,7 @@ export class PostgresService implements OnModuleDestroy {
     return result.rows;
   }
 
-  /** One connection, for the statements that have to land together. */
+  /** Uma conexão, pros comandos que têm que cair juntos. */
   async transaction<T>(
     work: (
       run: <R extends QueryResultRow>(
@@ -105,7 +105,7 @@ export class PostgresService implements OnModuleDestroy {
     }
   }
 
-  /** Whether the database is answering, as opposed to configured. */
+  /** Se o banco está respondendo, e não apenas configurado. */
   async reachable(): Promise<boolean> {
     if (!this.pool) return false;
     try {

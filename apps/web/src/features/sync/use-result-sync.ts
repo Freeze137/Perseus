@@ -19,14 +19,14 @@ export type SyncState =
   | "sending"
   | "sent"
   | "failed"
-  /** Kept for later: the network was the problem, not the run. */
+  /** Guardado pra depois: o problema foi a rede, não a corrida. */
   | "queued"
-  /** This tab is a deploy behind and cannot be verified until it reloads. */
+  /** Esta aba está um deploy atrás e não dá pra verificar até recarregar. */
   | "stale";
 
-/** Where runs wait when the network is not there to take them. */
+/** Onde as corridas esperam quando a rede não está lá pra levá-las. */
 const QUEUE_KEY = "perseus:pending-results";
-/** A queue is a courtesy, not a database. Deep enough for a bad afternoon. */
+/** Fila é cortesia, não banco. Funda o bastante pra uma tarde ruim. */
 const QUEUE_MAX = 10;
 
 /**
@@ -187,7 +187,7 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
   return state;
 }
 
-/** Puts a run aside for the next visit, newest last, oldest evicted. */
+/** Põe uma corrida de lado pra próxima visita, a mais nova por último, a mais velha despejada. */
 function enqueue(payload: SubmitResult): void {
   const queue = readQueue().filter((item) => item.run.id !== payload.run.id);
   queue.push(payload);

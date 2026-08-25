@@ -19,27 +19,27 @@ import { INSTANT, SPRING } from "@/lib/springs";
  */
 export type PerformanceTier = "full" | "light" | "minimal";
 
-/** What the interface is allowed to animate with. */
+/** Com o que a interface pode animar. */
 export type MotionLevel =
-  /** Springs, shared-layout travel between positions, the lot. */
+  /** Molas, viagem por layout compartilhado entre posições, tudo. */
   | "spring"
-  /** Short tweens on transform and opacity only. Nothing measures the layout. */
+  /** Tweens curtas só em transform e opacidade. Nada mede o layout. */
   | "brief"
-  /** Nothing moves. Cross-fades survive, because fading is not motion. */
+  /** Nada se move. O cruzamento de opacidade sobrevive, porque desvanecer não é movimento. */
   | "none";
 
-/** What the star field is allowed to draw. */
+/** O que o campo de estrelas pode desenhar. */
 export type FieldLevel =
-  /** Every shape, the standing glow, and the display's own pixel ratio. */
+  /** Toda forma, o brilho permanente, e a razão de pixel da própria tela. */
   | "rich"
-  /** The same composition without the blur, at 1x, with fewer shapes. */
+  /** A mesma composição sem o blur, em 1x, com menos formas. */
   | "plain"
   /** No canvas at all. */
   | "off";
 
 export type TierInfo = {
   label: string;
-  /** What this level costs and buys, in the user's terms. */
+  /** O que este nível custa e compra, nos termos de quem usa. */
   note: string;
   motion: MotionLevel;
   field: FieldLevel;
@@ -106,11 +106,11 @@ export function transitionFor(
   return spring;
 }
 
-/** One curve for every 'brief' transition, so the level reads as one decision. */
+/** Uma curva pra toda transição 'brief', pro nível ler como uma decisão só. */
 export const BRIEF = {
   duration: 0.16,
   ease: [0.2, 0.8, 0.2, 1],
 } as const satisfies Transition;
 
-/** Re-exported so callers need one import to animate at the right level. */
+/** Reexportado pra quem chama precisar de um import pra animar no nível certo. */
 export { SPRING, INSTANT };

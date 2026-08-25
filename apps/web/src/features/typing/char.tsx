@@ -8,22 +8,22 @@ type Props = {
   index: number;
   char: string;
   state: CharState;
-  /** Code only: this is leading whitespace at an indent stop, so draw a guide. */
+  /** Só em código: isto é espaço inicial numa parada de indentação, então desenha guia. */
   guide?: boolean;
 };
 
 /**
- * One character of the target text.
+ * Um caractere do texto alvo.
  *
- * The reactions are plain CSS animations rather than Motion components: a run
- * is hundreds of characters, and hundreds of animation drivers would compete
- * with the input handler for the same frame. Motion is reserved for the caret,
- * where the physics actually shows.
+ * As reações são animação CSS pura e não componentes do Motion: uma corrida tem
+ * centenas de caracteres, e centenas de motores de animação disputariam o mesmo
+ * frame com o handler de entrada. Motion fica reservado pro cursor, onde a
+ * física de fato aparece.
  */
 export const Char = memo(function Char({ index, char, state, guide }: Props) {
-  // A newline has no glyph but still needs a box: it is a position the caret
-  // parks on and a character the typist can get wrong, so it is given width
-  // rather than being skipped.
+  // Quebra de linha não tem glifo mas precisa de caixa: é uma posição em que o
+  // cursor estaciona e um caractere que dá pra errar, então recebe largura em
+  // vez de ser pulada.
   const newline = char === '\n';
 
   return (
@@ -33,7 +33,7 @@ export const Char = memo(function Char({ index, char, state, guide }: Props) {
       data-newline={newline || undefined}
       data-guide={guide || undefined}
       className="char"
-      // A space has no glyph to react, so give it a visible box to animate.
+      // Espaço não tem glifo pra reagir, então ganha uma caixa visível pra animar.
       aria-hidden="true"
     >
       {newline ? '' : char}

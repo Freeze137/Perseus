@@ -1,8 +1,8 @@
 /**
- * The same card again, under the name Twitter/X looks for.
+ * O mesmo cartão de novo, com o nome que o Twitter/X procura.
  *
- * Next only maps the Open Graph file to `og:image`; a route that wants
- * `twitter:image` has to exist as its own file. Re-exported rather than
- * duplicated so there is one drawing and one place to change it.
+ * O Next só mapeia o arquivo de Open Graph pra `og:image`; uma rota que quer
+ * `twitter:image` tem que existir como arquivo próprio. Reexportado em vez de
+ * duplicado pra haver um desenho e um lugar pra mudá-lo.
  */
 export { default, alt, size, contentType } from "./opengraph-image";

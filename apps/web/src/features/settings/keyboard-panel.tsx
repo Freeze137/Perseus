@@ -16,9 +16,9 @@ import {
 type Props = {
   layout: KeyboardLayout;
   onLayoutChange: (layout: KeyboardLayout) => void;
-  /** How much of this run's bank the keyboard reaches. */
+  /** Quanto do banco desta corrida o teclado alcança. */
   share: { available: number; total: number };
-  /** Offered when the keyboard is what is costing the typist sentences. */
+  /** Oferecido quando é o teclado que está custando frases à pessoa. */
   onUseEnglish: () => void;
 };
 

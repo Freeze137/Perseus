@@ -55,7 +55,7 @@ let seatsValue: Seats = {};
 let idsRaw: string | null = null;
 let idsValue: readonly string[] = [];
 
-/** The empty answer for a render that happens where storage does not exist. */
+/** A resposta vazia pro render que acontece onde não existe armazenamento. */
 const NO_IDS: readonly string[] = [];
 
 export function subscribeDuels(listener: () => void): () => void {
@@ -73,7 +73,7 @@ export function seatFor(code: string): Seat | null {
   return readSeats()[code] ?? null;
 }
 
-/** The server has no storage, so it has no seat. */
+/** O servidor não tem armazenamento, então não tem cadeira. */
 export function noSeat(): Seat | null {
   return null;
 }
@@ -94,7 +94,7 @@ export function forgetSeat(code: string): void {
   write(SEATS_KEY, next);
 }
 
-/** Adds a duel to the history list, newest first, oldest evicted. */
+/** Põe um duelo na lista de histórico, o mais novo primeiro, o mais velho despejado. */
 export function rememberMatch(id: string): void {
   const ids = readMatchIds();
   if (ids[0] === id) return;

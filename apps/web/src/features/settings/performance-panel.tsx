@@ -16,18 +16,18 @@ type Props = {
 };
 
 /**
- * The performance chooser.
+ * O seletor de desempenho.
  *
- * Deliberately the same control as the keyboard chooser above it — one
- * segmented row, one line of consequence underneath. Two pickers in one dialog
- * that behave differently is the kind of inconsistency a settings screen is
- * supposed to be free of, and this one is the second thing anybody arriving
- * here is looking for.
+ * De propósito é o mesmo controle do seletor de teclado acima — uma fileira
+ * segmentada, uma linha de consequência embaixo. Dois seletores num diálogo se
+ * comportando diferente é o tipo de inconsistência de que uma tela de
+ * configurações deveria estar livre, e este é a segunda coisa que quem chega
+ * aqui está procurando.
  *
- * The note is the whole point. Every level of this setting takes something
- * away, so each one has to say what it takes — and, just as importantly, what
- * it does not: no level of this changes a word of the text, a figure in the
- * metrics, or where a run lands on the board.
+ * A nota é o ponto inteiro. Todo nível desta configuração tira alguma coisa,
+ * então cada um tem que dizer o que tira — e, tão importante quanto, o que não
+ * tira: nenhum nível disto muda uma palavra do texto, um número das métricas,
+ * ou onde a corrida cai no ranking.
  */
 export function PerformancePanel({ tier, onTierChange }: Props) {
   const reduced = useReducedMotion();
@@ -57,8 +57,8 @@ export function PerformancePanel({ tier, onTierChange }: Props) {
               {active ? (
                 <motion.span
                   aria-hidden="true"
-                  // Shares no layoutId with the keyboard pill: two independent
-                  // controls, two independent objects.
+                  // Não divide layoutId com a pílula do teclado: dois controles
+                  // independentes, dois objetos independentes.
                   layoutId={level === "spring" ? "performance-pill" : undefined}
                   transition={transitionFor(level, SPRING.snap)}
                   className="absolute inset-0 rounded-full bg-slate"

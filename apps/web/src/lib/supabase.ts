@@ -8,10 +8,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * sem oferecer login. Todo mundo que chama aqui tem que tratar o null em vez
  * de supor que o cliente existe.
  *
- * Only the anon key ever reaches this file. It is public by design and every
- * row it can touch is fenced by the policies in supabase/migrations. The
- * service-role key lives in the API and would be a full database handover if it
- * were ever pasted into anything prefixed NEXT_PUBLIC_.
+ * Só a chave anon chega neste arquivo. Ela é pública por desenho e toda linha
+ * que ela alcança está cercada pelas políticas em supabase/migrations. A chave
+ * de service role mora na API e seria a entrega do banco inteiro se um dia fosse
+ * colada em qualquer coisa com prefixo NEXT_PUBLIC_.
  */
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

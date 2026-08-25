@@ -11,7 +11,7 @@ import { ResultsService } from './results.service';
 import { RunTicketService } from '../runs/run-ticket.service';
 import type { SupabaseService } from '../supabase/supabase.service';
 
-/** The service needs Supabase only to write; scoring is pure. */
+/** O serviço só precisa do Supabase pra escrever; a pontuação é pura. */
 const offline = { enabled: false } as unknown as SupabaseService;
 const tickets = new RunTicketService();
 
@@ -248,7 +248,7 @@ describe('RunTicketService', () => {
   });
 });
 
-/** Runs `act`, expecting a refusal, and hands back the body it carried. */
+/** Roda o `act` esperando recusa, e devolve o corpo que ela trouxe. */
 function refusalOf(act: () => unknown): Record<string, unknown> {
   try {
     act();
