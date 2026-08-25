@@ -12,7 +12,7 @@ import { SITE_NAME } from "@/lib/site";
 
 /** Onde a pessoa está. Portfólio primeiro: é o que ele mesmo escolheu mostrar. */
 const LINKS = [
-  { label: "Portfólio", href: "https://portfolio-eight-eta-47.vercel.app/" },
+  { label: "Portfólio", href: "https://portfolio-delta-ten-covuf9ebim.vercel.app/" },
   { label: "GitHub", href: "https://github.com/Freeze137" },
   {
     label: "LinkedIn",
