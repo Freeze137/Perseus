@@ -7,7 +7,7 @@ import {
 import type { Request } from 'express';
 import { SupabaseService } from './supabase/supabase.service';
 
-/** The caller, once the token has been checked. */
+/** Quem chamou, depois de o token ter sido conferido. */
 export type Caller = { userId: string; accessToken: string };
 
 declare module 'express' {
@@ -17,11 +17,11 @@ declare module 'express' {
 }
 
 /**
- * Resolves the bearer token to a user id with Supabase.
+ * Resolve o token bearer pra um id de usuário com o Supabase.
  *
- * The owner of a result is taken from here and never from the request body.
- * A payload that could name its own author would let anybody file a run under
- * somebody else's name, which is the same hole as letting them pick their score.
+ * O dono de um resultado sai daqui e nunca do corpo da requisição. Um payload
+ * que pudesse nomear o próprio autor deixaria qualquer um arquivar corrida no
+ * nome de outro, que é o mesmo buraco de deixar escolher a própria pontuação.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {

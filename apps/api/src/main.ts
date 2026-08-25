@@ -8,21 +8,21 @@ async function bootstrap() {
   const env = loadEnv();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // The browser calls this from a different origin in every environment we
-  // have — :3000 in development, a different host in production — so the
-  // allowed list is configuration rather than a constant.
+  // O browser chama isto de uma origem diferente em todo ambiente que temos —
+  // :3000 em desenvolvimento, outro host em produção — então a lista permitida
+  // é configuração, não constante.
   app.enableCors({ origin: corsOrigins(env), credentials: true });
 
-  // A keystroke timeline is a big body by design: the server insists on being
-  // sent what happened rather than what it scored, and what happened is one
-  // entry per character. The default 100 KB left the longest honest runs a
-  // correction away from a 413 nobody could have diagnosed from the message.
+  // Timeline de teclas é corpo grande por desenho: o servidor exige receber o
+  // que aconteceu, não o que foi pontuado, e o que aconteceu é uma entrada por
+  // caractere. Os 100 KB padrão deixavam as corridas honestas mais longas a uma
+  // correção de distância de um 413 que ninguém diagnosticaria pela mensagem.
   app.use(json({ limit: env.MAX_BODY_SIZE }));
 
-  // Reverse proxies buffer responses by default, which for an event stream
-  // means the duel arrives in one lump at the end. This is the header nginx and
-  // most of its relatives read to leave a response alone; it is meaningless
-  // everywhere else, which is why it costs nothing to set unconditionally.
+  // Proxy reverso faz buffer de resposta por padrão, o que num stream de
+  // eventos significa o duelo chegando todo de uma vez no fim. Este é o header
+  // que o nginx e os parentes dele leem pra deixar a resposta em paz; não quer
+  // dizer nada em outro lugar, e por isso setar sempre não custa nada.
   app.use((request: Request, response: Response, next: NextFunction) => {
     if (request.path.endsWith('/stream')) {
       response.setHeader('X-Accel-Buffering', 'no');
@@ -31,17 +31,18 @@ async function bootstrap() {
   });
 
   if (env.TRUST_PROXY_HOPS > 0) {
-    // Without this every caller behind the load balancer shares one address,
-    // which means one rate-limit budget for the entire internet.
+    // Sem isto todo chamador atrás do load balancer divide um endereço só, o
+    // que dá um orçamento de rate limit pra internet inteira.
     app.set('trust proxy', env.TRUST_PROXY_HOPS);
   }
 
-  // In-flight requests finish before the process goes. A submit cut off
-  // mid-write is the one request in this API that costs somebody a real run.
+  // As requisições em voo terminam antes de o processo ir. Um submit cortado
+  // no meio da escrita é a única requisição desta API que custa a alguém uma
+  // corrida de verdade.
   app.enableShutdownHooks();
 
   await app.listen(env.PORT);
 }
-// The floating promise is the point: nothing follows bootstrap, and an
-// unhandled rejection here should crash the process rather than be swallowed.
+// A promise solta é o ponto: nada vem depois do bootstrap, e uma rejeição não
+// tratada aqui tem que derrubar o processo em vez de ser engolida.
 void bootstrap();

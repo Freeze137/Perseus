@@ -29,13 +29,13 @@ function config(overrides: Partial<SessionConfig> = {}): SessionConfig {
 }
 
 /**
- * Types the whole target honestly, around one character every `gap`
- * milliseconds.
+ * Digita o alvo inteiro honestamente, mais ou menos um caractere a cada `gap`
+ * milissegundos.
  *
- * The wobble is not decoration. A hand does not strike two keys the same number
- * of milliseconds apart twice in a row, and the server now refuses timelines
- * that claim it does — so a fixture without jitter would be testing the server
- * against something no typist produces.
+ * A tremida não é enfeite. Mão não bate duas teclas com a mesma quantidade de
+ * milissegundos de distância duas vezes seguidas, e o servidor agora recusa
+ * timeline que alega isso — então fixture sem tremida estaria testando o
+ * servidor contra algo que digitador nenhum produz.
  */
 function honestRun(cfg: SessionConfig, gap = 120): SubmitResult {
   const target = generate(cfg);
@@ -44,7 +44,7 @@ function honestRun(cfg: SessionConfig, gap = 120): SubmitResult {
   let step = 0;
   while (session.typed.length < session.target.length) {
     const next = session.target[session.typed.length];
-    // Deterministic, so a failure is reproducible; uneven, so it is human.
+    // Determinístico, pra falha ser reproduzível; irregular, pra ser humano.
     at += gap + (((step * 37) % 13) - 6) * 6;
     step += 1;
     session = applyInput(session, next, at);
@@ -81,9 +81,9 @@ describe('ResultsService.score', () => {
   });
 
   it('ignores what the client thought its speed was', () => {
-    // There is nowhere in the payload to put a speed. That is the design: the
-    // only thing a client can send is what it did and when, and this is the
-    // proof. The ticket is the server's own, not a number the client chose.
+    // Não existe lugar no payload pra pôr uma velocidade. É esse o desenho: a
+    // única coisa que o cliente manda é o que fez e quando, e isto é a prova. O
+    // bilhete é do próprio servidor, não um número que o cliente escolheu.
     const payload = honestRun(config());
     expect(Object.keys(payload).sort()).toEqual([
       'config',
@@ -111,8 +111,8 @@ describe('ResultsService.score', () => {
       corpusVersion: CORPUS_VERSION + 1,
     };
     expect(() => service.score(payload)).toThrow(BadRequestException);
-    // The code is what lets the interface tell "reload the page" apart from
-    // "your run looked forged", which are not the same news.
+    // O código é o que deixa a interface separar "recarregue a página" de "sua
+    // corrida pareceu forjada", que não são a mesma notícia.
     expect(refusalOf(() => service.score(payload))).toMatchObject({
       code: 'corpus_version',
       expected: CORPUS_VERSION,
@@ -121,7 +121,7 @@ describe('ResultsService.score', () => {
 
   it('scores wrong characters as wrong however they are labelled', () => {
     const payload = honestRun(config());
-    // Swap every character for one that cannot match, then claim it was fine.
+    // Troca todo caractere por um que não pode bater, e depois alega que foi bem.
     payload.keystrokes = payload.keystrokes.map((k) => ({
       ...k,
       char: '¤',
@@ -138,9 +138,9 @@ describe('ResultsService.score', () => {
   });
 
   it('cannot be sped up by compressing the timeline', () => {
-    // The hole this whole check exists for. Every character correct, every
-    // position honest, the clock squeezed to a millisecond a key: the old
-    // server scored this at sixty thousand words a minute and stored it.
+    // O buraco pelo qual esta checagem inteira existe. Todo caractere certo,
+    // toda posição honesta, o relógio espremido a um milissegundo por tecla: o
+    // servidor antigo pontuava isto a sessenta mil palavras por minuto e guardava.
     const payload = honestRun(config());
     payload.keystrokes = payload.keystrokes.map((k, i) => ({ ...k, at: i }));
 
@@ -174,7 +174,7 @@ describe('ResultsService.score', () => {
   });
 
   it('refuses a run that claims more time than the server watched pass', () => {
-    // Two minutes of typing, in a window the server saw last for one second.
+    // Dois minutos de digitação, numa janela que o servidor viu durar um segundo.
     const payload = honestRun(config({ length: 300 }), 400);
     const now = Date.now();
     expect(
@@ -193,8 +193,8 @@ describe('ResultsService.score', () => {
   });
 
   it('accepts a genuinely fast typist', () => {
-    // Around 200 words a minute. Rare, real, and not to be thrown off a board
-    // by a ceiling set to whatever the author of the check could type.
+    // Uns 200 palavras por minuto. Raro, real, e não pode ser chutado do
+    // ranking por um teto ajustado ao que o autor da checagem conseguia digitar.
     const payload = honestRun(config(), 60);
     const scored = service.score(payload);
 
@@ -223,8 +223,8 @@ describe('RunTicketService', () => {
   });
 
   it('refuses a ticket whose timestamp was edited', () => {
-    // Moving the clock back is how a submission would buy itself room to claim
-    // a longer run than it had time for; the signature covers the timestamp.
+    // Andar com o relógio pra trás é como um envio compraria espaço pra alegar
+    // corrida mais longa do que teve tempo; a assinatura cobre o timestamp.
     const service = new RunTicketService();
     const ticket = service.issue();
     expect(
@@ -239,9 +239,9 @@ describe('RunTicketService', () => {
   });
 
   it('refuses a ticket from another process', () => {
-    // A process that was not configured with a secret invents one, so a second
-    // instance signs with something this one has never seen — which is exactly
-    // why a deployment with more than one instance has to set RUN_TICKET_SECRET.
+    // Processo que não foi configurado com segredo inventa um, então uma
+    // segunda instância assina com algo que esta nunca viu — que é exatamente
+    // por que deploy com mais de uma instância tem que setar RUN_TICKET_SECRET.
     const mine = new RunTicketService();
     const theirs = new RunTicketService(Buffer.from('a different deployment'));
     expect(mine.verify(theirs.issue()).ok).toBe(false);

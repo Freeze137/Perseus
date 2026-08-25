@@ -8,11 +8,11 @@ import { z } from 'zod';
 import { SupabaseService } from '../supabase/supabase.service';
 
 /**
- * The row as the table stores it, parsed rather than assumed.
+ * A linha como a tabela guarda, lida em vez de suposta.
  *
- * Numeric columns come back as strings from PostgREST — `numeric` has more
- * precision than a JSON number promises — so they are coerced here instead of
- * quietly becoming `"91.20"` three components later.
+ * Coluna numérica volta como string do PostgREST — `numeric` tem mais precisão
+ * do que um número JSON promete — então é convertida aqui em vez de virar
+ * calada um `"91.20"` três componentes depois.
  */
 const RowSchema = z.object({
   id: z.uuid(),
@@ -28,13 +28,13 @@ const RowSchema = z.object({
 });
 
 /**
- * Reads a person their own runs.
+ * Lê pra pessoa as corridas dela.
  *
- * Through the caller's token, never the service key: the row-level policy that
- * says "your rows and nobody else's" is already written and already tested by
- * the database, and re-implementing it here as a `where user_id = ...` would
- * mean the day somebody forgets that clause is the day the endpoint hands out
- * everybody's history. The policy is the check; this just asks.
+ * Pelo token de quem chamou, nunca pela chave de serviço: a política de linha
+ * que diz "suas linhas e de mais ninguém" já está escrita e já é testada pelo
+ * banco, e reimplementá-la aqui como um `where user_id = ...` faria o dia em
+ * que alguém esquecer essa cláusula ser o dia em que o endpoint entrega o
+ * histórico de todo mundo. A política é a checagem; isto só pergunta.
  */
 @Injectable()
 export class HistoryService {
@@ -91,11 +91,11 @@ export class HistoryService {
 }
 
 /**
- * The best run in the window, by speed.
+ * A melhor corrida da janela, por velocidade.
  *
- * Derived from the rows already fetched rather than asked for separately: a
- * second query for one number is a second round trip, and "best of what you are
- * looking at" is what somebody reading a history means by best.
+ * Derivada das linhas que já foram buscadas em vez de pedida à parte: uma
+ * segunda query por um número é uma segunda ida e volta, e "melhor do que você
+ * está olhando" é o que alguém lendo um histórico quer dizer com melhor.
  */
 function bestOf(entries: readonly StoredResult[]): HistoryResponse['best'] {
   const top = entries.reduce<StoredResult | null>(

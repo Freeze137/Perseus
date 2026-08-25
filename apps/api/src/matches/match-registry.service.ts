@@ -7,33 +7,33 @@ import type {
   SessionConfig,
 } from '@perseus/contracts';
 
-/** One player, as the room holds them while the duel is being played. */
+/** Um jogador, como a sala o segura enquanto o duelo é jogado. */
 export type RoomPlayer = {
   readonly slot: number;
   readonly displayName: string;
   readonly joinedAt: number;
-  /** Last published caret index. Decoration — never an input to the score. */
+  /** Último índice de cursor publicado. Decoração: nunca entra na pontuação. */
   progress: number;
   finishedAt: number | null;
   score: MatchScore | null;
   outcome: MatchOutcome | null;
-  /** Asked for another round. Cleared when one starts. */
+  /** Pediu outra rodada. Limpo quando uma começa. */
   rematch: boolean;
 };
 
-/** A duel in progress. Epoch milliseconds throughout; ISO is for the wire. */
+/** Um duelo em andamento. Epoch em milissegundos aqui dentro; ISO é pra rede. */
 export type Room = {
   readonly id: string;
   /**
-   * The round being played, and the id it is stored under when it ends.
+   * A rodada em jogo, e o id sob o qual ela é guardada quando acaba.
    *
-   * Redrawn on every rematch. The room keeps its id and its code — that is
-   * what the link points at — while each duel played in it gets a fresh
-   * identity, because each one is its own row in the history.
+   * Sorteada de novo a cada revanche. A sala mantém id e código — é pra onde o
+   * link aponta — enquanto cada duelo jogado nela ganha identidade nova, porque
+   * cada um é uma linha própria no histórico.
    */
   roundId: string;
   readonly inviteCode: string;
-  /** Redrawn by the host between rounds — new seed, and possibly new length. */
+  /** Sorteada de novo por quem criou, entre rodadas: semente nova e talvez tamanho novo. */
   config: SessionConfig;
   readonly corpusVersion: number;
   readonly createdAt: number;
@@ -46,12 +46,12 @@ export type Room = {
 };
 
 /**
- * One open connection to a room: where its events go, and how to close it.
+ * Uma conexão aberta com a sala: pra onde vão os eventos dela, e como fechar.
  *
- * The end callback is what lets a room outlive its duel without leaking. A
- * finished room stays streamable for the five minutes a rematch can be offered
- * in; when it is finally removed, every watcher is closed rather than left
- * listening to a room that is no longer there.
+ * O callback de fim é o que deixa a sala sobreviver ao duelo sem vazar. Sala
+ * terminada continua transmitindo pelos cinco minutos em que a revanche pode
+ * ser oferecida; quando é finalmente removida, todo ouvinte é fechado em vez de
+ * ficar escutando uma sala que não existe mais.
  */
 type Watcher = {
   next: (event: MatchEvent) => void;
@@ -59,32 +59,32 @@ type Watcher = {
 };
 
 /**
- * Ceiling on how many rooms exist at once.
+ * Teto de quantas salas existem ao mesmo tempo.
  *
- * A room is a few hundred bytes and two open responses, so this is not about
- * memory — it is about the free-tier box this is meant to run on staying
- * answerable if somebody scripts the create endpoint. The rate limiter is the
- * first line; this is the wall behind it.
+ * Uma sala são algumas centenas de bytes e duas respostas abertas, então isto
+ * não é sobre memória — é sobre a máquina de plano grátis onde isto roda
+ * continuar respondendo se alguém scriptar o endpoint de criar. O rate limiter
+ * é a primeira linha; isto é o muro atrás dela.
  */
 export const MAX_ROOMS = 200;
 
 /**
- * Every live duel, and everyone listening to one.
+ * Todo duelo vivo, e todo mundo escutando um.
  *
- * Deliberately in memory. A duel is two people for ninety seconds: the room is
- * born, watched by exactly two connections, and dies. Putting that in Postgres
- * would be a row written and deleted for every abandoned lobby, a poll or a
- * LISTEN to get it back out, and a schema in the way of every change to the
- * flow — for state whose whole lifetime is shorter than the deploy that would
- * lose it. What is worth keeping is the *finished* duel, and that is a single
- * write at the end, in the store next door.
+ * Em memória de propósito. Duelo é duas pessoas por noventa segundos: a sala
+ * nasce, é observada por exatamente duas conexões, e morre. Pôr isso no
+ * Postgres seria uma linha escrita e apagada pra cada lobby abandonado, um poll
+ * ou um LISTEN pra tirar de volta, e um schema no caminho de toda mudança de
+ * fluxo — pra um estado cuja vida inteira é mais curta que o deploy que a
+ * perderia. O que vale guardar é o duelo *terminado*, e isso é uma escrita só
+ * no fim, no store ao lado.
  *
- * The consequence, since it is the kind of thing that should be written down
- * rather than discovered: this does not survive a restart, and it does not
- * survive a second instance. A duel in progress during a deploy ends as
- * abandoned, and two API processes behind one load balancer would put the two
- * players in two different rooms. One process is the deployment this assumes;
- * anything more needs a shared channel, not a bigger map.
+ * A consequência, já que é o tipo de coisa que se escreve em vez de deixar
+ * alguém descobrir: isto não sobrevive a restart e não sobrevive a uma segunda
+ * instância. Duelo em andamento durante um deploy termina como abandonado, e
+ * dois processos de API atrás de um load balancer poriam os dois jogadores em
+ * salas diferentes. Um processo é o deploy que isto assume; mais que isso pede
+ * um canal compartilhado, não um mapa maior.
  */
 @Injectable()
 export class MatchRegistryService implements OnModuleDestroy {
@@ -112,11 +112,11 @@ export class MatchRegistryService implements OnModuleDestroy {
   }
 
   /**
-   * The room currently playing — or that just played — a given round.
+   * A sala que está jogando — ou acabou de jogar — uma dada rodada.
    *
-   * A linear scan over at most `MAX_ROOMS` entries, and it runs once per id in
-   * a history request. An index keyed by round would have to be kept in step
-   * with every rematch for no measurable gain.
+   * Varredura linear sobre no máximo `MAX_ROOMS` entradas, e roda uma vez por
+   * id numa requisição de histórico. Um índice por rodada teria que ser mantido
+   * em dia a cada revanche por ganho nenhum que dê pra medir.
    */
   byRound(roundId: string): Room | null {
     for (const room of this.rooms.values()) {
@@ -129,7 +129,7 @@ export class MatchRegistryService implements OnModuleDestroy {
     return this.codes.has(code);
   }
 
-  /** Every room, for the sweeps that ask about age rather than identity. */
+  /** Toda sala, pras varreduras que perguntam idade e não identidade. */
   all(): Room[] {
     return [...this.rooms.values()];
   }
@@ -140,11 +140,11 @@ export class MatchRegistryService implements OnModuleDestroy {
     this.clearTimers(id);
     this.codes.delete(room.inviteCode);
     this.rooms.delete(id);
-    // Watchers are told the room is gone rather than silently dropped. A
-    // finished room keeps its streams open so a rematch can reach both tabs,
-    // which means this is the moment those streams have nothing left to wait
-    // for — and a stream left hanging on a room that no longer exists is a
-    // connection nobody ever closes.
+    // Os ouvintes são avisados de que a sala acabou em vez de largados
+    // calados. Sala terminada mantém os streams abertos pra revanche alcançar
+    // as duas abas, o que faz deste o momento em que esses streams não têm mais
+    // o que esperar — e stream pendurado numa sala que não existe é conexão que
+    // ninguém fecha nunca.
     const set = this.listeners.get(id);
     this.listeners.delete(id);
     if (!set) return;
@@ -152,15 +152,15 @@ export class MatchRegistryService implements OnModuleDestroy {
   }
 
   /**
-   * Starts listening to a room. The returned function stops.
+   * Começa a escutar uma sala. A função devolvida para.
    *
-   * Fan-out is a plain Set of callbacks rather than an rxjs Subject per room
-   * because the controller already owns the Observable it hands to Nest, and
-   * two layers of subscription management would only be two places for a leak.
+   * O fan-out é um Set de callbacks e não um Subject do rxjs por sala porque o
+   * controller já é dono do Observable que entrega ao Nest, e duas camadas de
+   * gerência de inscrição seriam só dois lugares pra vazar.
    *
-   * `end` is called when the room is removed, so the caller can close whatever
-   * it is holding open. It is optional: the tests that only want the events do
-   * not have anything to close.
+   * `end` é chamado quando a sala é removida, pro chamador fechar o que estiver
+   * segurando. É opcional: os testes que só querem os eventos não têm nada pra
+   * fechar.
    */
   subscribe(
     id: string,
@@ -180,7 +180,7 @@ export class MatchRegistryService implements OnModuleDestroy {
     };
   }
 
-  /** How many connections are watching. Zero means both tabs are gone. */
+  /** Quantas conexões estão observando. Zero quer dizer que as duas abas sumiram. */
   watchers(id: string): number {
     return this.listeners.get(id)?.size ?? 0;
   }
@@ -192,12 +192,12 @@ export class MatchRegistryService implements OnModuleDestroy {
   }
 
   /**
-   * Schedules something for this room, replacing whatever was armed under the
-   * same name.
+   * Agenda algo pra esta sala, substituindo o que estivesse armado com o mesmo
+   * nome.
    *
-   * Named rather than anonymous so re-arming is idempotent: a second player
-   * joining twice, or a grace period being recalculated, must not leave two
-   * timers racing to settle the same duel.
+   * Com nome em vez de anônimo pra rearmar ser idempotente: um segundo jogador
+   * entrando duas vezes, ou um tempo de graça recalculado, não pode deixar dois
+   * timers correndo pra resolver o mesmo duelo.
    */
   arm(id: string, name: string, at: number, fire: () => void): void {
     const room = this.timers.get(id) ?? new Map<string, NodeJS.Timeout>();
@@ -205,8 +205,8 @@ export class MatchRegistryService implements OnModuleDestroy {
     if (existing) clearTimeout(existing);
 
     const timer = setTimeout(fire, Math.max(0, at - Date.now()));
-    // Unreferenced so a pending duel timer cannot hold the process — or a test
-    // runner — open past the work it is there for.
+    // Sem referência pra um timer de duelo pendente não segurar o processo — ou
+    // o runner de teste — aberto além do trabalho pelo qual ele existe.
     timer.unref?.();
     room.set(name, timer);
     this.timers.set(id, room);

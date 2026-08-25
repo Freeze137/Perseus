@@ -24,27 +24,27 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { RunTicketService } from '../runs/run-ticket.service';
 
-/** Postgres' unique-violation code, which is how a repeat submission arrives. */
+/** Código de violação de unicidade do Postgres. É como chega um envio repetido. */
 const UNIQUE_VIOLATION = '23505';
 
 /**
- * What the server knows about when a run really happened.
+ * O que o servidor sabe sobre quando a corrida aconteceu de verdade.
  *
- * The ticket's timestamp is the server's own clock; `now` is the server's clock
- * at submission. Between them they bound how much time can possibly have passed
- * while the typing was going on, which is the only part of the client's timeline
- * that can be checked against something the client does not control.
+ * O timestamp do bilhete é o relógio do próprio servidor; `now` é o relógio do
+ * servidor no envio. Entre os dois eles limitam quanto tempo pode ter passado
+ * enquanto a digitação acontecia, que é a única parte da timeline do cliente
+ * que dá pra checar contra algo que o cliente não controla.
  */
 export type RunAnchor = { readonly issuedAt: number; readonly now: number };
 
 /**
- * Everything scoring actually reads: a text to regenerate and a timeline to
- * replay against it.
+ * Tudo que a pontuação lê de verdade: um texto pra regerar e uma timeline pra
+ * reproduzir contra ele.
  *
- * Narrower than SubmitResult on purpose. A duel is scored by exactly this code
- * and has no run ticket to offer — the room is what gives it an identity and a
- * clock — so the signature says what the work needs rather than naming the one
- * caller that happens to carry more.
+ * Mais estreito que SubmitResult de propósito. Duelo é pontuado por exatamente
+ * este código e não tem bilhete pra oferecer — a sala é o que lhe dá identidade
+ * e relógio — então a assinatura diz o que o trabalho precisa em vez de nomear
+ * o único chamador que por acaso carrega mais.
  */
 export type Scoreable = Pick<
   SubmitResult,
@@ -52,19 +52,20 @@ export type Scoreable = Pick<
 >;
 
 /**
- * The gate between a claim and a record.
+ * O portão entre uma alegação e um registro.
  *
- * A submission is a timeline, not a score. This regenerates the text the run
- * was supposed to be typing, replays the timeline against it, and derives the
- * numbers here. Anything the client believed about its own speed is discarded
- * on the way in — which is the only reason a shared leaderboard is worth
- * showing anybody.
+ * Envio é timeline, não pontuação. Isto regera o texto que a corrida deveria
+ * estar digitando, reproduz a timeline contra ele e deriva os números aqui.
+ * Tudo que o cliente acreditava sobre a própria velocidade é jogado fora na
+ * entrada — que é o único motivo pelo qual um ranking compartilhado vale ser
+ * mostrado pra alguém.
  *
- * Replaying proves the characters. It says nothing about the clock, and the
- * clock is still the client's: `checkTimeline` is what stands between a correct
- * replay and any speed a forger cares to name. Neither one can tell a patient
- * script typing at a human rate from a human, and no arrangement of these
- * checks would — that is a property of the problem, not a gap in the code.
+ * Reproduzir prova os caracteres. Não diz nada sobre o relógio, e o relógio
+ * continua sendo do cliente: o `checkTimeline` é o que fica entre um replay
+ * correto e qualquer velocidade que o falsificador queira. Nenhum dos dois
+ * distingue um script paciente digitando em ritmo humano de um humano, e
+ * nenhum arranjo destas checagens distinguiria — isso é propriedade do
+ * problema, não buraco no código.
  */
 @Injectable()
 export class ResultsService {
@@ -88,8 +89,8 @@ export class ResultsService {
       .insert({
         user_id: userId,
         run_id: payload.run.id,
-        // Two runs of the same text at the same speeds are possible; the same
-        // timeline to the millisecond is a recording being filed twice.
+        // Duas corridas do mesmo texto na mesma velocidade são possíveis; a
+        // mesma timeline no milissegundo é uma gravação sendo arquivada duas vezes.
         timeline_hash: timelineHash(userId, payload),
         config: payload.config,
         corpus_version: payload.corpusVersion,
@@ -114,8 +115,9 @@ export class ResultsService {
 
     if (error) {
       if (error.code === UNIQUE_VIOLATION) {
-        // Not an error the typist caused: a retry after a dropped response
-        // lands here, and so does a second tab finishing the same run.
+        // Não é erro causado por quem digitou: uma retentativa depois de
+        // resposta perdida cai aqui, e uma segunda aba terminando a mesma
+        // corrida também.
         throw new ConflictException({
           code: 'duplicate' satisfies SubmitErrorCode,
           message: 'this run was already stored',
@@ -129,17 +131,17 @@ export class ResultsService {
   }
 
   /**
-   * Replays, judges and scores a submission. Pure — no database, so it is the
-   * part that can be tested without one.
+   * Reproduz, julga e pontua um envio. Pura — sem banco, então é a parte que dá
+   * pra testar sem um.
    *
-   * `anchor` is optional so the scoring can be exercised on its own, but the
-   * HTTP path always passes it: without it the only clock in the room is the
-   * one the submitter wrote.
+   * `anchor` é opcional pra pontuação poder ser exercitada sozinha, mas o
+   * caminho HTTP sempre passa: sem ele o único relógio na sala é o que quem
+   * enviou escreveu.
    */
   score(payload: Scoreable, anchor?: RunAnchor): Omit<TypingResult, 'id'> {
-    // An old corpus produces different text for the same seed, so a submission
-    // claiming a version this build cannot regenerate cannot be verified. It is
-    // refused rather than stored against text nobody can reproduce.
+    // Corpus antigo produz texto diferente pra mesma semente, então envio que
+    // alega uma versão que este build não regera não dá pra verificar. É
+    // recusado em vez de guardado contra texto que ninguém reproduz.
     if (payload.corpusVersion !== CORPUS_VERSION) {
       throw new BadRequestException({
         code: 'corpus_version' satisfies SubmitErrorCode,
@@ -157,7 +159,7 @@ export class ResultsService {
     try {
       session = replay(
         target,
-        // `correct` is filled in by the replay against the real target.
+        // `correct` é preenchido pelo replay contra o alvo de verdade.
         payload.keystrokes.map((k) => ({ ...k, correct: false })),
         { autoIndent: payload.config.kind === 'code' },
       );
@@ -174,9 +176,9 @@ export class ResultsService {
       );
     }
 
-    // Judged before it is scored. Deriving numbers from a timeline no hand
-    // produced and then deciding what to do with them would leave the decision
-    // to whatever the numbers happened to be.
+    // Julgado antes de pontuado. Derivar números de uma timeline que mão
+    // nenhuma produziu e só depois decidir o que fazer com eles deixaria a
+    // decisão a cargo dos números que por acaso saíram.
     const verdict = checkTimeline(session.keystrokes, TIMELINE_LIMITS);
     if (!verdict.ok) throw refuse('implausible', verdict.reason);
 
@@ -186,10 +188,10 @@ export class ResultsService {
     }
 
     if (anchor) {
-      // The one check the client cannot write its way around: however the
-      // timeline is dressed, the run cannot have lasted longer than the wall
-      // clock this server watched between handing out the ticket and being
-      // handed the result.
+      // A única checagem que o cliente não escreve como contornar: seja como
+      // for que a timeline esteja vestida, a corrida não pode ter durado mais
+      // que o relógio de parede que este servidor observou entre entregar o
+      // bilhete e receber o resultado.
       const watched = anchor.now - anchor.issuedAt;
       if (stats.elapsedMs > watched + TIMELINE_LIMITS.clockSlackMs) {
         throw refuse(
@@ -210,13 +212,14 @@ export class ResultsService {
       correct: stats.correct,
       incorrect: stats.incorrect,
       durationMs: Math.round(stats.elapsedMs),
-      // The moment the server accepted it, not a moment the client named. A
-      // client-set completion time is a client-set position on a daily board.
+      // O momento em que o servidor aceitou, não um momento que o cliente
+      // nomeou. Hora de conclusão escolhida pelo cliente é posição escolhida
+      // pelo cliente no ranking do dia.
       completedAt: new Date().toISOString(),
     };
   }
 
-  /** Whether a scored run is good enough to appear on a board. */
+  /** Se uma corrida pontuada é boa o bastante pra aparecer no ranking. */
   static ranks(result: Pick<TypingResult, 'accuracy'>): boolean {
     return result.accuracy >= LEADERBOARD_MIN_ACCURACY;
   }
@@ -227,11 +230,11 @@ function refuse(code: SubmitErrorCode, message: string): BadRequestException {
 }
 
 /**
- * A fingerprint of the run itself, scoped to its owner.
+ * A impressão digital da corrida em si, no escopo do dono.
  *
- * The user id is inside the hash so that two people who happen to produce the
- * same timeline — short text, identical rhythm — do not block each other, while
- * one person replaying their own recorded run collides with themselves.
+ * O id do usuário está dentro do hash pra duas pessoas que por acaso produzam a
+ * mesma timeline — texto curto, ritmo idêntico — não se bloquearem, enquanto
+ * uma pessoa reenviando a própria gravação colide com ela mesma.
  */
 function timelineHash(userId: string, payload: SubmitResult): string {
   const timeline = payload.keystrokes

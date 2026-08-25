@@ -30,11 +30,11 @@ import { parse } from '../validation';
 import { MatchesService } from './matches.service';
 
 /**
- * How often the stream sends something into a quiet duel.
+ * De quanto em quanto tempo o stream manda alguma coisa num duelo quieto.
  *
- * Proxies and load balancers close idle connections, and a lobby waiting for
- * the second player is idle by definition. Sent as a named event so it lands on
- * nobody's `onmessage`.
+ * Proxy e load balancer fecham conexão ociosa, e um lobby esperando o segundo
+ * jogador é ocioso por definição. Vai como evento com nome pra não cair no
+ * `onmessage` de ninguém.
  */
 const PING_MS = 20_000;
 
@@ -43,8 +43,8 @@ export class MatchesController {
   constructor(private readonly matches: MatchesService) {}
 
   /**
-   * Opens a room. Cheap to call and easy to script, hence the tight budget:
-   * twenty rooms a minute is more duels than a person can play in an hour.
+   * Abre uma sala. Barato de chamar e fácil de scriptar, daí o orçamento
+   * apertado: vinte salas por minuto é mais duelo do que se joga numa hora.
    */
   @Post()
   @RateLimit({ limit: 20, windowMs: 60_000 })
@@ -53,10 +53,10 @@ export class MatchesController {
   }
 
   /**
-   * What is behind an invite code, before committing to a name.
+   * O que tem atrás de um código de convite, antes de escolher um nome.
    *
-   * Declared above the `:id` routes because Nest matches in declaration order
-   * and 'code' would otherwise be read as a match id.
+   * Declarada acima das rotas `:id` porque o Nest casa na ordem de declaração e
+   * senão 'code' seria lido como id de partida.
    */
   @Get('code/:code')
   @RateLimit({ limit: 60, windowMs: 60_000 })
@@ -74,11 +74,11 @@ export class MatchesController {
   }
 
   /**
-   * The duels this browser says are its own.
+   * Os duelos que este browser diz serem dele.
    *
-   * A POST because the request is a list of ids rather than a filter, and a
-   * fifty-uuid query string is a URL nothing wants to log. It reads and it is
-   * declared before `:id` for the ordering reason above.
+   * É POST porque o pedido é uma lista de ids e não um filtro, e uma query
+   * string com cinquenta uuid é uma URL que ninguém quer logar. Ela lê, e está
+   * declarada antes de `:id` pelo motivo de ordem acima.
    */
   @Post('history')
   @HttpCode(HttpStatus.OK)
@@ -100,31 +100,29 @@ export class MatchesController {
   }
 
   /**
-   * The duel as it happens: state changes and the other player's caret.
+   * O duelo acontecendo: mudança de estado e o cursor do outro jogador.
    *
-   * Server-sent events rather than a socket. The traffic is one-directional —
-   * everything the client has to say is a request it already makes — and SSE
-   * survives a plain reverse proxy without an upgrade dance, reconnects on its
-   * own, and costs no dependency. The price is the token: `EventSource` cannot
-   * set headers, so it travels in the query string, which is why the request
-   * logger redacts it.
+   * Server-sent events em vez de socket. O tráfego é de mão única — tudo que o
+   * cliente tem a dizer é requisição que ele já faz — e SSE sobrevive a proxy
+   * reverso comum sem dança de upgrade, reconecta sozinho e não custa
+   * dependência. O preço é o token: `EventSource` não seta header, então ele
+   * viaja na query string, que é por que o logger de requisição o esconde.
    *
-   * The stream is authorised before the observable exists, so a bad token is an
-   * ordinary 401 rather than an error inside an already-open stream.
+   * O stream é autorizado antes de o observable existir, pra token ruim ser um
+   * 401 comum em vez de erro dentro de um stream já aberto.
    *
-   * A finished duel does not end the stream. It used to, and that is precisely
-   * what a rematch needs: the vote is published into the same room, and both
-   * screens have to hear it — the one that asked, and the one being asked. What
-   * ends the stream is the room being removed, minutes later, when there is
-   * nothing left to say. An abandoned duel is the exception: nobody is coming
-   * back to it.
+   * Duelo terminado não encerra o stream. Encerrava, e é exatamente isso que a
+   * revanche precisa: o voto é publicado na mesma sala, e as duas telas têm que
+   * ouvir — a que pediu e a que está sendo perguntada. O que encerra o stream é
+   * a sala ser removida, minutos depois, quando não há mais o que dizer. Duelo
+   * abandonado é a exceção: ninguém vai voltar pra ele.
    */
   @Sse(':id/stream')
   stream(
     @Param('id') id: string,
     @Query('token') token: string | undefined,
   ): Observable<MessageEvent> {
-    // Throws before any header is written if this is not a player.
+    // Lança antes de qualquer header ser escrito se isto não é um jogador.
     this.matches.forPlayer(id, token);
 
     return new Observable<MessageEvent>((subscriber) => {
@@ -140,8 +138,8 @@ export class MatchesController {
         () => subscriber.complete(),
       );
 
-      // The current state first, so a tab that arrives late or reconnects is
-      // never waiting on the next thing to happen to know what is going on.
+      // O estado atual primeiro, pra aba que chega tarde ou reconecta nunca
+      // ficar esperando a próxima coisa acontecer pra saber o que está rolando.
       subscriber.next({ data: { type: 'match', match } satisfies MatchEvent });
 
       const ping = setInterval(
@@ -157,8 +155,8 @@ export class MatchesController {
   }
 
   /**
-   * One caret position. Answered with 204 and nothing else — five of these a
-   * second per player is not the place to serialise a room.
+   * Uma posição de cursor. Respondida com 204 e mais nada — cinco destas por
+   * segundo por jogador não é lugar de serializar uma sala.
    */
   @Post(':id/progress')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -173,11 +171,11 @@ export class MatchesController {
   }
 
   /**
-   * Draws a different text for the room, optionally at a different length.
+   * Sorteia outro texto pra sala, opcionalmente com outro tamanho.
    *
-   * The host's button, in the lobby. Budgeted generously — deciding on a text
-   * is a few presses in a row while somebody reads the first line and says "não
-   * esse" — and still far below what a script would want.
+   * O botão de quem criou, no lobby. Orçamento generoso — escolher um texto são
+   * alguns cliques seguidos enquanto alguém lê a primeira linha e diz "não
+   * esse" — e ainda assim bem abaixo do que um script iria querer.
    */
   @Post(':id/text')
   @RateLimit({ limit: 30, windowMs: 60_000 })
@@ -194,11 +192,11 @@ export class MatchesController {
   }
 
   /**
-   * Asks for another round in the same room.
+   * Pede outra rodada na mesma sala.
    *
-   * Answers with the room either way, because the two answers are different
-   * screens: one says the other person is being waited on, the other is a
-   * countdown. Which of them came back is read off the state.
+   * Responde com a sala nos dois casos, porque as duas respostas são telas
+   * diferentes: uma diz que está esperando o outro, a outra é uma contagem
+   * regressiva. Qual delas voltou se lê no estado.
    */
   @Post(':id/rematch')
   @RateLimit({ limit: 20, windowMs: 60_000 })
@@ -210,12 +208,12 @@ export class MatchesController {
   }
 
   /**
-   * Ends the duel from this player's side.
+   * Encerra o duelo do lado deste jogador.
    *
-   * Same budget as finishing: both are once-per-duel actions, and twenty a
-   * minute is far more duels than anybody plays and far fewer than a script
-   * wants. Answers with the settled room rather than 204, so the tab that
-   * pressed the button renders the ending instead of asking for it again.
+   * Mesmo orçamento de terminar: os dois são ações de uma vez por duelo, e
+   * vinte por minuto é muito mais duelo do que se joga e muito menos do que um
+   * script quer. Responde com a sala resolvida em vez de 204, pra aba que
+   * apertou o botão desenhar o fim em vez de pedir de novo.
    */
   @Post(':id/leave')
   @RateLimit({ limit: 20, windowMs: 60_000 })
@@ -243,12 +241,12 @@ export class MatchesController {
 }
 
 /**
- * The duel token out of an Authorization header.
+ * O token do duelo, tirado do header Authorization.
  *
- * Every call that can be made with `fetch` carries it here rather than in the
- * query string: a URL is logged, kept in histories and handed to whatever the
- * page links to next, and this one authorises typing in somebody's name. The
- * stream is the exception, because `EventSource` has no way to send a header.
+ * Toda chamada que dá pra fazer com `fetch` o carrega aqui e não na query
+ * string: URL é logada, fica no histórico e é entregue pro que a página linkar
+ * em seguida, e este token autoriza digitar no nome de alguém. O stream é a
+ * exceção, porque `EventSource` não tem como mandar header.
  */
 function bearer(header: string | undefined): string | undefined {
   if (!header?.startsWith('Bearer ')) return undefined;

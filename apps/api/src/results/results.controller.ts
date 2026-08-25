@@ -32,9 +32,9 @@ export class ResultsController {
   ) {}
 
   /**
-   * The budget is per person and generous by the standards of typing: a run
-   * takes tens of seconds, so 30 a minute is far more than anybody types and
-   * far less than a script wants.
+   * O orçamento é por pessoa e generoso pelo padrão da digitação: uma corrida
+   * leva dezenas de segundos, então 30 por minuto é muito mais do que alguém
+   * digita e muito menos do que um script quer.
    */
   @Post('results')
   @UseGuards(AuthGuard)
@@ -44,11 +44,11 @@ export class ResultsController {
     @Body() body: unknown,
   ): Promise<TypingResult> {
     const payload = parse(SubmitResultSchema, body);
-    // Non-null: the guard is what put it there, and the guard threw otherwise.
+    // Não-nulo: quem pôs ali foi o guard, e o guard lançou no caso contrário.
     return this.results.submit(request.caller!.userId, payload);
   }
 
-  /** Your own runs, read inside your own row-level policies. */
+  /** Suas corridas, lidas dentro das suas próprias políticas de linha. */
   @Get('results/mine')
   @UseGuards(AuthGuard)
   @RateLimit({ limit: 60, windowMs: 60_000 })
@@ -62,7 +62,7 @@ export class ResultsController {
     );
   }
 
-  /** Public: a board nobody can read without an account is not a board. */
+  /** Público: ranking que ninguém lê sem conta não é ranking. */
   @Get('leaderboard')
   @RateLimit({ limit: 120, windowMs: 60_000 })
   async board(@Query() query: unknown): Promise<LeaderboardResponse> {

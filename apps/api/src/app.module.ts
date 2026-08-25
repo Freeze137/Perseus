@@ -38,10 +38,10 @@ import { SupabaseModule } from './supabase/supabase.module';
     MatchRegistryService,
     MatchStoreService,
     MatchTokenService,
-    // Global rather than per-route: a limiter you have to remember to attach is
-    // a limiter that is missing from the route somebody adds in a hurry. The
-    // guard does nothing to a route without a @RateLimit budget, so being
-    // global costs an untouched map lookup and buys the default being safe.
+    // Global e não por rota: limitador que você tem que lembrar de pendurar é
+    // limitador que falta na rota que alguém adiciona com pressa. O guard não
+    // faz nada com rota sem orçamento @RateLimit, então ser global custa uma
+    // consulta a um mapa intocado e compra o default ser seguro.
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],

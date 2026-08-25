@@ -40,11 +40,11 @@ import { MatchStoreService } from './match-store.service';
 import { MatchTokenService } from './match-token.service';
 
 /**
- * How long a finished room stays in memory after it is scored.
+ * Quanto tempo uma sala terminada fica na memória depois de pontuada.
  *
- * Long enough for both players to read the scoreboard, refresh the tab, and
- * copy the link — and, when there is no database, long enough that the history
- * list has something to show for the duel that just happened.
+ * O bastante pros dois lerem o placar, recarregarem a aba e copiarem o link —
+ * e, quando não há banco, o bastante pra lista de histórico ter o que mostrar
+ * do duelo que acabou de acontecer.
  */
 const KEEP_AFTER_DONE_MS = 5 * 60_000;
 
@@ -52,22 +52,22 @@ const KEEP_AFTER_DONE_MS = 5 * 60_000;
 const KEEP_AFTER_ABANDONED_MS = 60_000;
 
 /**
- * The duel: the room, the clock, and who won.
+ * O duelo: a sala, o relógio, e quem ganhou.
  *
- * Everything here is one process's memory plus one write at the end. What it
- * does *not* do is score anything itself — a duel is scored by the same
- * `ResultsService.score` a solo run goes through, replaying each player's
- * timeline against the text the seed regenerates. That is the whole reason the
- * live progress can be casual about being lossy: it decorates, and the result
- * comes from somewhere the client cannot reach.
+ * Tudo aqui é memória de um processo mais uma escrita no fim. O que ele *não*
+ * faz é pontuar coisa nenhuma: duelo é pontuado pelo mesmo
+ * `ResultsService.score` por onde passa a corrida solo, reproduzindo a timeline
+ * de cada jogador contra o texto que a semente regera. É por isso que o
+ * progresso ao vivo pode ser relaxado quanto a perder pacote: ele decora, e o
+ * resultado vem de um lugar que o cliente não alcança.
  *
- * The order of events, since it is spread across four methods and a timer:
+ * A ordem dos eventos, já que ela está espalhada por quatro métodos e um timer:
  *
- *   create   host opens a room          → 'lobby'
- *   join     the friend takes the code  → 'countdown', starts_at set
- *   (timer)  the countdown runs out     → 'running', keys unlock
- *   finish   somebody reaches the end   → grace period starts for the other
- *   settle   both in, or grace expired  → 'done', winner decided, written down
+ *   create   quem cria abre a sala        → 'lobby'
+ *   join     o amigo usa o código         → 'countdown', starts_at setado
+ *   (timer)  a regressiva acaba           → 'running', teclas destravam
+ *   finish   alguém chega ao fim          → começa o tempo de graça do outro
+ *   settle   os dois, ou graça vencida    → 'done', vencedor decidido, anotado
  */
 @Injectable()
 export class MatchesService {
@@ -81,12 +81,12 @@ export class MatchesService {
   ) {}
 
   /**
-   * Opens a room and puts the host in slot 1.
+   * Abre uma sala e põe quem criou no lugar 1.
    *
-   * The seed is drawn here rather than accepted from the host. A client that
-   * chose it could generate the text, type it once against a stopwatch, and
-   * open the room already knowing every character — which is not cheating the
-   * scoring, it is cheating the other person.
+   * A semente é sorteada aqui, não aceita de quem cria. Um cliente que a
+   * escolhesse poderia gerar o texto, digitar uma vez com cronômetro e abrir a
+   * sala já sabendo cada caractere — o que não é fraudar a pontuação, é fraudar
+   * a outra pessoa.
    */
   create(payload: CreateMatch): MatchCredentials {
     if (this.registry.size >= MAX_ROOMS) {
@@ -106,9 +106,8 @@ export class MatchesService {
       keyboardLayout: payload.keyboardLayout,
     };
 
-    // Refused here rather than at the countdown: a room whose config produces
-    // no text would leave two people staring at an empty screen with the clock
-    // already running.
+    // Recusado aqui e não na regressiva: sala cuja config não produz texto
+    // deixaria duas pessoas olhando uma tela vazia com o relógio já andando.
     if (generate(config).length === 0) {
       throw new BadRequestException('that configuration produces no text');
     }
@@ -130,7 +129,7 @@ export class MatchesService {
     };
 
     this.registry.add(room);
-    // A room nobody joins is swept rather than left holding a code.
+    // Sala em que ninguém entra é varrida em vez de ficar segurando um código.
     this.registry.arm(room.id, 'lobby', now + MATCH_LOBBY_TTL_MS, () => {
       if (room.state === 'lobby') this.registry.remove(room.id);
     });
@@ -150,12 +149,12 @@ export class MatchesService {
   }
 
   /**
-   * Puts the second player in and starts the countdown.
+   * Põe o segundo jogador dentro e começa a regressiva.
    *
-   * There is no ready check. Both clients already have the text — it is a pure
-   * function of the seed they were both handed — so the only thing left to
-   * agree on is when to start, and a countdown says that better than a button
-   * one person forgets to press.
+   * Não existe botão de "pronto". Os dois clientes já têm o texto — ele é função
+   * pura da semente que os dois receberam — então a única coisa que falta
+   * combinar é quando começar, e uma regressiva diz isso melhor que um botão que
+   * uma das pessoas esquece de apertar.
    */
   join(code: string, payload: JoinMatch): MatchCredentials {
     const room = this.registry.byCode(code);
@@ -185,9 +184,9 @@ export class MatchesService {
       room.state = 'running';
       this.publish(room);
     });
-    // The one case the grace period cannot close: both tabs disappear before
-    // anybody finishes, so the clock that would have settled the duel never
-    // starts. This is the wall behind that.
+    // O único caso que o tempo de graça não fecha: as duas abas somem antes de
+    // alguém terminar, então o relógio que resolveria o duelo nunca começa.
+    // Este é o muro atrás disso.
     this.registry.arm(room.id, 'max', room.startsAt + MATCH_MAX_RUN_MS, () =>
       this.settle(room),
     );
@@ -202,15 +201,15 @@ export class MatchesService {
   }
 
   /**
-   * Draws a different text for the room.
+   * Sorteia outro texto pra sala.
    *
-   * The host's, and only while the keys are still locked. Once a duel is
-   * running the text is what both people are typing, and after it ends it is
-   * what their scores were measured against — changing it in either state would
-   * rewrite something that already happened.
+   * É de quem criou, e só enquanto as teclas ainda estão travadas. Com o duelo
+   * rodando, o texto é o que os dois estão digitando; depois que acaba, é
+   * contra o que as pontuações foram medidas — mudar em qualquer um dos dois
+   * estados reescreveria algo que já aconteceu.
    *
-   * `length` is optional because the two things the button offers are the same
-   * gesture: "outro texto" and "outro texto, maior".
+   * `length` é opcional porque as duas coisas que o botão oferece são o mesmo
+   * gesto: "outro texto" e "outro texto, maior".
    */
   reseed(id: string, token: string | undefined, payload: ReseedMatch): Match {
     const { room, slot } = this.authorise(id, token);
@@ -235,8 +234,8 @@ export class MatchesService {
       seed: randomSeed(),
     };
 
-    // Same guard as at creation, for the same reason: a configuration that
-    // produces no text would leave two people staring at an empty screen.
+    // Mesma guarda da criação, pelo mesmo motivo: configuração que não produz
+    // texto deixaria duas pessoas olhando uma tela vazia.
     if (generate(config).length === 0) {
       throw new BadRequestException('that configuration produces no text');
     }
@@ -247,16 +246,16 @@ export class MatchesService {
   }
 
   /**
-   * Asks for another round, and starts one when both have asked.
+   * Pede outra rodada, e começa uma quando os dois pediram.
    *
-   * The room is kept — same code, same link, same two people — and what is
-   * redrawn is the round: a new id, so the duel that just happened keeps its
-   * row in the history, and a new seed, so nobody types a text they have
-   * already seen.
+   * A sala é mantida — mesmo código, mesmo link, mesmas duas pessoas — e o que
+   * é sorteado de novo é a rodada: id novo, pro duelo que acabou de acontecer
+   * manter a linha dele no histórico, e semente nova, pra ninguém digitar um
+   * texto que já viu.
    *
-   * A vote is not withdrawn once cast. The window is the five minutes a
-   * finished room is kept for, and inside it the only thing that can happen is
-   * the other person agreeing.
+   * Voto dado não é retirado. A janela são os cinco minutos em que a sala
+   * terminada é guardada, e dentro dela a única coisa que pode acontecer é o
+   * outro concordar.
    */
   rematch(id: string, token: string | undefined): Match {
     const { room, player: me } = this.authorise(id, token);
@@ -268,8 +267,8 @@ export class MatchesService {
       });
     }
 
-    // Somebody who left is not there to play again, and the room would start a
-    // countdown against an empty seat.
+    // Quem saiu não está lá pra jogar de novo, e a sala começaria uma
+    // regressiva contra uma cadeira vazia.
     if (room.players.length < MATCH_PLAYERS) {
       throw new ConflictException({
         code: 'match_closed' satisfies MatchErrorCode,
@@ -280,7 +279,7 @@ export class MatchesService {
     me.rematch = true;
 
     if (!room.players.every((one) => one.rematch)) {
-      // Half a rematch: the other screen learns somebody is waiting on it.
+      // Meia revanche: a outra tela fica sabendo que estão esperando por ela.
       this.publish(room);
       return this.snapshot(room);
     }
@@ -303,7 +302,7 @@ export class MatchesService {
       one.rematch = false;
     }
 
-    // The room was on its way out; it is being played again instead.
+    // A sala estava de saída; em vez disso vai ser jogada de novo.
     this.registry.disarm(room.id, 'reap');
 
     this.registry.arm(room.id, 'start', room.startsAt, () => {
@@ -320,9 +319,9 @@ export class MatchesService {
   }
 
   /**
-   * The room as one of its players sees it. Also what a reconnecting tab asks
-   * for: the token was stored locally, so a refresh mid-duel rejoins rather
-   * than starting over.
+   * A sala como um dos jogadores dela vê. Também é o que uma aba reconectando
+   * pede: o token ficou guardado localmente, então recarregar no meio do duelo
+   * volta pra sala em vez de recomeçar.
    */
   forPlayer(
     id: string,
@@ -333,21 +332,21 @@ export class MatchesService {
   }
 
   /**
-   * Walks out of the duel, and takes the room with it.
+   * Sai do duelo, e leva a sala junto.
    *
-   * A duel is two people by definition, so one leaving does not leave a duel
-   * behind — it ends one. That is why this settles the room rather than
-   * removing a player from it: whatever the state, the other person gets a
-   * screen that says the thing is over instead of a bar that stopped moving.
+   * Duelo é duas pessoas por definição, então um saindo não deixa um duelo pra
+   * trás: encerra um. É por isso que isto resolve a sala em vez de remover um
+   * jogador dela — seja qual for o estado, a outra pessoa recebe uma tela
+   * dizendo que acabou em vez de uma barra que parou de andar.
    *
-   * `settle` decides what "over" means, and it already knows: if somebody had
-   * finished, the duel is scored as it stands and the leaver is the one who did
-   * not make it to the end; if nobody had, the room is abandoned and nothing is
-   * recorded. There is deliberately no second way to close a room here.
+   * O `settle` decide o que "acabou" quer dizer, e ele já sabe: se alguém tinha
+   * terminado, o duelo é pontuado como está e quem saiu é quem não chegou ao
+   * fim; se ninguém tinha, a sala é abandonada e nada é registrado. De propósito
+   * não existe um segundo jeito de fechar sala aqui.
    *
-   * Leaving a duel that is already over is not an error. A tab that lost the
-   * stream, saw the scoreboard late, and only then hit the button is asking for
-   * something that has already happened.
+   * Sair de um duelo que já acabou não é erro. Uma aba que perdeu o stream, viu
+   * o placar tarde e só então apertou o botão está pedindo uma coisa que já
+   * aconteceu.
    */
   leave(id: string, token: string | undefined): Match {
     const { room } = this.authorise(id, token);
@@ -356,18 +355,18 @@ export class MatchesService {
   }
 
   /**
-   * Publishes a caret position to the other player.
+   * Publica uma posição de cursor pro outro jogador.
    *
-   * Silently ignored outside a running duel rather than refused. A client that
-   * is mid-flush when the grace period expires would otherwise get an error for
-   * doing exactly what it was told to do, about a message that does not matter.
+   * Ignorado calado fora de um duelo rodando, em vez de recusado. Senão um
+   * cliente no meio de um flush quando o tempo de graça vence receberia erro
+   * por fazer exatamente o que mandaram, sobre uma mensagem que não importa.
    */
   progress(id: string, token: string | undefined, index: number): void {
     const { room, player: me } = this.authorise(id, token);
     if (room.state !== 'running') return;
     if (me.finishedAt !== null) return;
 
-    // Monotonic: a late packet must not walk somebody's progress bar backwards.
+    // Monotônico: pacote atrasado não pode fazer a barra de alguém andar pra trás.
     if (index <= me.progress) return;
     me.progress = index;
 
@@ -380,13 +379,12 @@ export class MatchesService {
   }
 
   /**
-   * Takes one player's timeline, scores it, and decides whether the duel is
-   * over.
+   * Pega a timeline de um jogador, pontua, e decide se o duelo acabou.
    *
-   * The timeline is judged by the same code a solo submission goes through —
-   * replayed against the regenerated text, checked for a human rhythm, and
-   * bounded by a clock the server owns. `startsAt` is that clock here: the run
-   * cannot have taken longer than the time since the keys unlocked.
+   * A timeline é julgada pelo mesmo código por onde passa um envio solo —
+   * reproduzida contra o texto regerado, checada por ritmo humano, e limitada
+   * por um relógio que é do servidor. `startsAt` é esse relógio aqui: a corrida
+   * não pode ter durado mais que o tempo desde as teclas destravarem.
    */
   finish(
     id: string,
@@ -421,7 +419,7 @@ export class MatchesService {
         corpusVersion: room.corpusVersion,
         keystrokes: payload.keystrokes,
       },
-      // Non-null: `running` is only ever reached through the countdown timer.
+      // Não-nulo: `running` só é alcançado pelo timer da regressiva.
       { issuedAt: room.startsAt!, now },
     );
 
@@ -443,8 +441,8 @@ export class MatchesService {
       return this.snapshot(room);
     }
 
-    // First one home. The other gets the grace period and not a second longer:
-    // the alternative is a closed tab holding the room open forever.
+    // Primeiro a chegar. O outro ganha o tempo de graça e nem um segundo a
+    // mais: a alternativa é uma aba fechada segurando a sala aberta pra sempre.
     room.graceEndsAt = now + MATCH_GRACE_MS;
     this.registry.arm(room.id, 'grace', room.graceEndsAt, () =>
       this.settle(room),
@@ -454,14 +452,13 @@ export class MatchesService {
   }
 
   /**
-   * Ends the duel and works out who won.
+   * Encerra o duelo e descobre quem ganhou.
    *
-   * Two finishers: the higher wpm, which on one shared text is the same thing
-   * as being first, computed from the timeline rather than from whose request
-   * arrived first. One finisher: they win, and the other is 'unfinished' —
-   * they did not reach the end of the text inside the grace period, which is
-   * all that is claimed about them. Nobody: the room died, and nothing is
-   * recorded, because nothing happened.
+   * Dois chegaram: o maior ppm, que num texto compartilhado é a mesma coisa que
+   * chegar primeiro, calculado da timeline e não de qual requisição chegou
+   * antes. Um chegou: ele ganha, e o outro é 'unfinished' — não chegou ao fim
+   * do texto dentro do tempo de graça, que é tudo que se afirma sobre ele.
+   * Ninguém: a sala morreu, e nada é registrado, porque nada aconteceu.
    */
   private settle(room: Room): void {
     if (room.state === 'done' || room.state === 'abandoned') return;
@@ -497,8 +494,8 @@ export class MatchesService {
         (a, b) => (b.score?.wpm ?? 0) - (a.score?.wpm ?? 0),
       );
       if (first.score!.wpm === second.score!.wpm) {
-        // Identical to the second decimal. Vanishingly rare and not worth
-        // breaking with a tiebreak nobody could see the reasoning of.
+        // Idêntico até a segunda casa. Raríssimo e não vale quebrar com um
+        // critério de desempate cujo raciocínio ninguém enxergaria.
         room.winnerSlot = null;
         for (const one of finished) one.outcome = 'draw';
       } else {
@@ -510,12 +507,12 @@ export class MatchesService {
 
     this.publish(room);
 
-    // A copy, not the room. The write is fire and forget — both players already
-    // have the scoreboard, and storing it is a record rather than a step in
-    // producing it — which means it can still be in flight when a rematch
-    // reuses this room. A rematch redraws `roundId` and clears every score, so
-    // handing the live object over would file the duel that just ended under
-    // the next one's id, or with no scores at all.
+    // Uma cópia, não a sala. A escrita é atire e esqueça — os dois jogadores já
+    // têm o placar, e guardar é registro e não passo pra produzi-lo — o que
+    // significa que ela ainda pode estar em voo quando uma revanche reusar esta
+    // sala. Revanche sorteia `roundId` novo e limpa toda pontuação, então
+    // entregar o objeto vivo arquivaria o duelo que acabou sob o id do
+    // próximo, ou sem pontuação nenhuma.
     const finishedRound: Room = {
       ...room,
       players: room.players.map((one) => ({ ...one })),
@@ -529,12 +526,12 @@ export class MatchesService {
   }
 
   /**
-   * The duels a browser claims as its own, newest first.
+   * Os duelos que um browser diz serem dele, do mais novo pro mais velho.
    *
-   * Rooms still in memory answer for themselves, which is what makes the
-   * history work at all when there is no database: the duel that just finished
-   * is still here. `status` says which of those two worlds the answer came
-   * from, so the interface can say "not stored" instead of "none yet".
+   * Sala que ainda está na memória responde por si, e é isso que faz o
+   * histórico funcionar quando não há banco: o duelo que acabou de terminar
+   * continua aqui. `status` diz de qual desses dois mundos veio a resposta, pra
+   * interface poder dizer "não guardado" em vez de "nenhum ainda".
    */
   async summaries(ids: readonly string[]): Promise<MatchSummariesResponse> {
     const stored = await this.store.summaries(ids);
@@ -542,8 +539,8 @@ export class MatchesService {
 
     for (const id of ids) {
       if (byId.has(id)) continue;
-      // What a browser holds is the round it played, which is also the id the
-      // row carries. The room is found through it, not the other way round.
+      // O que o browser guarda é a rodada que ele jogou, que é também o id que
+      // a linha carrega. A sala é achada por ele, não o contrário.
       const room = this.registry.byRound(id);
       if (!room || room.state !== 'done') continue;
       byId.set(id, this.summarise(room));
@@ -556,8 +553,8 @@ export class MatchesService {
     return { status: this.store.enabled ? 'ok' : 'unavailable', matches };
   }
 
-  /** Subscribing is the registry's job; this is here so the controller has one
-   * dependency rather than two. */
+  /** Inscrever é trabalho do registry; isto está aqui pro controller ter uma
+   * dependência em vez de duas. */
   subscribe(
     id: string,
     token: string | undefined,
@@ -590,8 +587,8 @@ export class MatchesService {
 
     const found = room.players.find((one) => one.slot === slot);
     if (!found) {
-      // A token for a slot nobody occupies: the room was rebuilt, or the token
-      // outlived it. Either way it is not a seat at this table.
+      // Token pra um lugar que ninguém ocupa: a sala foi reconstruída, ou o
+      // token sobreviveu a ela. De qualquer jeito não é cadeira nesta mesa.
       throw new UnauthorizedException({
         code: 'match_token' satisfies MatchErrorCode,
         message: 'you are not a player in this duel',
@@ -649,8 +646,8 @@ export class MatchesService {
 
   private summarise(room: Room): MatchSummary {
     return {
-      // The round, matching the row this would have been read from had the
-      // write already landed. The room id would be a different duel's key.
+      // A rodada, batendo com a linha de onde isto teria sido lido se a
+      // escrita já tivesse caído. O id da sala seria chave de outro duelo.
       id: room.roundId,
       inviteCode: room.inviteCode,
       kind: room.config.kind,
@@ -672,11 +669,11 @@ export class MatchesService {
   }
 
   /**
-   * An unused invite code.
+   * Um código de convite não usado.
    *
-   * Collisions are checked rather than assumed away: a billion codes is a lot
-   * until two of two hundred live rooms happen to share one, and the person it
-   * happens to would be dropped into a stranger's duel.
+   * Colisão é checada em vez de descartada como improvável: um bilhão de
+   * códigos é muito até duas de duzentas salas vivas dividirem um, e a pessoa a
+   * quem isso acontecesse cairia no duelo de um estranho.
    */
   private freshCode(): string {
     for (let attempt = 0; attempt < 32; attempt += 1) {
@@ -686,7 +683,7 @@ export class MatchesService {
       }
       if (!this.registry.hasCode(code)) return code;
     }
-    // Thirty-two collisions in a row is not luck, it is a full table.
+    // Trinta e duas colisões seguidas não é azar, é tabela cheia.
     throw new ServiceUnavailableException({
       code: 'match_closed' satisfies MatchErrorCode,
       message: 'could not allocate an invite code — try again',

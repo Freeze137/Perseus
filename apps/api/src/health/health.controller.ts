@@ -17,25 +17,25 @@ export class HealthController {
   ) {}
 
   /**
-   * Says what this build can actually do, not just that it is up.
+   * Diz o que este build consegue fazer, não só que está de pé.
    *
-   * `sync` is what the web app reads to decide whether to offer sign-in at all:
-   * an API running without database credentials is a perfectly good API for a
-   * trainer that works offline, and the UI should reflect that rather than
-   * offering a button that fails.
+   * `sync` é o que o site lê pra decidir se oferece login: uma API rodando sem
+   * credencial de banco é uma API perfeitamente boa pra um treinador que
+   * funciona offline, e a interface deve refletir isso em vez de oferecer um
+   * botão que falha.
    *
-   * This answers from memory. It is the liveness probe — "is this process
-   * serving" — and a liveness probe that touches the database restarts a
-   * perfectly healthy API every time the database has a bad minute.
+   * Responde da memória. É a sonda de liveness — "este processo está servindo" —
+   * e uma sonda de liveness que encosta no banco reinicia uma API saudável toda
+   * vez que o banco tem um minuto ruim.
    */
   @Get()
   status() {
     return {
       status: 'ok',
       sync: this.supabase.enabled,
-      // Duels are always available — the room lives in this process. What this
-      // says is whether a finished one is written down afterwards, which is a
-      // different promise and deserves its own word.
+      // Duelo está sempre disponível: a sala vive neste processo. O que isto
+      // diz é se um duelo terminado é anotado depois, que é outra promessa e
+      // merece palavra própria.
       duels: true,
       duelHistory: this.postgres.enabled,
       corpusVersion: CORPUS_VERSION,
@@ -43,13 +43,13 @@ export class HealthController {
   }
 
   /**
-   * Readiness: whether the database is answering right now.
+   * Readiness: se o banco está respondendo agora.
    *
-   * Separate from the one above because they are asked by different things for
-   * different reasons. This one costs a query, so it belongs on a probe that
-   * runs every few seconds at most, and it reports 503 when sync is configured
-   * but not reachable — the state where the process is alive and cannot do the
-   * job it was configured for.
+   * Separada da de cima porque são perguntadas por coisas diferentes e por
+   * motivos diferentes. Esta custa uma query, então cabe numa sonda que roda no
+   * máximo de poucos em poucos segundos, e devolve 503 quando o sync está
+   * configurado e não alcançável — o estado em que o processo está vivo e não
+   * consegue fazer o trabalho pro qual foi configurado.
    */
   @Get('ready')
   @HttpCode(HttpStatus.OK)
@@ -61,7 +61,7 @@ export class HealthController {
       : 'not configured';
 
     if (!this.supabase.enabled) {
-      // Offline by configuration is a healthy state, not a degraded one.
+      // Offline por configuração é estado saudável, não degradado.
       if (duelHistory === 'unreachable') {
         throw new ServiceUnavailableException({
           status: 'degraded',

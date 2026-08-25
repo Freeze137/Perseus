@@ -8,37 +8,38 @@ export type TicketVerdict =
   | { readonly ok: false; readonly reason: string };
 
 /**
- * Signs and checks the permission slip a run is opened with.
+ * Assina e confere o papel de permissão com que uma corrida é aberta.
  *
- * Stateless on purpose: the signature is the state. A table of open tickets
- * would be a row written for every run anybody starts and abandons — most of
- * them, on a trainer — and would have to be swept. An HMAC costs nothing, keeps
- * no garbage, and answers the only question being asked: did this server hand
- * this ticket out, and when.
+ * Sem estado de propósito: a assinatura é o estado. Uma tabela de bilhetes
+ * abertos seria uma linha escrita pra toda corrida que alguém começa e
+ * abandona — a maioria delas, num treinador — e precisaria ser varrida. Um HMAC
+ * não custa nada, não deixa lixo, e responde a única pergunta que está sendo
+ * feita: este servidor entregou este bilhete, e quando.
  *
- * What a ticket is for is narrow, and worth stating so nobody trusts it with
- * more than it carries. It does not prove a person typed. It gives every run a
- * server-issued identity, which is what makes storing one twice impossible, and
- * it puts a wall clock behind the claimed duration so a submission cannot say
- * it took longer than the time that has actually passed.
+ * Pra que serve um bilhete é coisa estreita, e vale dizer pra ninguém confiar
+ * nele mais do que ele carrega. Não prova que uma pessoa digitou. Dá a toda
+ * corrida uma identidade emitida pelo servidor, que é o que torna impossível
+ * guardar a mesma duas vezes, e põe um relógio de parede atrás da duração
+ * alegada pra um envio não poder dizer que levou mais do que o tempo que de
+ * fato passou.
  */
 @Injectable()
 export class RunTicketService {
   private readonly secret: Buffer;
 
   /**
-   * The secret is shared with the duel tokens rather than owned here — one
-   * process, one identity. A random one still works; it just does not survive a
-   * restart, so runs open before a deploy cannot be submitted after it. See
-   * `serverSecret`.
+   * O segredo é dividido com os tokens de duelo em vez de ser dono aqui — um
+   * processo, uma identidade. Um aleatório funciona; só não sobrevive a um
+   * restart, então corrida aberta antes de um deploy não pode ser enviada
+   * depois. Ver `serverSecret`.
    *
-   * It is a parameter so a test can stand in for a second deployment, which is
-   * the only caller that ever passes one.
+   * É parâmetro pra um teste conseguir fingir ser um segundo deploy, que é o
+   * único chamador que passa um.
    */
   constructor(@Optional() secret?: Buffer) {
-    // Optional, and undefined in every real wiring: Nest would otherwise try to
-    // find a Buffer provider and refuse to start. A test passes one to stand in
-    // for a second deployment, which is the only caller that ever does.
+    // Opcional, e undefined em toda ligação real: senão o Nest procuraria um
+    // provider de Buffer e se recusaria a subir. Um teste passa um pra fingir
+    // ser um segundo deploy, que é o único chamador que faz isso.
     this.secret = secret ?? serverSecret();
   }
 
@@ -49,11 +50,11 @@ export class RunTicketService {
   }
 
   /**
-   * Checks the signature, the age and the direction of the clock.
+   * Confere a assinatura, a idade e a direção do relógio.
    *
-   * A ticket from the future is refused as firmly as an expired one: it is
-   * either a forgery or a server whose clock moved, and both make every
-   * duration derived from it meaningless.
+   * Bilhete vindo do futuro é recusado com a mesma firmeza de um vencido: ou é
+   * falsificação ou é servidor com relógio que andou, e os dois fazem toda
+   * duração derivada dele não querer dizer nada.
    */
   verify(ticket: RunTicket, now: number = Date.now()): TicketVerdict {
     const expected = this.sign(ticket.id, ticket.issuedAt);
@@ -76,9 +77,9 @@ export class RunTicketService {
   }
 
   private sign(id: string, issuedAt: number): string {
-    // The 'run' label is what keeps this from being interchangeable with a duel
-    // token, which is signed with the same key. Domain separation costs four
-    // characters and closes the whole class of "signature valid, meaning wrong".
+    // O rótulo 'run' é o que impede isto de virar um token de duelo, que é
+    // assinado com a mesma chave. Separação de domínio custa quatro caracteres
+    // e fecha a classe inteira de "assinatura válida, significado errado".
     return createHmac('sha256', this.secret)
       .update(`run:${id}:${issuedAt}`)
       .digest('hex');

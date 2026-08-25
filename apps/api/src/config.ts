@@ -1,75 +1,74 @@
 import { z } from 'zod';
 
 /**
- * Environment, parsed once at boot.
+ * Ambiente, lido uma vez no boot.
  *
- * The service-role key bypasses row-level security, which is exactly why the
- * API holds it and the browser never does: the browser gets the anon key and
- * lives inside the policies. If this file ever ends up imported from client
- * code, that is the bug.
+ * A chave de service role passa por cima do row-level security, que é
+ * exatamente por que a API a segura e o browser nunca: o browser recebe a chave
+ * anon e vive dentro das políticas. Se este arquivo um dia acabar importado de
+ * código de cliente, o bug é esse.
  *
- * Sync is optional. Without Supabase configured the app still runs — the typing
- * trainer works offline and always has — so a missing key degrades the ranking
- * rather than taking the process down.
+ * Sync é opcional. Sem Supabase configurado o app roda igual — o treinador
+ * funciona offline e sempre funcionou — então chave faltando degrada o ranking
+ * em vez de derrubar o processo.
  */
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   SUPABASE_URL: z.url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
-  /** Origins allowed to call this API. Comma separated. */
+  /** Origens que podem chamar esta API. Separadas por vírgula. */
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
   /**
-   * Signs run tickets. Optional so local work needs no setup; without it the
-   * process signs with a secret it invents at boot, which means a restart
-   * invalidates every run somebody had open. Set it anywhere with more than one
-   * instance or more than one deploy a day.
+   * Assina os bilhetes de corrida. Opcional pra trabalho local não precisar de
+   * setup; sem ela o processo assina com um segredo que inventa no boot, o que
+   * faz um restart invalidar toda corrida que alguém tinha aberta. Configure em
+   * qualquer lugar com mais de uma instância ou mais de um deploy por dia.
    */
   RUN_TICKET_SECRET: z.string().min(32).optional(),
   /**
-   * Postgres, for duels. Optional, like everything else that talks to a
-   * database here: without it a duel still runs end to end — the room lives in
-   * this process's memory — and only the history outlives the room.
+   * Postgres, pro duelo. Opcional como tudo aqui que fala com banco: sem ela o
+   * duelo roda de ponta a ponta do mesmo jeito — a sala vive na memória deste
+   * processo — e só o histórico sobrevive à sala.
    *
-   * Deliberately a separate connection from Supabase rather than the same
-   * project's pooler. A duel needs no accounts and no row-level security, so it
-   * needs none of what the service-role client is for, and pointing it at a
-   * plain Postgres box is a one-line change instead of a migration.
+   * É conexão separada do Supabase de propósito, não o pooler do mesmo projeto.
+   * Duelo não precisa de conta nem de row-level security, então não precisa de
+   * nada do que o cliente de service role serve, e apontar pra um Postgres
+   * comum é mudança de uma linha em vez de migração.
    */
   DATABASE_URL: z.string().min(12).optional(),
   /**
-   * Whether to negotiate TLS to that database. Off by default because the
-   * common shape is Postgres on the same host as the API, over the loopback,
-   * where TLS is ceremony. Turn it on for anything the traffic leaves the box
-   * to reach.
+   * Se negocia TLS com esse banco. Desligado por padrão porque o formato comum
+   * é Postgres no mesmo host da API, pelo loopback, onde TLS é cerimônia.
+   * Ligue pra qualquer coisa que o tráfego saia da máquina pra alcançar.
    */
   DATABASE_SSL: z
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
   /**
-   * How many proxies sit in front of this. Rate limiting counts callers by
-   * address, and behind a load balancer every address is the balancer's unless
-   * Express is told how far back to look.
+   * Quantos proxies estão na frente disto. O rate limit conta chamador por
+   * endereço, e atrás de um load balancer todo endereço é o do balancer, a não
+   * ser que o Express seja avisado de quantos saltos olhar pra trás.
    */
   TRUST_PROXY_HOPS: z.coerce.number().int().nonnegative().default(0),
   /**
-   * Body ceiling. A 2 000-character code run is around 90 KB of timeline, and
-   * Express defaults to 100 KB — close enough that the longest honest runs were
-   * one correction away from a 413 nobody would have understood.
+   * Teto do corpo. Uma corrida de código de 2 000 caracteres dá uns 90 KB de
+   * timeline, e o padrão do Express é 100 KB — perto o bastante pra as corridas
+   * honestas mais longas ficarem a uma correção de um 413 que ninguém entenderia.
    */
   MAX_BODY_SIZE: z.string().default('512kb'),
 });
 
 export type Env = z.infer<typeof EnvSchema> & {
   syncEnabled: boolean;
-  /** Whether finished duels are written down rather than only played. */
+  /** Se duelo terminado é anotado em vez de só jogado. */
   matchHistoryEnabled: boolean;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const parsed = EnvSchema.safeParse(source);
   if (!parsed.success) {
-    // Failing at boot beats failing on the first request that needs the value.
+    // Falhar no boot é melhor que falhar na primeira requisição que precisa do valor.
     throw new Error(`invalid environment:\n${z.prettifyError(parsed.error)}`);
   }
   const env = parsed.data;

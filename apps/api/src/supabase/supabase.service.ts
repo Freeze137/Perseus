@@ -7,38 +7,38 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { loadEnv, type Env } from '../config';
 
 /**
- * Whatever `createClient` hands back, named.
+ * O que quer que o `createClient` devolva, com nome.
  *
- * Spelled as the factory's own return type rather than as `SupabaseClient`: the
- * two differ in their default generic parameters, and pinning it to the factory
- * means a client library upgrade cannot quietly widen this to `any`.
+ * Escrito como o tipo de retorno da própria fábrica em vez de `SupabaseClient`:
+ * os dois diferem nos genéricos padrão, e prender na fábrica faz um upgrade da
+ * biblioteca não conseguir alargar isto pra `any` sem ninguém ver.
  */
 type CallerClient = ReturnType<typeof createClient>;
 
-/** How long a verified token is trusted without asking Supabase again. */
+/** Por quanto tempo um token verificado é confiado sem perguntar de novo. */
 const TOKEN_CACHE_MS = 60_000;
-/** Ceiling on the token cache, so it cannot be grown without bound. */
+/** Teto do cache de token, pra ele não crescer sem limite. */
 const TOKEN_CACHE_MAX = 5_000;
 
 /**
- * The one place that holds the service-role key.
+ * O único lugar que segura a chave de service role.
  *
- * `admin` bypasses row-level security and is used only for writes the server
- * has already validated and for calling `leaderboard()`, which is the one
- * deliberate opening in the policies.
+ * `admin` passa por cima do row-level security e só é usado pra escrita que o
+ * servidor já validou e pra chamar `leaderboard()`, que é a única abertura
+ * deliberada nas políticas.
  *
- * `asCaller` is the opposite tool: a client carrying the caller's own token, so
- * the database applies their policies. Anything reading a person's own rows
- * goes through it. The rule that decides between the two is simple — if the
- * answer is "the rows that belong to whoever is asking", the database should be
- * the one enforcing that, not this process.
+ * `asCaller` é a ferramenta oposta: um cliente carregando o token de quem
+ * chamou, pro banco aplicar as políticas dele. Tudo que lê as linhas de uma
+ * pessoa passa por ali. A regra que decide entre os dois é simples — se a
+ * resposta é "as linhas de quem está perguntando", quem tem que garantir isso é
+ * o banco, não este processo.
  */
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private readonly env: Env = loadEnv();
   private readonly client: SupabaseClient | null;
-  /** token → (user id, when the answer goes stale). */
+  /** token → (id do usuário, quando a resposta vence). */
   private readonly tokens = new Map<
     string,
     { userId: string; until: number }
@@ -67,7 +67,7 @@ export class SupabaseService {
     return this.client !== null;
   }
 
-  /** Full access. Only for writes the server has verified itself. */
+  /** Acesso total. Só pra escrita que o servidor mesmo verificou. */
   admin(): SupabaseClient {
     if (!this.client) {
       throw new ServiceUnavailableException(
@@ -78,10 +78,10 @@ export class SupabaseService {
   }
 
   /**
-   * A client that acts as the caller, inside their own row-level policies.
+   * Um cliente que age como quem chamou, dentro das políticas de linha dele.
    *
-   * Built per request rather than cached: it carries one person's credentials,
-   * and a cached one is a cross-user data leak waiting for a stale entry.
+   * Construído por requisição em vez de cacheado: carrega a credencial de uma
+   * pessoa, e um cacheado é vazamento entre usuários esperando uma entrada velha.
    */
   asCaller(accessToken: string): CallerClient {
     if (!this.env.SUPABASE_URL || !this.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -91,9 +91,9 @@ export class SupabaseService {
     }
     const client: CallerClient = createClient(
       this.env.SUPABASE_URL,
-      // The anon key would do here too; what decides the permissions is the
-      // Authorization header below, which puts the request inside the policies
-      // regardless of which key opened the connection.
+      // A chave anon serviria aqui também; quem decide a permissão é o header
+      // Authorization abaixo, que põe a requisição dentro das políticas
+      // independente de qual chave abriu a conexão.
       this.env.SUPABASE_SERVICE_ROLE_KEY,
       {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -104,14 +104,14 @@ export class SupabaseService {
   }
 
   /**
-   * Resolves a bearer token to a user id, or null if it is not a valid one.
+   * Resolve um token bearer pra um id de usuário, ou null se ele não vale.
    *
-   * Answers are held for a minute. Every authenticated request used to cost a
-   * round trip to Supabase before it could begin — on submit, in front of a
-   * database write, doubling the latency of the one call that matters. A minute
-   * is short enough that a revoked session stops working while somebody is
-   * still looking at the screen, and long enough that a burst of requests from
-   * one person costs one verification.
+   * As respostas ficam guardadas por um minuto. Toda requisição autenticada
+   * custava uma ida ao Supabase antes de poder começar — no submit, na frente
+   * de uma escrita no banco, dobrando a latência da única chamada que importa.
+   * Um minuto é curto o bastante pra sessão revogada parar de funcionar
+   * enquanto a pessoa ainda está olhando a tela, e longo o bastante pra uma
+   * rajada de requisições de alguém custar uma verificação.
    */
   async userIdFrom(accessToken: string): Promise<string | null> {
     const now = Date.now();
@@ -120,9 +120,9 @@ export class SupabaseService {
 
     const { data, error } = await this.admin().auth.getUser(accessToken);
     if (error || !data.user) {
-      // Failures are not cached: a token that just failed because Supabase
-      // hiccuped should get another chance on the next request, and caching a
-      // "no" would turn one bad moment into a minute of them.
+      // Falha não é cacheada: token que acabou de falhar porque o Supabase
+      // engasgou merece outra chance na próxima requisição, e cachear um "não"
+      // transformaria um mau momento num minuto deles.
       this.tokens.delete(accessToken);
       return null;
     }
@@ -136,10 +136,10 @@ export class SupabaseService {
   }
 
   /**
-   * Whether the database is actually answering, as opposed to configured.
+   * Se o banco está de fato respondendo, e não apenas configurado.
    *
-   * `enabled` says credentials exist. This says a query completes — the
-   * distinction a readiness probe is for.
+   * `enabled` diz que existe credencial. Isto diz que uma query completa — a
+   * distinção pra que serve uma sonda de readiness.
    */
   async reachable(): Promise<boolean> {
     if (!this.client) return false;
@@ -158,8 +158,8 @@ export class SupabaseService {
     for (const [token, entry] of this.tokens) {
       if (entry.until <= now) this.tokens.delete(token);
     }
-    // Still full of live entries: drop the lot rather than grow forever. The
-    // cost is one round trip per caller, once.
+    // Ainda cheio de entradas vivas: joga tudo fora em vez de crescer pra
+    // sempre. O custo é uma ida e volta por chamador, uma vez.
     if (this.tokens.size >= TOKEN_CACHE_MAX) this.tokens.clear();
   }
 }

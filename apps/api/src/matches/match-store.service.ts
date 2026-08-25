@@ -10,7 +10,7 @@ import type {
 import { PostgresService } from '../db/postgres.service';
 import type { Room } from './match-registry.service';
 
-/** The columns as Postgres hands them back. Numerics arrive as strings. */
+/** As colunas como o Postgres devolve. Numeric chega como string. */
 type MatchRow = {
   id: string;
   invite_code: string;
@@ -35,17 +35,17 @@ type PlayerRow = {
 };
 
 /**
- * Where a finished duel goes to be remembered.
+ * Onde um duelo terminado vai pra ser lembrado.
  *
- * Only finished ones. A room that was opened and never filled, or filled and
- * abandoned before anybody reached the end, is not written at all — the table
- * is a record of duels that happened, and padding it with rooms that did not
- * would make "how many duels have I played" a question about tab management.
+ * Só os terminados. Sala que foi aberta e nunca encheu, ou encheu e foi
+ * abandonada antes de alguém chegar ao fim, não é escrita — a tabela é o
+ * registro dos duelos que aconteceram, e enchê-la com salas que não aconteceram
+ * transformaria "quantos duelos eu joguei" numa pergunta sobre gerência de aba.
  *
- * Every method is safe to call with no database behind it. The duel has already
- * been played by the time anything here runs, and losing its record is a worse
- * outcome than the duel failing would be — but it is not a reason to fail the
- * request that just delivered it.
+ * Todo método é seguro de chamar sem banco atrás. O duelo já foi jogado quando
+ * qualquer coisa aqui roda, e perder o registro dele é resultado pior do que o
+ * duelo falhar seria — mas não é motivo pra derrubar a requisição que acabou de
+ * entregá-lo.
  */
 @Injectable()
 export class MatchStoreService {
@@ -58,11 +58,11 @@ export class MatchStoreService {
   }
 
   /**
-   * Writes the duel and both players together.
+   * Escreve o duelo e os dois jogadores juntos.
    *
-   * In one transaction because half a duel is worse than none: a match row
-   * with one player would show up in somebody's history as a race against
-   * nobody, and there is no second chance to fix it — the room is gone.
+   * Numa transação só porque meio duelo é pior que nenhum: uma linha de partida
+   * com um jogador apareceria no histórico de alguém como corrida contra
+   * ninguém, e não existe segunda chance de arrumar — a sala já era.
    */
   async save(room: Room): Promise<void> {
     if (!this.db.enabled) return;
@@ -77,8 +77,8 @@ export class MatchStoreService {
            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
            on conflict (id) do nothing`,
           [
-            // The round, not the room: a room that plays a rematch writes a
-            // second row, and the room id would collide with the first.
+            // A rodada, não a sala: sala que joga revanche escreve uma segunda
+            // linha, e o id da sala colidiria com a primeira.
             room.roundId,
             room.inviteCode,
             room.state,
@@ -120,9 +120,9 @@ export class MatchStoreService {
         }
       });
     } catch (error) {
-      // Logged and swallowed. The duel is over and both players have their
-      // result on screen; throwing here would turn a missing history row into
-      // a failed submission for the person who just finished second.
+      // Logado e engolido. O duelo acabou e os dois jogadores têm o resultado
+      // na tela; lançar aqui transformaria uma linha de histórico faltando num
+      // envio falhado pra quem acabou de chegar em segundo.
       this.logger.error(
         `could not store match ${room.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -130,12 +130,12 @@ export class MatchStoreService {
   }
 
   /**
-   * Reads back the duels a browser says are its own.
+   * Lê de volta os duelos que um browser diz serem dele.
    *
-   * There is no account to scope this to, so the ids are the scope. That is a
-   * real limit and worth naming: anybody who knows a match id can read that
-   * match. What it exposes is two chosen nicknames and two speeds — the same
-   * thing both players already saw — and the id is a uuid nobody can guess.
+   * Não existe conta pra delimitar isto, então os ids são o escopo. É um limite
+   * real e vale dizer: quem sabe um id de partida lê aquela partida. O que isso
+   * expõe são dois apelidos escolhidos e duas velocidades — a mesma coisa que
+   * os dois jogadores já viram — e o id é um uuid que ninguém adivinha.
    */
   async summaries(ids: readonly string[]): Promise<MatchSummary[]> {
     if (!this.db.enabled || ids.length === 0) return [];

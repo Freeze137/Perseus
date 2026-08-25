@@ -9,12 +9,11 @@ export class RunsController {
   constructor(private readonly tickets: RunTicketService) {}
 
   /**
-   * Opens a run.
+   * Abre uma corrida.
    *
-   * Called when the first character is typed rather than when the text appears:
-   * a ticket per text drawn would be a request every time somebody presses
-   * Escape looking for a text they like, and the clock it starts would begin
-   * before the typing did.
+   * Chamado quando o primeiro caractere é digitado, não quando o texto aparece:
+   * um bilhete por texto sorteado seria uma requisição a cada Escape de quem
+   * está procurando um texto que goste, e o relógio começaria antes da digitação.
    */
   @Post()
   @UseGuards(AuthGuard)

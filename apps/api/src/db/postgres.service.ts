@@ -3,19 +3,19 @@ import { Pool, type QueryResultRow } from 'pg';
 import { loadEnv, type Env } from '../config';
 
 /**
- * The connection duels are written down over. Optional, and that is the point.
+ * A conexão por onde o duelo é anotado. Opcional, e é esse o ponto.
  *
- * Everything about a duel that matters while it is being played lives in this
- * process's memory: the room, the two players, the clock, the fan-out. This
- * only outlives it. So an API without DATABASE_URL still hosts duels end to
- * end — two friends can race on a laptop with nothing installed — and what is
- * missing is the history afterwards, which the interface says plainly rather
- * than pretending the feature is off.
+ * Tudo que importa num duelo enquanto ele é jogado vive na memória deste
+ * processo: a sala, os dois jogadores, o relógio, o fan-out. Isto aqui só
+ * sobrevive a ele. Então uma API sem DATABASE_URL continua hospedando duelo de
+ * ponta a ponta — dois amigos correm num notebook sem instalar nada — e o que
+ * falta é o histórico depois, que a interface diz na cara em vez de fingir que
+ * a funcionalidade está desligada.
  *
- * Plain Postgres rather than the Supabase client. There are no accounts in a
- * duel and no row-level policies to sit inside, so the service-role client
- * would be a heavier way to say the same thing — and this way the database can
- * be a container on a laptop or a box on a VM without either end noticing.
+ * Postgres puro em vez do cliente Supabase. Duelo não tem conta e não tem
+ * política de linha pra ficar dentro, então o cliente de service role seria um
+ * jeito mais pesado de dizer a mesma coisa — e assim o banco pode ser um
+ * container num notebook ou uma máquina numa VM sem nenhuma das pontas notar.
  */
 @Injectable()
 export class PostgresService implements OnModuleDestroy {
@@ -27,9 +27,9 @@ export class PostgresService implements OnModuleDestroy {
     this.pool = this.env.DATABASE_URL
       ? new Pool({
           connectionString: this.env.DATABASE_URL,
-          // Small on purpose. The whole workload is a couple of writes at the
-          // end of a duel and one read when somebody opens their history; a
-          // large pool here would be idle sockets against a free-tier box.
+          // Pequeno de propósito. A carga inteira são duas escritas no fim do
+          // duelo e uma leitura quando alguém abre o histórico; pool grande
+          // aqui seria socket ocioso contra uma máquina de plano grátis.
           max: 5,
           idleTimeoutMillis: 30_000,
           connectionTimeoutMillis: 5_000,
@@ -44,9 +44,9 @@ export class PostgresService implements OnModuleDestroy {
       return;
     }
 
-    // A pool error with no listener takes the process down, and the errors it
-    // emits are the ordinary ones: a database restart, a dropped idle socket.
-    // Neither is a reason to stop serving a trainer that works offline.
+    // Erro de pool sem ouvinte derruba o processo, e os erros que ele emite são
+    // os comuns: restart do banco, socket ocioso caído. Nenhum dos dois é
+    // motivo pra parar de servir um treinador que funciona offline.
     this.pool.on('error', (error: Error) => {
       this.logger.warn(`idle connection error: ${error.message}`);
     });
@@ -57,12 +57,12 @@ export class PostgresService implements OnModuleDestroy {
   }
 
   /**
-   * Runs a statement and hands back the rows.
+   * Roda um comando e devolve as linhas.
    *
-   * Callers check `enabled` first: this returns an empty result rather than
-   * throwing when there is no database, because every caller here is a write
-   * that is allowed to be missing or a read that is allowed to be empty. A
-   * duel is not lost because its record could not be filed.
+   * Quem chama confere `enabled` antes: isto devolve resultado vazio em vez de
+   * lançar quando não há banco, porque todo chamador aqui é uma escrita que
+   * pode faltar ou uma leitura que pode vir vazia. Duelo não se perde porque o
+   * registro dele não pôde ser arquivado.
    */
   async query<T extends QueryResultRow>(
     text: string,

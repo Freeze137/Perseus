@@ -2,11 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 /**
- * Parses at the edge and hands the rest of the app a typed value.
+ * Valida na borda e entrega pro resto do app um valor tipado.
  *
- * Every request body and query string enters through here, so no handler ever
- * receives an `any` it has to guess about — the schema in @perseus/contracts is
- * the only definition of what a valid request is, on both sides of the wire.
+ * Todo corpo de requisição e toda query string entram por aqui, então nenhum
+ * handler recebe um `any` pra adivinhar — o schema no @perseus/contracts é a
+ * única definição do que é uma requisição válida, dos dois lados da rede.
  */
 export function parse<T extends z.ZodType>(
   schema: T,

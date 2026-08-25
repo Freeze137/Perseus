@@ -10,33 +10,33 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
 export type RateLimitRule = {
-  /** How many requests one caller may make inside the window. */
+  /** Quantas requisições um chamador pode fazer dentro da janela. */
   readonly limit: number;
   readonly windowMs: number;
 };
 
 const RATE_LIMIT = 'rate-limit';
 
-/** Declares the budget for a route. Without it, a route is not limited. */
+/** Declara o orçamento de uma rota. Sem isto, a rota não tem limite. */
 export const RateLimit = (rule: RateLimitRule) => SetMetadata(RATE_LIMIT, rule);
 
 /**
- * A fixed-window limiter held in this process's memory.
+ * Limitador de janela fixa guardado na memória deste processo.
  *
- * In-memory is a deliberate first move, not an oversight. The thing being
- * protected is a single API writing to one database, and the alternative —
- * Redis — is a whole piece of infrastructure to run, monitor and pay for before
- * anybody has abused anything. What this does not survive is horizontal
- * scaling: with two instances the effective budget doubles, which is the point
- * at which this should become a shared counter rather than be tuned.
+ * Ser em memória é primeiro passo deliberado, não descuido. O que está sendo
+ * protegido é uma API só escrevendo num banco só, e a alternativa — Redis — é
+ * uma peça inteira de infra pra rodar, monitorar e pagar antes de alguém ter
+ * abusado de coisa nenhuma. O que isto não sobrevive é escala horizontal: com
+ * duas instâncias o orçamento efetivo dobra, e é aí que isto vira contador
+ * compartilhado em vez de ser ajustado.
  *
- * Keyed by user id when the caller is authenticated, and by address when they
- * are not, so one noisy network cannot spend everybody else's budget.
+ * Chaveado por id de usuário quando o chamador está autenticado e por endereço
+ * quando não está, pra uma rede barulhenta não gastar o orçamento de todo mundo.
  */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly hits = new Map<string, { count: number; resetAt: number }>();
-  /** Ceiling on the map, so a flood of unique keys cannot grow it forever. */
+  /** Teto do mapa, pra enxurrada de chave única não crescê-lo pra sempre. */
   private static readonly MAX_KEYS = 50_000;
 
   constructor(private readonly reflector: Reflector) {}
@@ -73,7 +73,7 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  /** Drops expired windows, and the whole table if it ever runs away. */
+  /** Joga fora janela vencida, e a tabela inteira se ela fugir do controle. */
   private sweep(now: number): void {
     if (this.hits.size < RateLimitGuard.MAX_KEYS) {
       if (this.hits.size % 512 !== 0) return;
@@ -87,15 +87,15 @@ export class RateLimitGuard implements CanActivate {
 }
 
 /**
- * Who is being counted.
+ * Quem está sendo contado.
  *
- * The guard runs after AuthGuard on the routes that have one, so an
- * authenticated caller is counted as themselves — sharing an office address
- * should not mean sharing a budget.
+ * O guard roda depois do AuthGuard nas rotas que têm um, então chamador
+ * autenticado é contado como ele mesmo — dividir o endereço do escritório não
+ * pode significar dividir o orçamento.
  */
 function callerKey(request: Request): string {
   if (request.caller) return `user:${request.caller.userId}`;
-  // `ip` respects the trust-proxy setting configured at boot; without that a
-  // proxied deployment would count every caller as the proxy.
+  // `ip` respeita o trust-proxy configurado no boot; sem aquilo um deploy atrás
+  // de proxy contaria todo chamador como o proxy.
   return `ip:${request.ip ?? 'unknown'}`;
 }

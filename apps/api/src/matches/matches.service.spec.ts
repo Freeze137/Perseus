@@ -31,19 +31,19 @@ const REQUEST: CreateMatch = {
   displayName: 'rafael',
   language: 'pt-BR',
   kind: 'words',
-  // Short on purpose: the whole timeline has to fit inside the clock slack the
-  // scorer allows, and these tests move the clock by hand.
+  // Curto de propósito: a timeline inteira tem que caber na folga de relógio
+  // que o pontuador permite, e estes testes mexem o relógio na mão.
   length: 60,
   syntax: null,
   keyboardLayout: 'abnt2',
 };
 
 /**
- * Types the room's own text, honestly, at a chosen pace.
+ * Digita o texto da própria sala, honestamente, no ritmo escolhido.
  *
- * The jitter is load-bearing rather than decorative: a timeline with a perfectly
- * even rhythm is refused as machine-made, so a fixture without it would be
- * testing the duel against something no hand produces.
+ * A tremida sustenta peso, não é enfeite: timeline com ritmo perfeitamente
+ * parelho é recusada como coisa de máquina, então um fixture sem ela estaria
+ * testando o duelo contra algo que mão nenhuma produz.
  */
 /**
  * O intervalo mais lento que esta suíte pede. Todos são escalados por ele.
@@ -90,9 +90,9 @@ function honestRun(config: SessionConfig, gap = 120): SubmittedKeystroke[] {
 
 function build() {
   const registry = new MatchRegistryService();
-  // Held as loose functions rather than reached through the object: a mock read
-  // off a class instance is an unbound method, and the assertions below want the
-  // spy, not the method.
+  // Guardadas como funções soltas em vez de alcançadas pelo objeto: mock lido
+  // de uma instância de classe é método sem bind, e as asserções abaixo querem
+  // o espião, não o método.
   const save = jest.fn().mockResolvedValue(undefined);
   const summaries = jest.fn().mockResolvedValue([]);
   const store = {
@@ -132,8 +132,8 @@ describe('MatchesService', () => {
     expect(created.match.state).toBe('lobby');
     expect(created.match.inviteCode).toMatch(/^[A-Z2-9]{6}$/);
     expect(created.match.startsAt).toBeNull();
-    // The seed is the server's. A host that picked it could have typed the
-    // text once before opening the room.
+    // A semente é do servidor. Quem cria e a escolhesse poderia ter digitado o
+    // texto uma vez antes de abrir a sala.
     expect(created.match.config.seed.length).toBeGreaterThan(0);
     expect(generate(created.match.config).length).toBeGreaterThan(0);
   });
@@ -149,7 +149,7 @@ describe('MatchesService', () => {
       guest.match.serverNow + MATCH_COUNTDOWN_MS,
     );
     expect(guest.match.players).toHaveLength(2);
-    // Both play the same text, and neither was sent it.
+    // Os dois jogam o mesmo texto, e nenhum dos dois o recebeu.
     expect(guest.match.config).toEqual(host.match.config);
 
     jest.advanceTimersByTime(MATCH_COUNTDOWN_MS);
@@ -181,7 +181,7 @@ describe('MatchesService', () => {
     expect(() =>
       service.finish(host.match.id, undefined, { keystrokes: [] }),
     ).toThrow(UnauthorizedException);
-    // A real token, for a different room.
+    // Um token de verdade, de outra sala.
     const other = build().service.create(REQUEST);
     expect(() => service.progress(host.match.id, other.token, 1)).toThrow(
       UnauthorizedException,
@@ -234,7 +234,7 @@ describe('MatchesService', () => {
     expect(settled.players[0].score!.wpm).toBeGreaterThan(
       settled.players[1].score!.wpm,
     );
-    // Written down once, and only because it finished.
+    // Anotado uma vez, e só porque terminou.
     expect(save).toHaveBeenCalledTimes(1);
   });
 
@@ -253,7 +253,7 @@ describe('MatchesService', () => {
     const after = service.forPlayer(host.match.id, guest.token).match;
     expect(after.state).toBe('done');
     expect(after.winnerSlot).toBe(1);
-    // Stated as what happened, not as a verdict on the person.
+    // Dito como o que aconteceu, não como veredito sobre a pessoa.
     expect(after.players[1].outcome).toBe('unfinished');
     expect(after.players[1].score).toBeNull();
   });
@@ -296,7 +296,7 @@ describe('MatchesService', () => {
     expect(left.state).toBe('abandoned');
     expect(left.winnerSlot).toBeNull();
     expect(left.players[0].outcome).toBe('abandoned');
-    // Nobody typed, so there is nothing to remember.
+    // Ninguém digitou, então não há o que lembrar.
     expect(save).not.toHaveBeenCalled();
   });
 
@@ -307,7 +307,7 @@ describe('MatchesService', () => {
 
     service.leave(host.match.id, host.token);
 
-    // The one left behind sees an ending, not a bar that stopped moving.
+    // Quem ficou vê um fim, não uma barra que parou de andar.
     const seen = service.forPlayer(host.match.id, guest.token).match;
     expect(seen.state).toBe('abandoned');
     expect(seen.players.every((one) => one.outcome === 'abandoned')).toBe(true);
@@ -336,7 +336,7 @@ describe('MatchesService', () => {
     });
     const left = service.leave(host.match.id, guest.token);
 
-    // Leaving mid-race is not a way to deny somebody the run they finished.
+    // Sair no meio não é jeito de negar a alguém a corrida que ele terminou.
     expect(left.state).toBe('done');
     expect(left.winnerSlot).toBe(1);
     expect(left.players[0].outcome).toBe('won');
@@ -370,7 +370,7 @@ describe('MatchesService', () => {
 
     const after = service.leave(host.match.id, host.token);
 
-    // The scoreboard stands: a late button press is not a second ending.
+    // O placar fica de pé: botão apertado tarde não é um segundo fim.
     expect(after.state).toBe('done');
     expect(after.winnerSlot).toBe(1);
     expect(save).toHaveBeenCalledTimes(1);
@@ -402,7 +402,7 @@ describe('MatchesService', () => {
     expect(longer.config.length).toBe(180);
 
     const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
-    // The guest is a player, so the token is good — and still not the host's.
+    // O convidado é jogador, então o token vale — e mesmo assim não é o de quem criou.
     expect(() => service.reseed(host.match.id, guest.token, {})).toThrow(
       UnauthorizedException,
     );
@@ -431,14 +431,14 @@ describe('MatchesService', () => {
     const firstRound = service.forPlayer(host.match.id, host.token).match;
     expect(firstRound.state).toBe('done');
 
-    // One vote is not a rematch: the other screen only learns it is waited on.
+    // Um voto não é revanche: a outra tela só fica sabendo que a esperam.
     const waiting = service.rematch(host.match.id, host.token);
     expect(waiting.state).toBe('done');
     expect(waiting.players.map((one) => one.rematch)).toEqual([true, false]);
 
     const started = service.rematch(host.match.id, guest.token);
 
-    // Same room, same link — that is the whole point of asking here.
+    // Mesma sala, mesmo link — é esse o ponto de pedir aqui.
     expect(started.id).toBe(host.match.id);
     expect(started.inviteCode).toBe(host.match.inviteCode);
 
@@ -455,8 +455,8 @@ describe('MatchesService', () => {
       'running',
     );
 
-    // The duel that just happened keeps its row: the second one is written
-    // under a different id rather than colliding with it.
+    // O duelo que acabou de acontecer mantém a linha dele: o segundo é escrito
+    // sob outro id em vez de colidir com ele.
     expect(save).toHaveBeenCalledTimes(1);
     const stored = save.mock.calls as unknown as [Room][];
     expect(stored[0][0].roundId).toBe(firstRound.roundId);
@@ -473,9 +473,9 @@ describe('MatchesService', () => {
       keystrokes: honestRun(config, 220),
     });
 
-    // A watcher that was there for the duel is still there after it: this is
-    // the connection a rematch travels down, and closing it at `done` is what
-    // made both buttons do nothing.
+    // Um ouvinte que estava lá pro duelo continua lá depois dele: é por esta
+    // conexão que a revanche viaja, e fechá-la no `done` era o que fazia os
+    // dois botões não fazerem nada.
     const seen: MatchEvent[] = [];
     let ended = false;
     registry.subscribe(
@@ -488,8 +488,8 @@ describe('MatchesService', () => {
 
     service.rematch(host.match.id, host.token);
 
-    // The vote reaches the room while it is still `done` — that is the whole
-    // of "somebody is waiting on you".
+    // O voto chega na sala enquanto ela ainda está `done` — é nisso que
+    // consiste o "alguém está esperando por você".
     const votes = seen
       .filter((event) => event.type === 'match')
       .map((event) =>
@@ -504,7 +504,7 @@ describe('MatchesService', () => {
       .map((event) => (event.type === 'match' ? event.match.state : ''));
     expect(states).toContain('countdown');
 
-    // Open all the way through, and closed when the room finally goes.
+    // Aberto o tempo todo, e fechado quando a sala finalmente vai embora.
     expect(ended).toBe(false);
     registry.remove(host.match.id);
     expect(ended).toBe(true);
@@ -530,7 +530,7 @@ describe('MatchesService', () => {
       keystrokes: honestRun(config, 220),
     });
 
-    // By round, not by room: a room can play several duels, and each one is
+    // Por rodada, não por sala: uma sala joga vários duelos, e cada um é
     // its own entry in a history.
     const history = await service.summaries([host.match.roundId]);
     expect(history.status).toBe('unavailable');

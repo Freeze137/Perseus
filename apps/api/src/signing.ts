@@ -5,18 +5,18 @@ import { loadEnv } from './config';
 let secret: Buffer | null = null;
 
 /**
- * The one secret this process signs its own paperwork with.
+ * O único segredo com que este processo assina os próprios papéis.
  *
- * Two things are signed here — the ticket a solo run is opened with, and the
- * token that says which side of a duel somebody is playing — and they share a
- * secret on purpose rather than by neglect. Both are short-lived, both are
- * meaningless outside this deployment, and a second environment variable to
- * forget to set would buy nothing: what keeps them from being interchangeable
- * is the label each one puts inside the HMAC, not the key.
+ * Duas coisas são assinadas aqui — o bilhete que abre uma corrida solo e o
+ * token que diz de que lado do duelo alguém está — e dividem o segredo de
+ * propósito, não por desleixo. Os dois são curtos de vida, os dois não querem
+ * dizer nada fora deste deploy, e uma segunda variável de ambiente pra esquecer
+ * de setar não compraria nada: o que impede um de virar o outro é o rótulo que
+ * cada um põe dentro do HMAC, não a chave.
  *
- * Without RUN_TICKET_SECRET the process invents one at boot. That works and is
- * the right default for local work — it just does not survive a restart, so
- * runs and duels opened before one are refused after it.
+ * Sem RUN_TICKET_SECRET o processo inventa um no boot. Funciona e é o default
+ * certo pra trabalho local — só não sobrevive a um restart, então corrida e
+ * duelo abertos antes são recusados depois.
  */
 export function serverSecret(): Buffer {
   if (secret) return secret;

@@ -9,24 +9,24 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 const MS_PER_DAY = 86_400_000;
 /**
- * How long a board is served from memory before it is asked for again.
+ * Por quanto tempo o ranking sai da memória antes de ser pedido de novo.
  *
- * A board is a ranking of runs that took a minute each; nobody can tell the
- * difference between it being ten seconds old and current, and every drawer
- * opened used to be a fresh `distinct on` over the whole results table. Short
- * enough that your own new record shows up while you are still looking for it.
+ * Ranking é uma classificação de corridas de um minuto cada; ninguém distingue
+ * dez segundos de idade de atual, e cada gaveta aberta era um `distinct on`
+ * novo sobre a tabela inteira de resultados. Curto o bastante pro seu recorde
+ * novo aparecer enquanto você ainda está procurando por ele.
  */
 const CACHE_MS = 20_000;
-/** Ceiling on distinct boards held. Fifteen syntaxes times five kinds and up. */
+/** Teto de rankings distintos guardados. Quinze sintaxes vezes cinco modos, e sobe. */
 const CACHE_MAX = 200;
 
 /**
- * The shape the database function returns, parsed rather than assumed.
+ * O formato que a função do banco devolve, lido em vez de suposto.
  *
- * `rpc()` is typed `any` — the client cannot know what a hand-written SQL
- * function returns — and an `any` that walks out of this file would take the
- * type safety of everything downstream with it. Parsing here turns a schema
- * drift into an error at the boundary instead of a wrong number on a board.
+ * `rpc()` é tipado `any` — o cliente não tem como saber o que uma função SQL
+ * escrita à mão devolve — e um `any` que saísse deste arquivo levaria junto a
+ * segurança de tipo de tudo pra frente. Ler aqui transforma um desvio de schema
+ * em erro na fronteira, em vez de número errado no ranking.
  */
 const RowSchema = z.object({
   rank: z.coerce.number().int(),
@@ -37,12 +37,12 @@ const RowSchema = z.object({
 });
 
 /**
- * Reads the board through the database function rather than the table.
+ * Lê o ranking pela função do banco, não pela tabela.
  *
- * The table is closed by row-level security — you can read your own results and
- * nobody else's — and that is worth keeping. The function is the one deliberate
- * opening: it returns a name, a speed and a date, and no way to walk back from
- * them to anyone's individual runs.
+ * A tabela é fechada por row-level security — você lê os seus resultados e os
+ * de mais ninguém — e isso vale manter. A função é a única abertura deliberada:
+ * devolve um nome, uma velocidade e uma data, e nenhum caminho de volta às
+ * corridas individuais de quem quer que seja.
  */
 @Injectable()
 export class LeaderboardService {
@@ -55,12 +55,12 @@ export class LeaderboardService {
   constructor(private readonly supabase: SupabaseService) {}
 
   /**
-   * Reads a board, saying whether it is a board or an outage.
+   * Lê um ranking, dizendo se é um ranking ou uma queda.
    *
-   * The failure paths return `unavailable` with no entries rather than an empty
-   * list. They used to be the same value, which meant the screen told somebody
-   * "be the first to rank" when the truth was "the database did not answer" —
-   * an invitation and an apology sharing one shape.
+   * Os caminhos de falha devolvem `unavailable` sem entradas, não lista vazia.
+   * Eram o mesmo valor, e isso fazia a tela dizer "seja o primeiro a pontuar"
+   * quando a verdade era "o banco não respondeu" — um convite e um pedido de
+   * desculpa dividindo um formato só.
    */
   async read(query: LeaderboardQuery): Promise<LeaderboardResponse> {
     if (!this.supabase.enabled) return { status: 'ok', entries: [] };
@@ -71,7 +71,7 @@ export class LeaderboardService {
     if (cached && cached.until > now) return cached.response;
 
     const response = await this.fetch(query);
-    // Outages are not cached: the next reader should find out it came back.
+    // Queda não é cacheada: o próximo leitor tem que descobrir que voltou.
     if (response.status === 'ok') {
       if (this.cache.size >= CACHE_MAX) this.sweep(now);
       this.cache.set(key, { until: now + CACHE_MS, response });
@@ -89,8 +89,8 @@ export class LeaderboardService {
       await this.supabase.admin().rpc('leaderboard', {
         p_kind: query.kind,
         p_language: query.language,
-        // Only code has a syntax; asking for one on a prose board would return
-        // nothing rather than everything, which is the wrong kind of empty.
+        // Só código tem sintaxe; pedir uma num ranking de prosa devolveria
+        // nada em vez de tudo, que é o tipo errado de vazio.
         p_syntax: query.kind === 'code' ? query.syntax : null,
         p_since: since,
         p_limit: query.limit,
@@ -103,9 +103,10 @@ export class LeaderboardService {
 
     const rows = z.array(RowSchema).safeParse(response.data ?? []);
     if (!rows.success) {
-      // The board is decoration on top of a trainer that works without it, so a
-      // shape it cannot read is logged and reported unavailable rather than
-      // thrown — the run the typist just finished is not worth a 500.
+      // O ranking é decoração em cima de um treinador que funciona sem ele,
+      // então formato que não dá pra ler é logado e reportado como indisponível
+      // em vez de lançado — a corrida que a pessoa acabou de fazer não merece
+      // um 500.
       this.logger.error(
         `leaderboard shape changed: ${z.prettifyError(rows.error)}`,
       );
@@ -130,7 +131,7 @@ export class LeaderboardService {
   }
 }
 
-/** Every field the board is scoped by, and nothing else. */
+/** Todo campo que delimita o ranking, e nada mais. */
 function cacheKey(query: LeaderboardQuery): string {
   const syntax = query.kind === 'code' ? (query.syntax ?? 'mix') : '';
   return [

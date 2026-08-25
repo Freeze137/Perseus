@@ -4,20 +4,20 @@ import { MATCH_PLAYERS } from '@perseus/contracts';
 import { serverSecret } from '../signing';
 
 /**
- * Proof that you are one of the two people in a room, rather than someone who
- * read the invite code over a shoulder.
+ * A prova de que você é uma das duas pessoas da sala, e não alguém que leu o
+ * código de convite por cima do ombro.
  *
- * The code is the door and this is the key. An invite is a six-character string
- * that gets pasted into group chats and read out loud, so it cannot also be the
- * thing that authorises publishing progress and submitting a run: anybody
- * holding it could then type in either player's name. Joining is what mints the
- * token, and joining is only possible while the room has a free slot.
+ * O código é a porta e isto é a chave. Um convite é uma string de seis
+ * caracteres que é colada em grupo de mensagem e lida em voz alta, então não
+ * pode ser também o que autoriza publicar progresso e enviar corrida: quem
+ * segurasse poderia digitar no nome de qualquer um dos dois. Entrar é o que
+ * cunha o token, e entrar só é possível enquanto a sala tem lugar vago.
  *
- * Stateless, like the run ticket and for the same reason — the signature is the
- * state, so a restart costs the rooms it was already going to cost and no
- * sweeping is required. Deterministic per match and slot rather than carrying a
- * nonce: the same person reloading their tab has to be able to come back with
- * the token they already stored.
+ * Sem estado, como o bilhete de corrida e pelo mesmo motivo — a assinatura é o
+ * estado, então um restart custa as salas que já ia custar e não precisa de
+ * varredura. Determinístico por partida e lugar em vez de carregar um nonce: a
+ * mesma pessoa recarregando a aba tem que conseguir voltar com o token que já
+ * guardou.
  */
 @Injectable()
 export class MatchTokenService {
@@ -28,11 +28,10 @@ export class MatchTokenService {
   }
 
   /**
-   * Returns the slot the token speaks for, or null.
+   * Devolve o lugar por quem o token fala, ou null.
    *
-   * Null covers every failure the same way on purpose — forged, malformed, or
-   * minted for another room. Telling them apart is only useful to whoever is
-   * trying them.
+   * Null cobre toda falha do mesmo jeito de propósito — forjado, malformado, ou
+   * cunhado pra outra sala. Distinguir só é útil pra quem está tentando.
    */
   verify(matchId: string, token: string | undefined | null): number | null {
     if (!token) return null;
@@ -52,8 +51,8 @@ export class MatchTokenService {
   }
 
   private sign(matchId: string, slot: number): string {
-    // 'match' rather than 'run': the same key signs both, and the label is what
-    // stops a valid signature from one being a valid signature for the other.
+    // 'match' e não 'run': a mesma chave assina os dois, e o rótulo é o que
+    // impede uma assinatura válida de um valer para o outro.
     return createHmac('sha256', this.secret)
       .update(`match:${matchId}:${slot}`)
       .digest('hex');

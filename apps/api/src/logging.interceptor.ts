@@ -10,16 +10,16 @@ import type { Request, Response } from 'express';
 import { tap } from 'rxjs';
 
 /**
- * One line per request, with an id that survives into the failure.
+ * Uma linha por requisição, com um id que sobrevive até a falha.
  *
- * The logs used to say what went wrong and nothing about which request it went
- * wrong in, which is fine with one user and useless the first time two people
- * submit at once. The id goes back on the response as well, so a person can
- * paste the one from their failed submission and have it found.
+ * O log dizia o que deu errado e nada sobre em qual requisição deu, o que serve
+ * com um usuário e é inútil na primeira vez que duas pessoas enviam ao mesmo
+ * tempo. O id volta na resposta também, então a pessoa cola o do envio que
+ * falhou e a gente acha.
  *
- * Deliberately not a full tracing setup. What is missing when something breaks
- * is almost always "which call, how long, what status" — and that fits on a
- * line without a collector to run.
+ * De propósito não é tracing completo. O que falta quando algo quebra é quase
+ * sempre "qual chamada, quanto tempo, qual status" — e isso cabe numa linha sem
+ * ter um coletor pra rodar.
  */
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -45,8 +45,8 @@ export class LoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap({
         next: () => finish(String(response.statusCode)),
-        // The status is not on the response yet when the filter has not run, so
-        // the error's own is the honest one to report.
+        // O status ainda não está na resposta quando o filtro não rodou, então
+        // o do próprio erro é o honesto de reportar.
         error: (error: unknown) => finish(statusOf(error)),
       }),
     );
@@ -60,15 +60,15 @@ declare module 'express' {
 }
 
 /**
- * Hides the duel token that the event stream has no choice but to put in its
- * URL — `EventSource` cannot send a header. It authorises typing in somebody
- * else's name, so it does not belong in a log line that gets pasted around.
+ * Esconde o token de duelo que o stream de eventos não tem escolha senão pôr na
+ * URL — `EventSource` não manda header. Ele autoriza digitar no nome de outra
+ * pessoa, então não pode estar numa linha de log que sai por aí colada.
  */
 function redact(url: string): string {
   return url.replace(/([?&]token=)[^&]*/g, '$1[redacted]');
 }
 
-/** Honours an id set by a proxy, so one request is one id end to end. */
+/** Respeita um id setado por proxy, pra uma requisição ser um id de ponta a ponta. */
 function headerId(request: Request): string | null {
   const header = request.headers['x-request-id'];
   const value = Array.isArray(header) ? header[0] : header;
