@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { PerseusMark3D } from "@/components/shell/perseus-mark-3d";
+import { SITE_NAME } from "@/lib/site";
 
 type Props = {
   onOpenRanking: () => void;
@@ -101,11 +102,11 @@ export function AppHeader({
         className="group pointer-events-none absolute left-1/2 top-1/2 ml-5 mt-2.5 origin-center -translate-x-1/2 -translate-y-1/2 scale-[0.62] data-[placement=after]:-ml-5 sm:scale-100"
       >
         {/* The word is the thing that gets centred, and it is centred alone.
-            -mr cancels the trailing letterspace after the final S: tracking
+            -mr cancels the trailing letterspace after the last letter: tracking
             adds a gap the eye does not see but the box does, and leaving it in
             drags the word half a letter left of the centre line. */}
         <span className="display block -mr-[0.3em] text-3xl tracking-[0.3em] text-bone">
-          PERSEUS
+          {SITE_NAME}
         </span>
 
         {/* The project mark: the 3D letter P raised off a black plate,

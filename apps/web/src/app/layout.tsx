@@ -34,7 +34,7 @@ const DESCRIPTION =
   "Treinador de digitação em português e inglês, para texto corrido e para código. Aprenda o teclado sem olhar.";
 
 /**
- * What a link to PERSEUS looks like somewhere else.
+ * What a link to the site looks like somewhere else.
  *
  * `metadataBase` is what turns the relative image path Next generates into the
  * absolute URL every unfurler insists on — without it the card silently ships

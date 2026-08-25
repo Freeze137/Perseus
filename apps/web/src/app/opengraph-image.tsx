@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
-import { SITE_TAGLINE } from "@/lib/site";
+import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 
 /**
- * The card WhatsApp and every other unfurler paints for a PERSEUS link.
+ * The card WhatsApp and every other unfurler paints for a link to the site.
  *
  * Generated rather than committed as a PNG so it can never drift from the
  * palette in globals.css: the colours below are the same tokens the app itself
@@ -12,7 +12,7 @@ import { SITE_TAGLINE } from "@/lib/site";
  * means a fetch at build time for every deploy in exchange for a typeface
  * nobody reads at this size — the fallback sans is the honest trade.
  */
-export const alt = "PERSEUS — treino de digitação";
+export const alt = `${SITE_NAME} — treino de digitação`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -78,19 +78,25 @@ export default function Image() {
           </div>
         </div>
 
+        {/* Sized against the 1020px the 90px side padding leaves rather than
+            against a number that once looked right. At eight letters the old
+            168/14 pair lands within a few pixels of that edge, and the face is
+            whichever sans Satori resolves — so the margin is guesswork and the
+            failure is a severed final S. The card is read at thumb size in a
+            chat list, where 156 reads identically and cannot clip. */}
         <div
           style={{
             display: "flex",
-            fontSize: 168,
+            fontSize: 156,
             fontWeight: 700,
-            letterSpacing: 14,
+            letterSpacing: 10,
             marginTop: 28,
             backgroundImage: `linear-gradient(120deg, ${BONE}, ${MINT} 55%, ${EMERALD})`,
             backgroundClip: "text",
             color: "transparent",
           }}
         >
-          PERSEUS
+          {SITE_NAME}
         </div>
 
         <div style={{ display: "flex", fontSize: 38, color: BONE, marginTop: 12 }}>

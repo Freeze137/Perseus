@@ -6,6 +6,7 @@ import { use, useCallback, useEffect, useSyncExternalStore } from "react";
 import { DuelJoin } from "@/features/multiplayer/duel-join";
 import { DuelLobby } from "@/features/multiplayer/duel-lobby";
 import { DuelScreen } from "@/features/multiplayer/duel-screen";
+import { SITE_NAME } from "@/lib/site";
 import {
   forgetSeat,
   noSeat,
@@ -105,8 +106,8 @@ export default function DuelPage({
         >
           ← Treino
         </Link>
-        <span className="display text-xl tracking-[0.3em] text-bone">
-          PERSEUS
+        <span className="display -mr-[0.3em] text-xl tracking-[0.3em] text-bone">
+          {SITE_NAME}
         </span>
         <span className="w-16" aria-hidden="true" />
       </header>

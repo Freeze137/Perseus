@@ -27,7 +27,14 @@ const configured =
 
 export const SITE_URL = (configured ?? "http://localhost:3000").replace(/\/$/, "");
 
-/** What the tab and the share card are both called. */
-export const SITE_NAME = "PERSEUS";
+/**
+ * What the tab, the header and the share card are all called.
+ *
+ * Two esses, deliberately: the wordmark follows the `perseuss.tech` domain.
+ * It reads as a typo to anyone who meets it cold, so it is spelled in exactly
+ * one place — every surface imports this rather than writing the word out,
+ * and there is nothing left to "correct" in isolation.
+ */
+export const SITE_NAME = "PERSEUSS";
 
 export const SITE_TAGLINE = "Treino de digitação — português, inglês e código.";

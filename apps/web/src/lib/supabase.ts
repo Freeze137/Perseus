@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 /**
  * The browser's Supabase client, or null when sync is not configured.
  *
- * Null is a supported state, not a failure. PERSEUS is a typing trainer before
+ * Null is a supported state, not a failure. PERSEUSS is a typing trainer before
  * it is an account: with no credentials in the environment it runs exactly as
  * it always has — local, offline, no sign-in offered — and every caller here
  * has to handle that rather than assume a client exists.
