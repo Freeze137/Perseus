@@ -178,14 +178,17 @@ fly certs add api.seudominio.com
 fly ips list
 ```
 
-No seu DNS:
+O `fly certs add` imprime na hora os registros a criar. **Use a saída dele**, e
+não o `perseus-api.fly.dev` cru: a forma `CNAME` do Fly aponta para um hostname
+próprio da app (`<id>.perseus-api.fly.dev`), e a recomendada nem é `CNAME`:
 
 | Tipo | Nome | Valor |
 | --- | --- | --- |
-| `CNAME` | `api` | `perseus-api.fly.dev` |
+| `A` | `api` | o IPv4 que o `fly certs add` mostrou |
+| `AAAA` | `api` | o IPv6 que o `fly certs add` mostrou |
 
-Para um apex (`seudominio.com` direto na API), `CNAME` não serve — use `A` e
-`AAAA` com os endereços que o `fly ips list` devolveu.
+`fly certs setup api.seudominio.com` repete essas opções mais o desafio ACME e
+o TXT de posse, se precisar deles.
 
 Acompanhe até o certificado sair:
 
@@ -204,9 +207,60 @@ Os dois são obrigatórios e nenhum é automático. `CORS_ORIGINS` é sobre a or
 do **site**; `NEXT_PUBLIC_API_URL` é sobre o endereço da **API**. Trocar um e
 esquecer o outro dá o mesmo sintoma: o navegador bloqueia a chamada.
 
-> **DuckDNS não serve aqui.** Ele só publica registros `A` apontando para um IP,
-> e o que o Fly quer é um `CNAME`. Se o domínio for DuckDNS, fique com o
-> `*.fly.dev` — que já é HTTPS e não custa nada.
+> **DuckDNS não vale a pena aqui.** O que ele dá é um subdomínio sob
+> `duckdns.org`, não um nome seu — e `perseus-api.fly.dev` já é isso, com HTTPS
+> pronto e sem etapa nenhuma. Ele existia na rota da VM por outro motivo: lá o
+> Let's Encrypt precisava de um nome porque o alvo era um IP puro.
+
+### O domínio `perseuss.tech`
+
+Registrado em 25/08/2026 pelo Name.com, grátis pelo primeiro ano via GitHub
+Student Pack. **Auto-renova em 24/07/2027 por US$ 29,99** — o grátis é só o
+primeiro ano, e a data de cobrança vem antes da de expiração.
+
+Os nameservers ficaram os do próprio Name.com; a zona vive lá. Trocar para os
+da Vercel também funcionaria, mas o painel não oferece o botão.
+
+| Tipo | Host | Valor |
+| --- | --- | --- |
+| `A` | `@` | `76.76.21.21` |
+| `CNAME` | `www` | `cname.vercel-dns.com` |
+| `A` | `api` | `66.241.125.93` |
+| `AAAA` | `api` | `2a09:8280:1::179:8e49:0` |
+
+`www` é `CNAME`, não `A`: assim ele acompanha se a Vercel trocar de IP. O apex
+não pode ser `CNAME`, por isso lá vai o endereço cru.
+
+O campo **Host** quer só o rótulo: `api`, nunca `api.perseuss.tech` — ele
+concatena o domínio sozinho, e o erro produz `api.perseuss.tech.perseuss.tech`.
+
+Três armadilhas que custaram tempo na primeira vez:
+
+- **Editar um registro não cria outro.** Abrir o `@` e trocar o host para `api`
+  move o registro; o apex some e o site cai quando a zona publicar. Para o
+  segundo registro é *Add new record*, sempre.
+- **A zona demora a publicar.** O registro aparece no painel minutos antes de
+  existir no autoritativo. Perguntar ao `tech-domains.earth.orderbox-dns.com`
+  direto distingue "ainda não publicou" de "não foi salvo".
+- **Consultar cedo demais envenena o cache.** Um `NXDOMAIN` ou `NODATA` fica
+  guardado no resolver, e depois o nome resolve em todo lugar menos na sua
+  máquina. `ipconfig /flushdns` limpa o local; o do provedor espera o TTL.
+
+O certificado da Vercel não saiu sozinho depois da verificação —
+`vercel certs issue perseuss.tech www.perseuss.tech` destravou. O do Fly saiu
+sozinho assim que o `AAAA` propagou.
+
+O IPv4 do Fly é compartilhado e o IPv6 é dedicado; o roteamento sai por SNI.
+Consequência prática: `curl` no IPv4 puro não acha a API, e isso não é defeito.
+Para testar contornando o DNS, fixe a resolução em vez do endereço:
+
+```sh
+curl -s --resolve api.perseuss.tech:443:66.241.125.93 https://api.perseuss.tech/health
+```
+
+`CORS_ORIGINS` ficou com os três: `https://perseuss.tech`,
+`https://www.perseuss.tech` e `https://perseus-xi.vercel.app` — o endereço
+antigo continua servindo, e tirá-lo agora só quebraria links já espalhados.
 
 ---
 

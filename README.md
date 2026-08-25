@@ -9,7 +9,7 @@ O nome é uma constelação e o produto ensina um mapa: o teclado virtual é
 desenhado como um mapa estelar, onde o brilho de cada tecla reflete o domínio
 real do usuário sobre ela.
 
-**No ar em [perseus-xi.vercel.app](https://perseus-xi.vercel.app/)** — site na
+**No ar em [perseuss.tech](https://perseuss.tech/)** — site na
 Vercel, API no Fly.io em São Paulo (`gru`), banco no Neon.
 
 ## O que ele faz
