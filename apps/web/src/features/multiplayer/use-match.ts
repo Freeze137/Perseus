@@ -13,35 +13,35 @@ export type MatchLink = {
   /** Set when the room refused us or is gone. Terminal — no retry will help. */
   error: string | null;
   /**
-   * The server's clock, as well as this browser can tell.
+   * O relógio do servidor, até onde este browser consegue saber.
    *
-   * Every snapshot carries the server's `serverNow`, and the difference against
-   * the local clock is kept here. It is off by however long the message took to
-   * arrive — tens of milliseconds on the connections this is for — and that is
-   * accepted rather than corrected: the alternative is a round-trip estimate
-   * whose error is the same size. What it buys is the thing that matters, which
-   * is that two browsers whose system clocks disagree by a minute still count
-   * the same countdown.
+   * Todo retrato carrega o `serverNow` do servidor, e a diferença contra o
+   * relógio local fica guardada aqui. Está errada pelo tempo que a mensagem
+   * levou pra chegar — dezenas de milissegundos nas conexões pra que isto
+   * serve — e isso é aceito em vez de corrigido: a alternativa é uma estimativa
+   * de ida e volta cujo erro tem o mesmo tamanho. O que se compra é o que
+   * importa: dois browsers cujos relógios de sistema discordam em um minuto
+   * ainda contam a mesma regressiva.
    */
   serverNow: () => number;
   /**
-   * Takes a snapshot the caller got from somewhere else.
+   * Aceita um retrato que quem chamou pegou em outro lugar.
    *
-   * There is one: the response to submitting a finished run, which carries the
-   * settled room. The stream normally delivers the same thing a moment later,
-   * and this is what keeps the screen correct in the case where it does not —
-   * a dropped connection at the exact moment the duel ends.
+   * Existe um: a resposta ao envio de uma corrida terminada, que traz a sala
+   * resolvida. Normalmente o stream entrega a mesma coisa um instante depois, e
+   * isto é o que mantém a tela correta no caso em que ele não entrega — conexão
+   * caída exatamente no momento em que o duelo acaba.
    */
   apply: (match: Match) => void;
 };
 
 /**
- * Holds one duel: the room's state, kept current, and the other player's caret.
+ * Segura um duelo: o estado da sala, sempre atual, e o cursor do outro jogador.
  *
- * The stream is server-sent events rather than a socket, for the reasons on the
- * API side. What matters here is that it is *only* a view. Nothing this hook
- * receives is trusted with a score — progress moves a bar, and the result
- * arrives as a snapshot the server wrote after replaying both timelines.
+ * O stream é server-sent events e não socket, pelos motivos do lado da API. O
+ * que importa aqui é que ele é *só* uma vista. Nada que este hook recebe é
+ * confiado com pontuação — progresso move uma barra, e o resultado chega como
+ * retrato que o servidor escreveu depois de reproduzir as duas timelines.
  */
 export function useMatch(
   matchId: string | null,
@@ -58,8 +58,9 @@ export function useMatch(
   const apply = useCallback((next: Match) => {
     offset.current = next.serverNow - Date.now();
     setMatch((current) =>
-      // Snapshots are ordered by the server's own clock, so an older one
-      // arriving late is dropped rather than allowed to reopen a finished duel.
+      // Os retratos são ordenados pelo relógio do próprio servidor, então um
+      // mais velho chegando atrasado é descartado em vez de poder reabrir um
+      // duelo terminado.
       current && current.serverNow > next.serverNow ? current : next,
     );
   }, []);
@@ -73,9 +74,9 @@ export function useMatch(
       setMatch(next);
     };
 
-    // The stream opens with a snapshot of its own, so this is not strictly
-    // needed — but it is the request that reports a dead room or a stale token
-    // as an ordinary error, where the stream would only fail to open.
+    // O stream abre com um retrato próprio, então isto não é estritamente
+    // necessário — mas é a requisição que reporta sala morta ou token velho
+    // como erro comum, onde o stream só falharia em abrir.
     readMatch(matchId, token)
       .then((seat) => {
         if (!alive) return;
@@ -110,10 +111,10 @@ export function useMatch(
 
       if (parsed.data.type === "match") {
         take(parsed.data.match);
-        // A finished duel still has one thing to say: a rematch. The room lives
-        // on for as long as one can be offered, and the vote arrives down this
-        // same stream — closing here is what made the button do nothing on both
-        // screens. Only an abandoned room is over for good.
+        // Duelo terminado ainda tem uma coisa a dizer: revanche. A sala segue
+        // viva enquanto uma puder ser oferecida, e o voto chega por este mesmo
+        // stream — fechar aqui era o que fazia o botão não fazer nada nas duas
+        // telas. Só sala abandonada acabou de vez.
         if (parsed.data.match.state === "abandoned") {
           source.close();
           setConnected(false);
@@ -121,8 +122,8 @@ export function useMatch(
         return;
       }
 
-      // A caret moved. Patched in place rather than asking for a new snapshot:
-      // this arrives five times a second per player and changes one number.
+      // Um cursor andou. Remendado no lugar em vez de pedir retrato novo: isto
+      // chega cinco vezes por segundo por jogador e muda um número.
       const { slot: moved, index, serverNow: at } = parsed.data;
       offset.current = at - Date.now();
       setMatch((current) =>
@@ -141,9 +142,9 @@ export function useMatch(
 
     source.onerror = () => {
       if (alive) setConnected(false);
-      // No manual retry: EventSource reconnects on its own for anything
-      // transient, and for a room that is gone the reconnect gets a 404 and
-      // stops. Reimplementing that here would only fight it.
+      // Sem retentativa manual: EventSource reconecta sozinho pra qualquer
+      // coisa passageira, e pra sala que já era a reconexão leva 404 e para.
+      // Reimplementar isso aqui só brigaria com ele.
     };
 
     return () => {
@@ -156,12 +157,11 @@ export function useMatch(
 }
 
 /**
- * Milliseconds left until a server timestamp, recomputed on a timer.
+ * Milissegundos que faltam pra um timestamp do servidor, recalculado num timer.
  *
- * Separate from the countdown's rendering so the number and the thing that
- * draws it are not the same concern — and so a component that only wants to
- * know whether the keys are unlocked does not have to re-render at 10 Hz to
- * find out.
+ * Separado do desenho da regressiva pro número e a coisa que o desenha não
+ * serem a mesma preocupação — e pra um componente que só quer saber se as
+ * teclas destravaram não ter que re-renderizar a 10 Hz pra descobrir.
  */
 export function useTimeLeft(
   target: number | null,
@@ -173,9 +173,10 @@ export function useTimeLeft(
     left: remaining(target, serverNow),
   }));
 
-  // Adjusting state during render is the supported way to reset on a changed
-  // input — the same move `useTypingSession` makes. An effect would show the
-  // old countdown for one frame, which on a five-second clock is visible.
+  // Ajustar estado durante o render é o jeito suportado de zerar numa entrada
+  // que mudou — o mesmo movimento que o `useTypingSession` faz. Um efeito
+  // mostraria a regressiva antiga por um frame, o que num relógio de cinco
+  // segundos dá pra ver.
   if (state.target !== target) {
     setState({ target, left: remaining(target, serverNow) });
   }

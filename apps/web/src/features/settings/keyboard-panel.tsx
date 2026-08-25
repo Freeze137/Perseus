@@ -23,35 +23,34 @@ type Props = {
 };
 
 /**
- * The keyboard chooser, drawn as a reach map rather than a dropdown.
+ * O seletor de teclado, desenhado como mapa de alcance em vez de dropdown.
  *
- * A `<select>` and two paragraphs was the honest minimum and it read like a
- * form: the one thing the typist actually wants to know — what this keyboard
- * costs my fingers — was prose they had to take on trust. Here the twelve
- * characters that matter are on screen, sorted by what they cost, and changing
- * the layout makes them travel between the groups.
+ * Um `<select>` e dois parágrafos era o mínimo honesto e lia como formulário: a
+ * única coisa que a pessoa quer saber — o que este teclado custa aos meus dedos
+ * — era prosa pra aceitar na confiança. Aqui os doze caracteres que importam
+ * estão na tela, ordenados pelo que custam, e trocar o layout faz eles viajarem
+ * entre os grupos.
  *
- * The movement is the argument. Switch from ABNT2 to US and the four accents
- * physically fall into "Fora de alcance", which is the same event that shrinks
- * the corpus underneath. Nobody has to be told twice.
+ * O movimento é o argumento. Troque de ABNT2 pra US e os quatro acentos caem
+ * fisicamente em "Fora de alcance", que é o mesmo evento que encolhe o corpus
+ * embaixo. Ninguém precisa ouvir duas vezes.
  *
  * ---
  *
- * **Nothing in here resizes, and that is the whole trick.**
+ * **Nada aqui muda de tamanho, e é esse o truque inteiro.**
  *
- * The first version animated the group containers with `layout`. Motion
- * implements that as a scale transform, which stretches every glyph inside it
- * for the length of the animation — the keys and the labels visibly squashed on
- * the way to their new size. It also meant three containers reflowing while
- * twelve keys tried to fly between them.
+ * A primeira versão animava os contêineres de grupo com `layout`. O Motion
+ * implementa isso como transform de escala, que estica todo glifo lá dentro
+ * pela duração da animação — as teclas e os rótulos visivelmente achatados a
+ * caminho do novo tamanho. Também significava três contêineres refazendo layout
+ * enquanto doze teclas tentavam voar entre eles.
  *
- * So the structure is fixed instead: all three groups always render, an empty
- * one says so rather than disappearing, and the key row is one line at every
- * layout (the widest group is eight caps ≈ 298px inside 432px of panel). The
- * panel's height is therefore identical for all three keyboards, no container
- * ever changes size, and the keys are free to move on transforms alone — which
- * is the only thing that animates cheaply and the only thing that cannot warp
- * a letterform.
+ * Então a estrutura é fixa: os três grupos sempre renderizam, um vazio diz que
+ * está vazio em vez de sumir, e a fileira de teclas é uma linha em todo layout
+ * (o grupo mais largo são oito caps ≈ 298px dentro de 432px de painel). A altura
+ * do painel é portanto idêntica pros três teclados, nenhum contêiner muda de
+ * tamanho, e as teclas ficam livres pra se mover só em transform — que é a única
+ * coisa que anima barato e a única que não deforma letra.
  */
 export function KeyboardPanel({
   layout,
@@ -60,9 +59,9 @@ export function KeyboardPanel({
   onUseEnglish,
 }: Props) {
   const level = useMotionLevel();
-  // Shared-layout travel is the one effect here that measures the DOM. At
-  // 'brief' the keys still change groups, they just stop flying there — which
-  // is exactly the trade this level exists to make.
+  // A viagem por layout compartilhado é o único efeito daqui que mede o DOM. No
+  // 'brief' as teclas continuam trocando de grupo, só param de voar até lá —
+  // que é exatamente a troca que este nível existe pra fazer.
   const travels = level === "spring";
   const info = LAYOUTS[layout];
   const narrowed = share.available < share.total;
@@ -151,9 +150,9 @@ export function KeyboardPanel({
                   keys.map((key) => (
                     <motion.span
                       key={key.char}
-                      // The character is the identity, so the same key that was
-                      // 'direct' on one layout is the same object when it lands
-                      // in 'dead' on the next — and it travels there.
+                      // O caractere é a identidade, então a mesma tecla que era
+                      // 'direct' num layout é o mesmo objeto quando cai em
+                      // 'dead' no seguinte — e viaja até lá.
                       layoutId={travels ? `key-${key.char}` : undefined}
                       transition={transitionFor(level, SPRING.migrate)}
                       title={key.how}
@@ -220,13 +219,13 @@ export function KeyboardPanel({
 }
 
 /**
- * The brightness ramp, which is the same idea the keyboard star map is built
- * on: a key you can reach is a star you can see. Cost is drawn as light, never
- * as hue — rust is the error colour in this palette, and a key your hardware
- * does not have is a fact, not a mistake.
+ * A rampa de brilho, que é a mesma ideia sobre a qual o mapa estelar do teclado
+ * é construído: tecla que você alcança é estrela que você vê. Custo é desenhado
+ * como luz, nunca como matiz — ferrugem é a cor de erro desta paleta, e tecla
+ * que seu hardware não tem é fato, não erro.
  *
- * Every state is the same box at the same size. Only paint changes, so a key
- * arriving in a new group has nothing to resize on the way.
+ * Todo estado é a mesma caixa no mesmo tamanho. Só a pintura muda, então tecla
+ * chegando num grupo novo não tem o que redimensionar no caminho.
  */
 const CAP: Record<KeyReach, string> = {
   direct:

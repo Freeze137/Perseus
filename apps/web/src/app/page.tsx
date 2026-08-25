@@ -37,9 +37,9 @@ import { bagSeed, useBag, useBagHydration } from "@/features/typing/use-bag";
 /** Live metrics refresh rate — fast enough to feel live, cheap enough to be free. */
 const TICK_MS = 100;
 /**
- * How long the text stays dipped while a cancel swaps it. Long enough to be
- * read as an action and short enough that nobody waits for it — a cancel that
- * simply replaces the screen looks like the app lost the run.
+ * Quanto tempo o texto fica abaixado enquanto um cancelamento o troca. Longo o
+ * bastante pra ler como ação e curto o bastante pra ninguém esperar — um
+ * cancelamento que só substitui a tela parece que o app perdeu a corrida.
  */
 const SWAP_MS = 150;
 /** Long enough for the cleared live region to register as a change. */
@@ -79,9 +79,9 @@ export default function Home() {
   const isCode = kind === "code";
 
   const config = useMemo<SessionConfig>(
-    // `syntax` is carried on every config but only read by the code builder,
-    // so it is pinned to null elsewhere — a stray syntax on a prose run would
-    // make two identical prose configs hash to two different seeds.
+    // `syntax` viaja em toda config mas só é lido pelo builder de código, então
+    // fica preso em null no resto — uma sintaxe perdida numa corrida de prosa
+    // faria duas configs de prosa idênticas caírem em duas sementes diferentes.
     () => ({
       language,
       kind,
@@ -95,20 +95,20 @@ export default function Home() {
   );
 
   /**
-   * The config the *text* is built from, one beat behind the one the controls
-   * show.
+   * A config de que o *texto* é montado, uma batida atrás da que os controles
+   * mostram.
    *
-   * Changing a setting regenerates the target, which re-renders every character
-   * on the screen behind the dialog and makes the typing area re-measure the
-   * caret — a forced reflow of the whole page, in the same commit that the
-   * settings panel is trying to start an animation in. Deferring it lets the
-   * panel commit at full priority and the text catch up at low priority, off
-   * the animation's critical path.
+   * Mudar uma configuração regera o alvo, o que re-renderiza todo caractere da
+   * tela atrás do diálogo e faz a área de digitação remedir o cursor — um
+   * reflow forçado da página inteira, no mesmo commit em que o painel de
+   * configurações está tentando começar uma animação. Adiar deixa o painel
+   * commitar em prioridade cheia e o texto correr atrás em prioridade baixa,
+   * fora do caminho crítico da animação.
    *
-   * Text and sync read the same deferred config on purpose. They must never
-   * disagree: the server regenerates the target from whatever config a
-   * submission names, so a run sent under the newer config would replay against
-   * text its typist never saw and be refused.
+   * Texto e sync leem a mesma config adiada de propósito. Eles nunca podem
+   * discordar: o servidor regera o alvo a partir da config que o envio nomear,
+   * então corrida mandada sob a config mais nova reproduziria contra um texto
+   * que quem digitou nunca viu, e seria recusada.
    */
   const deferredConfig = useDeferredValue(config);
   const text = useMemo(() => generate(deferredConfig), [deferredConfig]);
@@ -117,12 +117,12 @@ export default function Home() {
   });
 
   const running = session.startedAt !== null && !isFinished(session);
-  // Sampled only while typing, and only at a level that still has something to
-  // give up — at 'minimal' there is no offer to make, so there is no reason to
-  // spend a frame callback finding out.
+  // Amostrado só enquanto se digita, e só num nível que ainda tem o que
+  // entregar — no 'minimal' não há oferta a fazer, então não há motivo pra
+  // gastar um callback de frame descobrindo.
   const frames = useFrameRate(running && tier !== "minimal");
   const done = isFinished(session);
-  // Fires once per finished run. Off entirely when Supabase is not configured.
+  // Dispara uma vez por corrida terminada. Desligado quando não há Supabase.
   const sync = useResultSync(session, deferredConfig);
 
   useEffect(() => {
@@ -145,31 +145,32 @@ export default function Home() {
   const takeFocusBack = useCallback(() => setFocusSignal((n) => n + 1), []);
 
   /**
-   * Escape walks away from the run.
+   * Escape sai fora da corrida.
    *
-   * It is deliberately not the same key as restart. Enter replays the text you
-   * just fought with; Escape abandons it and draws another. Conflating them
-   * would make the only way out of a bad text a run you did not want to repeat.
+   * De propósito não é a mesma tecla de recomeçar. Enter repete o texto com que
+   * você acabou de brigar; Escape abandona e sorteia outro. Juntar os dois
+   * faria a única saída de um texto ruim ser uma corrida que você não queria
+   * repetir.
    *
-   * Nothing is recorded on the way out: resetSession() drops the keystrokes and
-   * the clock before any result exists, so an abandoned run cannot be scored,
-   * submitted or ranked. It also emits no keystrokes, which is what keeps the
-   * star field from flashing at a run that is being thrown away.
+   * Nada é registrado na saída: resetSession() joga fora as teclas e o relógio
+   * antes de existir resultado, então corrida abandonada não pode ser pontuada,
+   * enviada nem classificada. Também não emite tecla, e é isso que impede o
+   * campo de estrelas de piscar por uma corrida que está sendo descartada.
    */
   const cancelRun = useCallback(() => {
-    // An open panel owns Escape — the press that closes it stops there.
+    // Painel aberto é dono do Escape — o aperto que o fecha para ali.
     if (drawer !== null || settingsOpen || duelOpen) return;
-    // Nothing under way: no reset, no new seed, no render at all.
+    // Nada em andamento: sem reset, sem semente nova, sem render nenhum.
     if (!running) return;
-    // Reset and advance both: the advance is what supplies new text, the reset
-    // is what guarantees a clean session even if a seed ever repeats its text.
+    // Reset e avanço juntos: o avanço é quem fornece texto novo, o reset é
+    // quem garante sessão limpa mesmo se uma semente um dia repetir o texto.
     restart();
     bag.next(deferredConfig);
 
     setSwapping(true);
-    // Cleared before it is written: a live region says nothing when the text it
-    // already holds is assigned to it again, and cancelling twice in a row has
-    // to be audible both times.
+    // Limpo antes de ser escrito: uma região viva não fala nada quando o texto
+    // que ela já tem é atribuído de novo, e cancelar duas vezes seguidas tem
+    // que ser audível nas duas.
     setAnnouncement("");
     cancelTimers.current.forEach(window.clearTimeout);
     cancelTimers.current = [
@@ -195,9 +196,9 @@ export default function Home() {
   }, [takeFocusBack]);
 
   const stats = metrics(session, now);
-  // What the keyboard costs this particular run, rather than a sentence about
-  // keyboards in general. Equal numbers mean it costs nothing and the panel
-  // says nothing — the consequence appears only where there is one.
+  // O que o teclado custa nesta corrida específica, e não uma frase sobre
+  // teclado em geral. Números iguais querem dizer que não custa nada e o painel
+  // não fala nada — a consequência só aparece onde ela existe.
   const share = reachableShare(config);
 
   return (

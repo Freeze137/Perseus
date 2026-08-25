@@ -14,37 +14,38 @@ type Props = {
   children: ReactNode;
 };
 
-/** Exits are a tween, not a spring: overshoot after the reader has looked away. */
+/** Saída é tween, não mola: overshoot depois que quem lê já desviou o olhar. */
 const LEAVE = { duration: 0.14, ease: [0.4, 0, 1, 1] } as const;
 
 /**
- * Built on the native `<dialog>`: focus trapping, Escape, inertness of the page
- * behind, and the top layer all come from the platform instead of from us,
- * which is how they end up correct.
+ * Construído sobre o `<dialog>` nativo: prisão de foco, Escape, inércia da
+ * página atrás e a camada de topo vêm todos da plataforma em vez de virem da
+ * gente, que é como acabam corretos.
  *
  * ---
  *
- * **The contents stay mounted, exactly like the drawers do.**
+ * **O conteúdo fica montado, exatamente como as gavetas.**
  *
- * A version of this gated the panel behind `AnimatePresence`, so opening the
- * dialog mounted its whole subtree — the account panel, the keyboard map, every
- * one of its twelve keys registering with Motion's projection tree — in the one
- * frame the opening animation had to start in. The drawers never felt that way
- * because they were never built that way: they are always in the DOM and only
- * slide. This now matches them. Opening is an animation and nothing else.
+ * Uma versão disto punha o painel atrás de `AnimatePresence`, então abrir o
+ * diálogo montava a subárvore inteira — o painel de conta, o mapa de teclado,
+ * cada uma das doze teclas se registrando na árvore de projeção do Motion — no
+ * único frame em que a animação de abertura tinha que começar. As gavetas nunca
+ * pareceram pesadas porque nunca foram feitas assim: elas estão sempre no DOM e
+ * só deslizam. Agora isto combina com elas. Abrir é uma animação e mais nada.
  *
- * While the dialog is shut the browser's own `display: none` on a closed
- * `<dialog>` keeps the subtree off the accessibility tree, out of the tab order
- * and out of the render, so permanence costs nothing after the first mount.
+ * Enquanto o diálogo está fechado, o `display: none` que o próprio browser
+ * aplica num `<dialog>` fechado mantém a subárvore fora da árvore de
+ * acessibilidade, fora da ordem de tabulação e fora do render, então a
+ * permanência não custa nada depois da primeira montagem.
  *
- * `close()` waits for the exit to finish, because it drops the element out of
- * the top layer in the frame it is called and would delete the panel mid-exit.
- * Escape is intercepted through `onCancel` for the same reason: the platform's
- * own close is instant, and instant is the one thing the exit cannot be.
+ * `close()` espera a saída terminar, porque ele tira o elemento da camada de
+ * topo no frame em que é chamado e apagaria o painel no meio da saída. O Escape
+ * é interceptado pelo `onCancel` pelo mesmo motivo: o fechamento da plataforma é
+ * instantâneo, e instantâneo é a única coisa que a saída não pode ser.
  *
- * The scrim is drawn here rather than left to `::backdrop`, which React cannot
- * reach and which only stops existing at `close()` — that is, after the panel
- * has already gone, leaving a dark and empty screen behind it.
+ * O véu é desenhado aqui em vez de deixado pro `::backdrop`, que o React não
+ * alcança e que só deixa de existir no `close()` — ou seja, depois de o painel
+ * já ter ido, deixando uma tela escura e vazia atrás.
  */
 export function Modal({ open, onClose, title, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -57,8 +58,8 @@ export function Modal({ open, onClose, title, children }: Props) {
     if (open && !dialog.open) dialog.showModal();
   }, [open]);
 
-  // Tell the star field to stand down: it is fully covered, and its render loop
-  // would otherwise compete for frames with this panel's own animation.
+  // Avisa o campo de estrelas pra descansar: ele está totalmente coberto, e o
+  // loop de render dele disputaria frames com a animação deste painel.
   useEffect(() => {
     setOverlayOpen(open, `modal:${title}`);
     return () => setOverlayOpen(false, `modal:${title}`);
@@ -79,12 +80,12 @@ export function Modal({ open, onClose, title, children }: Props) {
         initial={false}
         animate={{ opacity: open ? 1 : 0 }}
         transition={transitionFor(level, { duration: 0.18 })}
-        // No `backdrop-filter`. A full-screen blur cannot be cached while
-        // anything behind it moves, and what is behind it here is an animated
-        // canvas — so the compositor was re-blurring the whole viewport every
-        // frame, next to the panel trying to animate on top of it. The drawers
-        // never had one and never felt heavy, which is the comparison that
-        // found this. A solid scrim separates just as well.
+        // Sem `backdrop-filter`. Blur de tela inteira não pode ser cacheado
+        // enquanto algo atrás dele se move, e o que está atrás aqui é um canvas
+        // animado — então o compositor reborrava a viewport inteira a cada
+        // frame, ao lado do painel tentando animar por cima. As gavetas nunca
+        // tiveram um e nunca pareceram pesadas, e foi essa comparação que achou
+        // isto. Um véu sólido separa igual.
         className="absolute inset-0 bg-void/85"
       />
 
@@ -100,8 +101,8 @@ export function Modal({ open, onClose, title, children }: Props) {
             open
               ? { opacity: 1, scale: 1, y: 0 }
               : {
-                  // The resting place the panel springs out of and tweens back
-                  // into. Far enough that arriving reads as arriving.
+                  // O lugar de repouso de onde o painel sai na mola e pra onde
+                  // volta na tween. Longe o bastante pra chegar ler como chegar.
                   opacity: 0,
                   scale: still ? 1 : 0.94,
                   y: still ? 0 : 12,

@@ -10,16 +10,16 @@ import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
 /**
- * The scoreboard arriving.
+ * O placar chegando.
  *
- * One authored moment, and it is this one: the duel is over and the numbers the
- * server computed are being handed down. Everything settles from slightly
- * behind and out of focus — the same material the countdown uses, so the end of
- * a duel is visibly the same object as its beginning.
+ * Um momento autoral, e é este: o duelo acabou e os números que o servidor
+ * calculou estão sendo entregues. Tudo assenta vindo de um pouco atrás e fora
+ * de foco — o mesmo material que a regressiva usa, pro fim de um duelo ser
+ * visivelmente o mesmo objeto que o começo dele.
  *
- * Order carries meaning. The verdict lands first, the rule draws itself under
- * it, then the two players in slot order, then the way out. Nobody has to be
- * told where to look.
+ * A ordem carrega sentido. O veredito cai primeiro, a régua se desenha embaixo,
+ * depois os dois jogadores na ordem dos lugares, depois a saída. Ninguém precisa
+ * ouvir onde olhar.
  */
 const SETTLE = { duration: 0.44, ease: [0.16, 1, 0.3, 1] } as const;
 
@@ -33,24 +33,24 @@ type Props = {
   match: Match;
   /** Which player is reading this. Null when neither — a spectator's link. */
   slot: number | null;
-  /** This tab's seat, when it has one. A spectator has none and is not offered
-   *  a rematch. */
+  /** A cadeira desta aba, quando ela tem uma. Espectador não tem e não recebe
+   *  oferta de revanche. */
   token: string | null;
-  /** Hands a snapshot up when a request answers before the stream does. */
+  /** Entrega um retrato pra cima quando uma requisição responde antes do stream. */
   onMatch: (match: Match) => void;
 };
 
 /**
- * The scoreboard, with the server's numbers on it.
+ * O placar, com os números do servidor nele.
  *
- * These are not the figures either browser drew during the race. Both timelines
- * were replayed against the text the seed regenerates and scored on the server,
- * so what is compared here was computed by the one participant that has no
- * reason to prefer either player.
+ * Não são os números que os browsers desenharam durante a corrida. As duas
+ * timelines foram reproduzidas contra o texto que a semente regera e pontuadas
+ * no servidor, então o que é comparado aqui foi calculado pelo único
+ * participante que não tem motivo pra preferir nenhum dos dois.
  *
- * The losing line says what happened and stops. A duel is somebody's friend on
- * the other end, and a product that does not flatter the winner has no business
- * needling the loser either.
+ * A linha de quem perdeu diz o que aconteceu e para. Do outro lado de um duelo
+ * está o amigo de alguém, e um produto que não bajula quem ganhou não tem por
+ * que alfinetar quem perdeu.
  */
 export function DuelResult({ match, slot, token, onMatch }: Props) {
   const router = useRouter();
@@ -62,12 +62,12 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
   const them = match.players.find((player) => player.slot !== slot);
 
   /**
-   * Another round, in this same room.
+   * Outra rodada, nesta mesma sala.
    *
-   * Offered only where it can actually happen: a duel that was played to the
-   * end, by somebody holding a seat, with the other player still in the room.
-   * An abandoned room fails all three — there is nobody on the other side to
-   * agree, which is why it ended.
+   * Oferecida só onde ela pode de fato acontecer: duelo jogado até o fim, por
+   * alguém que tem cadeira, com o outro jogador ainda na sala. Sala abandonada
+   * falha nas três — não há ninguém do outro lado pra concordar, e é por isso
+   * que ela acabou.
    */
   const [asking, setAsking] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -83,10 +83,10 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
     if (!token) return;
     setAsking(true);
     setRefusal(null);
-    // The answer is a snapshot of the room, and it is used rather than dropped.
-    // The stream carries the same thing a moment later, but this screen is the
-    // one that pressed the button: it should not depend on a connection that
-    // has been open since before the duel ended to show that the press landed.
+    // A resposta é um retrato da sala, e é usada em vez de descartada. O stream
+    // traz a mesma coisa um instante depois, mas esta tela é a que apertou o
+    // botão: ela não devia depender de uma conexão aberta desde antes de o duelo
+    // acabar pra mostrar que o aperto chegou.
     requestRematch(match.id, token)
       .then(onMatch)
       .catch((error: unknown) => {
@@ -278,16 +278,16 @@ function headline(match: Match, slot: number | null): string {
 }
 
 /**
- * A number counting up to what the server said it was.
+ * Um número contando até o que o servidor disse que ele era.
  *
- * A motion value rather than React state: this changes sixty times a second for
- * under a second, and re-rendering the whole scoreboard on every frame to move
- * two digits would be paying for the animation with the thing the animation is
- * about. `tabular-nums` on the parent keeps the width from twitching as the
- * digits change.
+ * Um motion value em vez de estado do React: isto muda sessenta vezes por
+ * segundo por menos de um segundo, e re-renderizar o placar inteiro a cada frame
+ * pra mover dois dígitos seria pagar a animação com a própria coisa de que a
+ * animação trata. `tabular-nums` no pai impede a largura de tremer conforme os
+ * dígitos mudam.
  *
- * At the still level it is simply the number. Somebody who asked for no motion
- * asked for the result, not for a slower way to receive it.
+ * No nível parado é simplesmente o número. Quem pediu nenhum movimento pediu o
+ * resultado, não um jeito mais devagar de recebê-lo.
  */
 function Ticker({ to, still }: { to: number; still: boolean }) {
   const value = useMotionValue(still ? to : 0);
