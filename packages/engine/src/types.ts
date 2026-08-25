@@ -1,6 +1,6 @@
 /**
- * A single character committed by the user, with the moment it happened.
- * `index` is the position in the target it was compared against.
+ * Um caractere que a pessoa confirmou, e quando. `index` é a posição do alvo
+ * contra a qual ele foi comparado.
  */
 export type Keystroke = {
   readonly char: string;
@@ -12,24 +12,24 @@ export type Keystroke = {
 export type SessionStatus = 'idle' | 'running' | 'finished';
 
 export type SessionOptions = {
-  /** Stop accepting input at the first mistake instead of marking and moving on. */
+  /** Trava no primeiro erro em vez de marcar e seguir. */
   readonly stopOnError: boolean;
   /**
-   * On a newline, advance past the indentation that follows it.
+   * Na quebra de linha, pula a indentação que vem depois.
    *
-   * For code. Leading whitespace is not a skill — every editor in existence
-   * supplies it — and making the typist count spaces would drill the one part
-   * of writing code that nobody does by hand.
+   * Isso é pra código. Espaço no começo da linha não é habilidade — todo
+   * editor põe sozinho — e obrigar a contar espaço treina justamente a parte
+   * que ninguém digita na mão.
    */
   readonly autoIndent: boolean;
 };
 
 /**
- * Immutable snapshot of a typing run.
+ * Retrato imutável de uma corrida.
  *
- * `target` and `typed` are grapheme arrays, not strings: on ABNT2 keyboards a
- * dead key plus a vowel yields one visible character made of two code points,
- * and the user experiences it as a single keystroke.
+ * `target` e `typed` são arrays de grafema, não string: no ABNT2 a tecla morta
+ * mais a vogal dá um caractere visível feito de dois code points, e pra quem
+ * digita foi uma tecla só.
  */
 export type Session = {
   readonly target: readonly string[];
@@ -39,33 +39,33 @@ export type Session = {
   readonly finishedAt: number | null;
   readonly options: SessionOptions;
   /**
-   * Positions the machine filled in, not the typist — auto-indentation.
+   * Posições que a máquina preencheu, não a pessoa — a auto-indentação.
    *
-   * They advance the caret but they are not credit: counting them as correct
-   * characters would pay a code typist for whitespace they never pressed, and
-   * the whole point of measuring is that the number means something.
+   * Andam com o cursor mas não valem ponto. Contar como acerto pagaria a quem
+   * digita código por espaço que ele nunca apertou, e aí o número não quer
+   * dizer nada.
    */
   readonly given: readonly number[];
 };
 
 export type Metrics = {
   readonly elapsedMs: number;
-  /** Correct characters only, the standard 5-chars-per-word measure. */
+  /** Só os acertos, na conta padrão de 5 caracteres por palavra. */
   readonly wpm: number;
   /**
-   * Correct characters per minute, undivided.
+   * Caracteres certos por minuto, sem dividir.
    *
-   * The five-character word is a convention borrowed from English prose. Code
-   * has no words in that sense — `=>`, `!==` and a nested closing brace are all
-   * real work that the divisor flattens — so code runs are read in CPM, and the
-   * number is exposed for prose too rather than being a special case.
+   * A palavra de cinco letras é convenção de prosa em inglês. Código não tem
+   * palavra nesse sentido: `=>`, `!==` e uma chave fechando aninhada são
+   * trabalho de verdade que o divisor achata. Por isso código se lê em CPM, e
+   * o número aparece pra prosa também em vez de virar caso especial.
    */
   readonly cpm: number;
-  /** Every character typed, mistakes included. */
+  /** Tudo que foi digitado, erro incluído. */
   readonly rawWpm: number;
   /** 0-100. */
   readonly accuracy: number;
-  /** 0-100. Evenness of the rhythm between keystrokes. */
+  /** 0-100. Quão parelho é o ritmo entre as teclas. */
   readonly consistency: number;
   readonly correct: number;
   readonly incorrect: number;
@@ -75,6 +75,6 @@ export type KeyStat = {
   readonly key: string;
   readonly typed: number;
   readonly errors: number;
-  /** Mean gap between the previous keystroke and this one, in ms. */
+  /** Intervalo médio entre a tecla anterior e esta, em ms. */
   readonly avgLatencyMs: number;
 };

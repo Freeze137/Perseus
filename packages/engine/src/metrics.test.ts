@@ -3,7 +3,7 @@ import { keyStats, metrics } from './metrics';
 import { applyBackspace, applyInput, createSession } from './session';
 import type { Session } from './types';
 
-/** Builds a finished session with a fixed gap between every keystroke. */
+/** Monta uma sessão terminada com intervalo fixo entre todas as teclas. */
 function run(target: string, input: string, gapMs: number): Session {
   let session = createSession(target);
   Array.from(input).forEach((char, i) => {
@@ -19,7 +19,7 @@ describe('metrics', () => {
   });
 
   it('computes wpm from correct characters over elapsed time', () => {
-    // 11 characters, 100ms apart: 1000ms elapsed, 11/5 words in 1/60 min.
+    // 11 caracteres de 100ms: 1000ms de corrida, 11/5 palavras em 1/60 min.
     const result = metrics(run('hello world', 'hello world', 100));
     expect(result.elapsedMs).toBe(1_000);
     expect(result.wpm).toBeCloseTo(132, 5);
@@ -65,10 +65,10 @@ describe('metrics', () => {
   });
 
   it('does not let one interruption erase an otherwise steady rhythm', () => {
-    // Forty characters typed evenly, a thirty-second interruption in the
-    // middle, forty more typed just as evenly. The pause costs this run every
-    // point of WPM it is worth — it does not also get to call the typing
-    // erratic, which is what the old gap-level figure did.
+    // Quarenta caracteres parelhos, trinta segundos de interrupção no meio,
+    // mais quarenta igualmente parelhos. A pausa custa cada ponto de PPM que
+    // vale, mas não pode ainda chamar a digitação de errática — que era o que
+    // o número antigo por intervalo fazia.
     let session = createSession('x'.repeat(80));
     Array.from({ length: 80 }).forEach((_, i) => {
       const at = i * 120 + (i >= 40 ? 30_000 : 0);

@@ -2,22 +2,20 @@ import { createSession } from './session';
 import type { Keystroke, Session, SessionOptions } from './types';
 
 /**
- * Rebuilds a finished session from its keystroke timeline.
+ * Remonta uma sessão terminada a partir da timeline de teclas.
  *
- * This exists so that a leaderboard can mean something. Numbers computed in a
- * browser are numbers anybody can type into a console, so the server does not
- * accept them: it regenerates the target from the run's own config, replays the
- * timeline against it here, and scores the result itself. The client's claimed
- * speed never enters the database.
+ * Existe pro ranking querer dizer alguma coisa. Número calculado no browser é
+ * número que qualquer um digita no console, então o servidor não aceita: ele
+ * regera o alvo a partir da config da própria corrida, reproduz a timeline
+ * aqui e pontua sozinho. A velocidade que o cliente alega nunca entra no banco.
  *
- * It replays by index rather than by appending, because the timeline is not a
- * sequence of appends. Backspaces are deliberately not recorded — a correction
- * must not flatter the raw speed — so a typist who fixes a character leaves two
- * keystrokes pointing at the same position, and the later one is what stands.
+ * Reproduz por índice, não appendando, porque a timeline não é uma sequência
+ * de appends. Backspace não é gravado de propósito — correção não pode inflar
+ * a velocidade bruta — então quem corrige deixa duas teclas apontando pra
+ * mesma posição, e vale a última.
  *
- * Auto-indentation is re-derived rather than trusted: it follows from the
- * target and from where the newlines landed, so a submission cannot claim free
- * characters it was never given.
+ * A auto-indentação é recalculada, não confiada: sai do alvo e de onde caíram
+ * as quebras de linha. Assim nenhum envio reivindica caractere de graça.
  */
 export function replay(
   target: string,
@@ -26,9 +24,9 @@ export function replay(
 ): Session {
   const base = createSession(target, options);
   const typed: string[] = [];
-  // A Set rather than an array with a membership scan: deep code indents the
-  // same positions on every newline, and the scan made that quadratic in the
-  // length of the run.
+  // Set em vez de array com busca linear: código fundo indenta as mesmas
+  // posições a cada quebra, e a busca fazia isso virar quadrático no tamanho
+  // da corrida.
   const given = new Set<number>();
   let previousAt: number | null = null;
 
@@ -37,14 +35,14 @@ export function replay(
     if (!Number.isInteger(index) || index < 0 || index >= base.target.length) {
       throw new ReplayError(`keystroke points outside the target: ${index}`);
     }
-    // Every position up to this one has to already exist. A timeline that skips
-    // ahead is claiming characters that were never typed.
+    // Toda posição até esta já tem que existir. Timeline que pula à frente
+    // está reivindicando caractere que ninguém digitou.
     if (index > typed.length) {
       throw new ReplayError(`keystroke at ${index} skips past ${typed.length}`);
     }
-    // Time only moves one way. Out of order timestamps are not a slow run or a
-    // fast one — they are a timeline that was written rather than recorded, and
-    // the metrics downstream read the first and last entry as the duration.
+    // Tempo anda pra um lado só. Timestamp fora de ordem não é corrida lenta
+    // nem rápida: é timeline escrita, não gravada. E as métricas lá na frente
+    // leem a primeira e a última entrada como duração.
     if (!Number.isFinite(at)) {
       throw new ReplayError('keystroke has no usable timestamp');
     }
@@ -74,7 +72,7 @@ export function replay(
     ...base,
     typed,
     given: [...given].filter((index) => index < typed.length),
-    // Correctness is recomputed against the target, never taken from the wire.
+    // Acerto é recalculado contra o alvo. Nunca vem pronto do envio.
     keystrokes: keystrokes.map((keystroke) => ({
       ...keystroke,
       correct: keystroke.char === base.target[keystroke.index],

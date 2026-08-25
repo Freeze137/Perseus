@@ -10,13 +10,13 @@ const LIMITS: TimelineLimits = {
 };
 
 /**
- * A timeline of `count` keystrokes, `gapMs` apart, with `jitterMs` of wobble
- * so it reads as a hand rather than as a loop.
+ * Timeline de `count` teclas, `gapMs` entre elas, com `jitterMs` de tremida
+ * pra parecer mão e não loop.
  */
 function timeline(count: number, gapMs: number, jitterMs = 0): Keystroke[] {
   let at = 0;
   return Array.from({ length: count }, (_, i) => {
-    // Deterministic wobble: a test that sometimes fails is worse than no test.
+    // Tremida determinística: teste que falha às vezes é pior que teste nenhum.
     at += gapMs + (jitterMs === 0 ? 0 : ((i * 37) % 11) - 5) * (jitterMs / 5);
     return { char: 'a', at: Math.round(at), index: i, correct: true };
   });
@@ -24,12 +24,12 @@ function timeline(count: number, gapMs: number, jitterMs = 0): Keystroke[] {
 
 describe('checkTimeline', () => {
   it('accepts an ordinary run', () => {
-    // 60 keystrokes 180ms apart is around 330 characters a minute.
+    // 60 teclas de 180ms dá uns 330 caracteres por minuto.
     expect(checkTimeline(timeline(60, 180, 40), LIMITS)).toEqual({ ok: true });
   });
 
   it('accepts a genuinely fast run', () => {
-    // 120 wpm in prose. Fast, common, and not to be thrown off a board.
+    // 120 ppm em prosa. Rápido, comum, e não pode ser chutado do ranking.
     expect(checkTimeline(timeline(120, 100, 30), LIMITS).ok).toBe(true);
   });
 
@@ -43,8 +43,8 @@ describe('checkTimeline', () => {
   });
 
   it('refuses a timeline compressed into no time at all', () => {
-    // The forgery the old server accepted: every character correct, the whole
-    // text delivered in a handful of milliseconds, 60 000 words a minute.
+    // A fraude que o servidor antigo aceitava: tudo certo, o texto inteiro
+    // entregue em alguns milissegundos, 60 mil palavras por minuto.
     const strokes = timeline(200, 1);
     const verdict = checkTimeline(strokes, LIMITS);
 
@@ -60,14 +60,14 @@ describe('checkTimeline', () => {
   });
 
   it('refuses a rhythm too even to be a person', () => {
-    // Plausible speed, zero variation: a loop with a fixed sleep.
+    // Velocidade plausível, variação zero: loop com sleep fixo.
     const verdict = checkTimeline(timeline(200, 150), LIMITS);
     expect(verdict.ok).toBe(false);
     expect(verdict).toMatchObject({ reason: expect.stringContaining('even') });
   });
 
   it('does not judge the rhythm of a run too short to have one', () => {
-    // Ten identical gaps is not evidence of a machine, it is ten keystrokes.
+    // Dez intervalos iguais não provam máquina. São dez teclas.
     expect(checkTimeline(timeline(10, 150), LIMITS).ok).toBe(true);
   });
 

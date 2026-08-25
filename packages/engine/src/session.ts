@@ -3,7 +3,7 @@ import type { Session, SessionOptions, SessionStatus } from './types';
 
 const DEFAULT_OPTIONS: SessionOptions = { stopOnError: false, autoIndent: false };
 
-/** What a newline may be followed by and have supplied for free. */
+/** O que pode vir depois da quebra de linha e ser dado de graça. */
 const INDENT = new Set([' ', '\t']);
 
 export function createSession(
@@ -31,12 +31,12 @@ export function isFinished(session: Session): boolean {
   return session.finishedAt !== null;
 }
 
-/** Position the caret sits at — always the length of what has been typed. */
+/** Onde o cursor está: sempre o tamanho do que já foi digitado. */
 export function cursor(session: Session): number {
   return session.typed.length;
 }
 
-/** True when the character at `index` was typed and does not match the target. */
+/** True quando o caractere em `index` foi digitado e não bate com o alvo. */
 export function isMistake(session: Session, index: number): boolean {
   const typed = session.typed[index];
   if (typed === undefined) return false;
@@ -50,11 +50,11 @@ function blocked(session: Session): boolean {
 }
 
 /**
- * Commits one character.
+ * Confirma um caractere.
  *
- * Feed this from the DOM's `beforeinput`/`input` data rather than `keydown`:
- * dead keys and IME composition only produce a final character there.
- * The clock starts on the first accepted character, never on render.
+ * Alimenta isto com o dado do `beforeinput`/`input`, não do `keydown`: tecla
+ * morta e composição de IME só viram caractere final lá. O relógio começa no
+ * primeiro caractere aceito, nunca no render.
  */
 export function applyInput(session: Session, input: string, at: number): Session {
   if (isFinished(session) || blocked(session)) return session;
@@ -76,9 +76,9 @@ function applyGrapheme(session: Session, char: string, at: number): Session {
   const typed = [...session.typed, normalized];
   const given = [...session.given];
 
-  // A correct newline carries its indentation with it. Only a correct one: if
-  // the typist pressed Enter where the target has something else, filling in
-  // the next line's indentation would compound one mistake into several.
+  // Quebra de linha certa traz a indentação junto. Só a certa: se a pessoa
+  // apertou Enter onde o alvo tem outra coisa, preencher a indentação da linha
+  // seguinte transformaria um erro em vários.
   if (session.options.autoIndent && correct && normalized === '\n') {
     for (let i = typed.length; i < session.target.length; i += 1) {
       const next = session.target[i];
@@ -101,15 +101,15 @@ function applyGrapheme(session: Session, char: string, at: number): Session {
 }
 
 /**
- * Removes the last character. Backspaces are not keystrokes — they do not enter
- * the timeline, so corrections never inflate the raw WPM.
+ * Apaga o último caractere. Backspace não é tecla: não entra na timeline, então
+ * correção nunca infla o PPM bruto.
  */
 export function applyBackspace(session: Session, _at: number): Session {
   if (isFinished(session) || session.typed.length === 0) return session;
 
-  // Whitespace the machine supplied comes off with the newline that caused it.
-  // Leaving it behind would make undoing one Enter cost a dozen presses for
-  // characters the typist never entered.
+  // O espaço que a máquina pôs sai junto com a quebra que o causou. Deixar
+  // pra trás faria desfazer um Enter custar uma dúzia de backspaces por
+  // caractere que a pessoa nunca digitou.
   const givenTail = new Set(session.given);
   let end = session.typed.length;
   while (end > 0 && givenTail.has(end - 1)) end -= 1;
@@ -122,7 +122,7 @@ export function applyBackspace(session: Session, _at: number): Session {
   };
 }
 
-/** Drops everything typed but keeps the target, for a restart on the same text. */
+/** Joga fora o digitado e mantém o alvo, pra recomeçar no mesmo texto. */
 export function resetSession(session: Session): Session {
   return {
     ...session,

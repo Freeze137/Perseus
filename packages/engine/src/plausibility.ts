@@ -1,12 +1,11 @@
 import type { Keystroke } from './types';
 
 /**
- * What a timeline has to look like to have come from a hand.
+ * Com o que uma timeline tem que parecer pra ter saído de uma mão.
  *
- * The limits arrive as an argument rather than being imported: this package
- * knows how to measure a timeline, and the question of how fast is too fast is
- * policy that belongs to whoever is doing the refusing. The server passes
- * TIMELINE_LIMITS from the contracts package; a test can pass its own.
+ * Os limites chegam por argumento, não por import. Este pacote sabe medir
+ * timeline; decidir o que é rápido demais é política de quem recusa. O
+ * servidor passa TIMELINE_LIMITS do contracts, e um teste passa o dele.
  */
 export type TimelineLimits = {
   readonly maxCpm: number;
@@ -20,19 +19,19 @@ export type TimelineVerdict =
   | { readonly ok: false; readonly reason: string };
 
 /**
- * Judges whether a keystroke timeline could have been produced by a person.
+ * Julga se a timeline pode ter saído de uma pessoa.
  *
- * This is the check the whole verification story was missing. Regenerating the
- * text and replaying the timeline proves the characters were right; it says
- * nothing about *when* they were pressed, and the timestamps are the one part
- * of a submission still written by the client. Without this, a forged clock
- * turns a correct replay into any speed the forger likes.
+ * Era a checagem que faltava. Regerar o texto e reproduzir a timeline prova
+ * quais caracteres foram digitados e não prova *quando* — e o timestamp é a
+ * única parte do envio que ainda é escrita pelo cliente. Sem isso aqui, um
+ * relógio forjado transforma um replay correto na velocidade que o cara quiser.
  *
- * What it can prove: the clock runs forwards, the gaps are not machine-uniform,
- * and the average rate is inside what a hand can do. What it cannot prove, and
- * does not pretend to: that a script typing at a believable speed in real time
- * is not a script. That signal is not in the timeline, and pretending otherwise
- * would buy false confidence rather than security.
+ * Prova: relógio andando pra frente, intervalo que não é uniforme de máquina,
+ * e média dentro do que uma mão faz.
+ *
+ * Não prova, e não finge provar: que um script digitando devagar e em tempo
+ * real não é um script. Esse sinal não está na timeline. Fingir que está
+ * compraria confiança falsa, que é pior que não ter checagem nenhuma.
  */
 export function checkTimeline(
   keystrokes: readonly Keystroke[],
@@ -47,8 +46,8 @@ export function checkTimeline(
     if (!previous || !current) continue;
 
     const gap = current.at - previous.at;
-    // A clock that runs backwards is not a slow run or a fast one. It is a
-    // timeline that was assembled rather than recorded.
+    // Relógio andando pra trás não é corrida lenta nem rápida. É timeline
+    // montada, não gravada.
     if (gap < 0) {
       return { ok: false, reason: 'the timeline goes backwards in time' };
     }
@@ -60,8 +59,8 @@ export function checkTimeline(
   if (!first || !last) return { ok: false, reason: 'the timeline is empty' };
 
   const elapsedMs = last.at - first.at;
-  // One keystroke has no duration and no rhythm; there is nothing here to
-  // disbelieve. It is refused later for not finishing the text, not here.
+  // Uma tecla só não tem duração nem ritmo, então não há o que desconfiar.
+  // É recusada depois por não terminar o texto, não aqui.
   if (keystrokes.length < 2) return { ok: true };
 
   if (elapsedMs <= 0) {
@@ -84,10 +83,10 @@ export function checkTimeline(
     };
   }
 
-  // Uniformity is the tell a forger rarely thinks to hide: human gaps wander by
-  // tens of percent between one key and the next, and a loop with a fixed sleep
-  // does not wander at all. Only judged once the sample is big enough that the
-  // figure is a rhythm rather than an accident.
+  // Uniformidade é o vacilo que quase ninguém lembra de esconder: intervalo
+  // humano varia dezenas de por cento de uma tecla pra outra, e loop com sleep
+  // fixo não varia nada. Só olha isso quando a amostra já é grande o bastante
+  // pro número ser ritmo e não acaso.
   if (gaps.length >= limits.variationSampleFloor) {
     const variation = coefficientOfVariation(gaps);
     if (variation < limits.minGapVariation) {

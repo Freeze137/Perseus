@@ -1,7 +1,7 @@
 import type { KeyStat, Metrics, Session } from './types';
 
 const MS_PER_MINUTE = 60_000;
-/** The convention every typing test shares: a "word" is five characters. */
+/** Convenção de todo teste de digitação: "palavra" são cinco caracteres. */
 const CHARS_PER_WORD = 5;
 
 export function elapsedMs(session: Session, now: number = Date.now()): number {
@@ -10,9 +10,9 @@ export function elapsedMs(session: Session, now: number = Date.now()): number {
 }
 
 function countCorrect(session: Session): number {
-  // Auto-indentation is skipped: it is on screen and it is correct, but the
-  // machine put it there. Paying for it would inflate a code run by however
-  // deeply it happened to nest.
+  // Auto-indentação fica de fora: está na tela e está certa, mas foi a máquina
+  // que pôs. Pagar por ela infla a corrida de código na medida em que o código
+  // por acaso aninhou.
   const given = session.given.length > 0 ? new Set(session.given) : null;
   let correct = 0;
   for (let i = 0; i < session.typed.length; i += 1) {
@@ -23,39 +23,37 @@ function countCorrect(session: Session): number {
 }
 
 /**
- * A gap longer than this is somebody leaving the keyboard, not typing slowly.
+ * Intervalo maior que isto é gente saindo do teclado, não digitando devagar.
  *
- * Kept as a local constant rather than imported: this package measures, and the
- * number that decides what counts as a pause is the same one the server uses to
- * judge a timeline (TIMELINE_LIMITS.afkGapMs in @perseus/contracts). They agree
- * on purpose; if one moves, move the other.
+ * Constante local em vez de import: este pacote mede, e o número que define
+ * pausa é o mesmo que o servidor usa pra julgar timeline
+ * (TIMELINE_LIMITS.afkGapMs no @perseus/contracts). Batem de propósito. Mexeu
+ * num, mexe no outro.
  */
 const AFK_GAP_MS = 3_000;
-/** Rhythm is sampled per second, the unit a typist can actually feel. */
+/** Ritmo é amostrado por segundo, que é a unidade que a pessoa sente. */
 const WINDOW_MS = 1_000;
-/** A trailing window shorter than this measures the tail, not the rhythm. */
+/** Janela final menor que isto mede o rabo da corrida, não o ritmo. */
 const MIN_TAIL_MS = 500;
-/** Below this many windows the sample is too small to describe a rhythm. */
+/** Com menos janelas que isto a amostra não descreve ritmo nenhum. */
 const MIN_WINDOWS = 3;
 
 /**
- * Evenness of rhythm, 0-100.
+ * Quão parelho é o ritmo, 0-100.
  *
- * Measured as 100 minus the coefficient of variation of the *per-second* rate,
- * not of the gap between one key and the next. The distinction matters for
- * anyone fast: rollover means two characters genuinely land 4ms apart and the
- * next takes 90ms, so gap-level variance reads a good typist as erratic while
- * their words-per-second barely moves. The second is the unit the rhythm is
- * actually felt in.
+ * É 100 menos o coeficiente de variação da taxa *por segundo*, não do intervalo
+ * entre uma tecla e a próxima. Faz diferença pra quem é rápido: com rollover
+ * dois caracteres caem 4ms um do outro e o seguinte leva 90ms, então a variância
+ * por intervalo lê um bom digitador como errático enquanto o palavras-por-segundo
+ * dele mal se mexe. O segundo é a unidade em que o ritmo é sentido.
  *
- * Pauses are excluded rather than punished. A run interrupted by half a minute
- * used to score zero — one trip to the door outweighing four hundred evenly
- * struck keys — which measured the interruption instead of the typing. The
- * interruption still costs the typist every point of WPM it is worth; it does
- * not also get to erase the rhythm they kept on either side of it.
+ * Pausa é excluída, não punida. Corrida interrompida por meio minuto tirava
+ * zero — uma ida até a porta pesando mais que quatrocentas teclas parelhas —
+ * o que media a interrupção, não a digitação. A interrupção continua custando
+ * cada ponto de PPM que ela vale; só não apaga também o ritmo dos dois lados.
  *
- * Short runs fall back to the gap-level figure, where a handful of windows
- * would otherwise be three numbers pretending to be a distribution.
+ * Corrida curta cai no número por intervalo, senão meia dúzia de janelas viram
+ * três números fingindo ser distribuição.
  */
 function consistency(session: Session): number {
   const strokes = session.keystrokes;
@@ -79,7 +77,7 @@ function consistency(session: Session): number {
   return variation === null ? 0 : clamp(100 * (1 - variation), 0, 100);
 }
 
-/** Gaps between consecutive keystrokes, with the away-from-keyboard ones out. */
+/** Intervalos entre teclas seguidas, tirando os de quem saiu do teclado. */
 function typingGaps(strokes: Session['keystrokes']): number[] {
   const gaps: number[] = [];
   for (let i = 1; i < strokes.length; i += 1) {
@@ -93,8 +91,8 @@ function typingGaps(strokes: Session['keystrokes']): number[] {
 }
 
 /**
- * Characters per second, one entry per second of the run, minus the seconds
- * that fell inside a pause and a trailing sliver too short to be a rate.
+ * Caracteres por segundo, uma entrada por segundo de corrida, fora os segundos
+ * que caíram dentro de pausa e o rabinho curto demais pra ser taxa.
  */
 function ratePerWindow(
   strokes: Session['keystrokes'],
@@ -105,10 +103,10 @@ function ratePerWindow(
   if (span <= 0) return [];
 
   const pauses = pauseIntervals(strokes);
-  // Tallied in one pass rather than by scanning the timeline once per window:
-  // a long run has hundreds of windows and thousands of keystrokes, and the
-  // quadratic version of this is the kind of cost that only shows up in
-  // production, on the longest runs, from the people who type the most.
+  // Contado numa passada só, não varrendo a timeline por janela: corrida longa
+  // tem centenas de janelas e milhares de teclas, e a versão quadrática disso é
+  // o tipo de custo que só aparece em produção, na corrida mais longa, com
+  // quem digita mais.
   const tally = new Map<number, number>();
   for (const stroke of strokes) {
     const window = Math.floor((stroke.at - start) / WINDOW_MS);
@@ -121,11 +119,11 @@ function ratePerWindow(
     if (from >= end) break;
     const to = Math.min(from + WINDOW_MS, end);
     if (to - from < MIN_TAIL_MS) break;
-    // Any second a pause touches is thrown out, not just the ones it swallows
-    // whole. A window holding the last two keystrokes before somebody stood up
-    // is a fifth of a second of typing being reported as a full second of it,
-    // and those two edges were most of what made an interrupted run look
-    // erratic under the old figure.
+    // Todo segundo que a pausa encosta é descartado, não só os que ela engole
+    // inteiros. A janela com as duas últimas teclas antes de alguém levantar é
+    // um quinto de segundo de digitação virando um segundo cheio. Essas duas
+    // bordas eram boa parte do que fazia corrida interrompida parecer errática
+    // no número antigo.
     if (pauses.some((pause) => from < pause.to && to > pause.from)) continue;
     counts.push(tally.get(window) ?? 0);
   }
@@ -148,7 +146,7 @@ function pauseIntervals(
   return pauses;
 }
 
-/** Null when the sample has no mean to vary around. */
+/** Null quando a amostra não tem média pra variar em volta. */
 function coefficientOfVariation(values: readonly number[]): number | null {
   if (values.length < 2) return null;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -162,9 +160,9 @@ export function metrics(session: Session, now: number = Date.now()): Metrics {
   const elapsed = elapsedMs(session, now);
   const minutes = elapsed / MS_PER_MINUTE;
   const correct = countCorrect(session);
-  // Auto-indentation is excluded from both sides of the ledger. Subtracting it
-  // from `correct` alone would silently reclassify every free space as a
-  // mistake, and a clean code run would report errors it never made.
+  // Auto-indentação sai dos dois lados da conta. Tirar só do `correct`
+  // reclassificaria calado todo espaço grátis como erro, e uma corrida de
+  // código limpa reportaria erro que nunca aconteceu.
   const incorrect = session.typed.length - session.given.length - correct;
   const hits = session.keystrokes.filter((keystroke) => keystroke.correct).length;
 
@@ -173,8 +171,8 @@ export function metrics(session: Session, now: number = Date.now()): Metrics {
     wpm: minutes > 0 ? correct / CHARS_PER_WORD / minutes : 0,
     cpm: minutes > 0 ? correct / minutes : 0,
     rawWpm: minutes > 0 ? session.keystrokes.length / CHARS_PER_WORD / minutes : 0,
-    // Accuracy is keystroke-level on purpose: an error fixed with backspace
-    // still happened, and hiding it would flatter the learner.
+    // Precisão é por tecla de propósito: erro corrigido com backspace
+    // aconteceu, e esconder isso seria bajular quem está aprendendo.
     accuracy:
       session.keystrokes.length > 0 ? (hits / session.keystrokes.length) * 100 : 0,
     consistency: consistency(session),
@@ -184,8 +182,8 @@ export function metrics(session: Session, now: number = Date.now()): Metrics {
 }
 
 /**
- * Per-character accuracy and speed. This is what future adaptive lessons read
- * to decide which keys deserve more drilling.
+ * Precisão e velocidade por caractere. É daqui que as lições adaptativas vão
+ * ler quais teclas merecem mais treino.
  */
 export function keyStats(session: Session): KeyStat[] {
   type Accumulator = { typed: number; errors: number; latencyTotal: number; latencySamples: number };

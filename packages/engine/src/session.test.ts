@@ -12,7 +12,7 @@ import {
 import { metrics } from './metrics';
 import type { Session } from './types';
 
-/** Types a whole string one character at a time, 100ms apart. */
+/** Digita a string inteira, um caractere por vez, de 100ms. */
 function type(target: string, input: string, stopOnError = false) {
   let session = createSession(target, { stopOnError });
   Array.from(input).forEach((char, i) => {
@@ -59,7 +59,7 @@ describe('session', () => {
 
     expect(session.typed.join('')).toBe('ca');
     expect(isMistake(session, 1)).toBe(false);
-    // Three characters were committed, even though only two survive.
+    // Três caracteres foram confirmados, mesmo que só dois sobrem.
     expect(session.keystrokes).toHaveLength(3);
   });
 
@@ -74,7 +74,7 @@ describe('session', () => {
     expect(session.target).toEqual(['n', 'ã', 'o']);
 
     session = applyInput(session, 'n', 0);
-    // "a" + combining tilde, the shape a dead key produces before composition.
+    // "a" + til combinante, o formato que a tecla morta dá antes de compor.
     session = applyInput(session, 'a\u0303', 100);
     session = applyInput(session, 'o', 200);
 
@@ -98,7 +98,7 @@ describe('session', () => {
 });
 
 describe('auto-indentation', () => {
-  /** Two lines with two spaces of indent on the second. */
+  /** Duas linhas, com dois espaços de indentação na segunda. */
   const CODE = 'if x {\n  y();\n}';
 
   function type(session: Session, text: string, at = 1): Session {
@@ -116,7 +116,7 @@ describe('auto-indentation', () => {
     let session = createSession(CODE, { autoIndent: true });
     session = type(session, 'if x {\n');
     expect(session.typed.join('')).toBe('if x {\n  ');
-    // The two spaces are on screen but marked as not the typist's.
+    // Os dois espaços estão na tela mas marcados como não sendo da pessoa.
     expect(session.given).toEqual([7, 8]);
   });
 
@@ -128,8 +128,8 @@ describe('auto-indentation', () => {
   });
 
   it('leaves indentation alone after a wrong newline', () => {
-    // The target wants "i"; Enter here is a mistake, and a mistake must not be
-    // rewarded with three more characters of free progress.
+    // O alvo quer "i"; Enter aqui é erro, e erro não pode ser premiado com
+    // mais três caracteres de progresso de graça.
     let session = createSession(CODE, { autoIndent: true });
     session = type(session, '\n');
     expect(session.given).toEqual([]);
@@ -140,7 +140,7 @@ describe('auto-indentation', () => {
     let session = createSession(CODE, { autoIndent: true });
     session = type(session, 'if x {\n');
     session = applyBackspace(session, 2);
-    // The newline and the indentation it brought go together.
+    // A quebra de linha e a indentação que ela trouxe saem juntas.
     expect(session.typed.join('')).toBe('if x {');
     expect(session.given).toEqual([]);
   });
@@ -163,8 +163,8 @@ describe('auto-indentation', () => {
     indented = applyInput(indented, 'if x {\n', 0);
     indented = applyInput(indented, 'y', 60_000);
 
-    // Seven pressed characters plus the "y" are correct; the two spaces are not
-    // counted, even though they sit in `typed` and match the target.
+    // Sete caracteres apertados mais o "y" estão certos; os dois espaços não
+    // contam, mesmo estando no `typed` e batendo com o alvo.
     expect(metrics(indented, 60_000).correct).toBe(8);
     expect(indented.typed.filter((_, i) => indented.given.includes(i))).toEqual([
       ' ',
@@ -177,8 +177,8 @@ describe('auto-indentation', () => {
     session = applyInput(session, 'if x {\n', 0);
     session = applyInput(session, 'y', 60_000);
 
-    // A clean run is a clean run: the two free spaces are neither credited nor
-    // blamed, so the error count stays at zero and accuracy stays at 100.
+    // Corrida limpa é corrida limpa: os dois espaços grátis não são creditados
+    // nem culpados, então erro fica em zero e precisão em 100.
     const stats = metrics(session, 60_000);
     expect(stats.incorrect).toBe(0);
     expect(stats.accuracy).toBe(100);
@@ -189,7 +189,7 @@ describe('auto-indentation', () => {
     session = applyInput(session, 'if x {\n', 0);
     session = applyInput(session, 'y', 60_000);
     const stats = metrics(session, 60_000);
-    // Exactly one minute, eight credited characters.
+    // Exatamente um minuto, oito caracteres creditados.
     expect(Math.round(stats.cpm)).toBe(8);
     expect(Math.round(stats.wpm)).toBe(2);
   });

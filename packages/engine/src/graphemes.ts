@@ -4,8 +4,8 @@ const segmenter =
     : null;
 
 /**
- * Splits text into user-perceived characters, normalizing to NFC first so that
- * a composed "á" and a dead-key "´" + "a" compare equal.
+ * Quebra o texto no que a pessoa enxerga como caractere. NFC antes, senão o
+ * "á" pronto e o "´" + "a" da tecla morta não batem.
  */
 export function toGraphemes(text: string): string[] {
   const normalized = text.normalize('NFC');
