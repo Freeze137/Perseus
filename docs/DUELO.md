@@ -1,4 +1,4 @@
-# PERSEUS — duelo 1v1
+# PERSEUSS — duelo 1v1
 
 Documento canônico do multiplayer. Estado em 20/08/2026: **escrito, testado e
 rodando local**. Falta só o que depende de você — o banco e o deploy.

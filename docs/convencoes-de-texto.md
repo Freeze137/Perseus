@@ -1,6 +1,6 @@
 # Convenções de texto
 
-Como o PERSEUS escreve o que aparece na tela. Vale para botão, rótulo, título,
+Como o PERSEUSS escreve o que aparece na tela. Vale para botão, rótulo, título,
 aba, menu, campo, aviso, erro, modal, estado vazio, tela de carregamento — e
 também para o que não se vê: `aria-label`, `title`, `alt`, `<meta>` e o título
 da aba.
@@ -21,7 +21,9 @@ Modo programador      não  Modo Programador
 Title Case é padrão do inglês e fica errado em português. **Nos textos em
 inglês, siga o inglês** — Title Case em títulos e botões.
 
-`PERSEUS` sempre em maiúscula, é nome próprio.
+`PERSEUSS` sempre em maiúscula, é nome próprio — e sempre com dois esses,
+que acompanham o domínio `perseuss.tech`. Um s só é erro de digitação, não
+variante. No código a palavra sai de `SITE_NAME`, nunca escrita à mão.
 
 Siglas preservadas: `PPM`, `WPM`, `CPM`, `FPS`.
 

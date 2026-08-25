@@ -1,4 +1,4 @@
-# PERSEUS — Product Context
+# PERSEUSS — Product Context
 
 ## Register
 
@@ -15,7 +15,8 @@ its own score.
 
 The name is a constellation, and the product teaches a map: the planned virtual
 keyboard is drawn as a star chart where each key's brightness reflects the
-typist's real command of it.
+typist's real command of it. The second s comes from the address — `perseus.tech`
+was taken, and the wordmark follows the domain rather than argue with it.
 
 ## Users & purpose
 

@@ -1,4 +1,4 @@
-# PERSEUS — subir no ar (VM na Oracle Cloud)
+# PERSEUSS — subir no ar (VM na Oracle Cloud)
 
 Runbook. A ordem importa: cada passo depende do endereço que o anterior
 produziu.

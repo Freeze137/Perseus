@@ -1,4 +1,4 @@
-# PERSEUS — subir no ar (Fly + Neon + Vercel)
+# PERSEUSS — subir no ar (Fly + Neon + Vercel)
 
 Rota alternativa à VM da Oracle, que está em `DEPLOY.md`. Entrega a mesma coisa
 e tira três dores: a fila de capacidade do Ampere, o nginx e o certbot.

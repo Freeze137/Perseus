@@ -1,4 +1,4 @@
-# PERSEUS
+# PERSEUSS
 
 ## O projeto está no ar
 

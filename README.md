@@ -1,16 +1,17 @@
-# PERSEUS
+# PERSEUSS
 
 Treinador de digitação para navegador, em português e inglês, para texto corrido
 e para código. Quinze linguagens de programação com auto-indentação real, cinco
 modos de texto, corpus determinístico, duelo 1v1 e um servidor que não aceita a
 palavra do cliente sobre o próprio resultado.
 
+**[perseuss.tech](https://perseuss.tech/)** — site na Vercel, API no Fly.io em
+São Paulo (`gru`), banco no Neon.
+
 O nome é uma constelação e o produto ensina um mapa: o teclado virtual é
 desenhado como um mapa estelar, onde o brilho de cada tecla reflete o domínio
-real do usuário sobre ela.
-
-**No ar em [perseuss.tech](https://perseuss.tech/)** — site na
-Vercel, API no Fly.io em São Paulo (`gru`), banco no Neon.
+real do usuário sobre ela. O segundo s é do endereço: `perseus.tech` já tinha
+dono, e a marca preferiu acompanhar o domínio a brigar com ele.
 
 ## O que ele faz
 
@@ -113,6 +114,9 @@ docs/
 199 testes: 46 no motor, 91 no corpus, 44 na API, 18 no site.
 
 ## Créditos
+
+Escrito por **Rafael Souza Costa** — [@Freeze137](https://github.com/Freeze137).
+Produto, engenharia e desenho, do motor de digitação ao mapa estelar.
 
 Parte do corpus vem do [Tatoeba](https://tatoeba.org) sob CC BY 2.0 FR — a
 atribuição por frase está em `packages/corpus/ATTRIBUTION.md` e nos créditos

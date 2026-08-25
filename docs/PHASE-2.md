@@ -1,4 +1,4 @@
-# PERSEUS — protocolo da fase 2
+# PERSEUSS — protocolo da fase 2
 
 Documento canônico. A versão publicada como artifact é uma renderização deste
 arquivo; quando os dois divergirem, este vale.
@@ -277,7 +277,7 @@ credencial.
 na área de digitação a cor já significa uma coisa — branco é acerto, vermelho é
 erro, cinza é o que falta. Cor de sintaxe põe mais cinco ou seis cores por cima
 falando de outro assunto, e o verde de string é o pior caso, porque verde no
-PERSEUS é a cor de "está indo bem".
+PERSEUSS é a cor de "está indo bem".
 
 ---
 
