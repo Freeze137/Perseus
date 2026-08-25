@@ -6,8 +6,8 @@ import { AmbientBackground } from "@/features/ambient/ambient-background";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// next/font self-hosts these at build time — no blocking request to a font CDN,
-// and no layout shift when they land.
+// next/font hospeda no build. Sem request pra CDN de fonte e sem pulo de
+// layout quando chegam.
 const display = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "700"],
@@ -15,8 +15,8 @@ const display = Space_Grotesk({
   display: "swap",
 });
 
-// Monospace is non-negotiable in the typing area: a proportional font would
-// shift the text sideways whenever a wrong character is wider than the right one.
+// Mono é obrigatório na área de digitação: fonte proporcional empurra o texto
+// pro lado toda vez que o caractere errado é mais largo que o certo.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -35,18 +35,16 @@ const DESCRIPTION =
   "Treinador de digitação em português e inglês, para texto corrido e para código. Aprenda o teclado sem olhar.";
 
 /**
- * What a link to the site looks like somewhere else.
+ * Como o link do site aparece em outro lugar.
  *
- * `metadataBase` is what turns the relative image path Next generates into the
- * absolute URL every unfurler insists on — without it the card silently ships
- * a broken image in production and works perfectly on localhost, which is the
- * worst possible way for it to fail.
+ * `metadataBase` transforma o caminho relativo da imagem em URL absoluta.
+ * Sem ele o cartão quebra em produção e funciona em localhost — o pior jeito
+ * possível de falhar.
  *
- * An unfurler reads only Open Graph: no `og:image` means a bare blue
- * link, and `og:image` without width and height means the client guesses at the
- * layout and often picks the small square one. Next fills the dimensions in
- * from opengraph-image.tsx, which is why the card is generated there rather
- * than pointed at by hand.
+ * Unfurler só lê Open Graph. Sem `og:image` vira link azul pelado; com
+ * `og:image` mas sem largura e altura o cliente chuta e costuma pegar o
+ * quadradinho. O Next preenche as medidas a partir do opengraph-image.tsx,
+ * por isso o cartão é gerado lá e não apontado na mão.
  */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -56,8 +54,8 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: SITE_NAME,
-  // Renders <meta name="author"> and <link rel="author">: authorship stated
-  // for a crawler, which opens neither the credits panel nor humans.txt.
+  // Vira <meta name="author"> e <link rel="author">. Crawler não abre painel
+  // de configurações nem lê humans.txt.
   authors: [{ name: "Rafael Souza Costa", url: "https://github.com/Freeze137" }],
   creator: "Rafael Souza Costa",
   alternates: { canonical: "/" },
@@ -75,8 +73,8 @@ export const metadata: Metadata = {
     description: SITE_TAGLINE,
   },
   icons: {
-    // icon.png and apple-icon.png beside this file are picked up by convention;
-    // named here only so the small monochrome mark has somewhere to live.
+    // icon.png e apple-icon.png do lado deste arquivo o Next pega sozinho.
+    // Só está escrito aqui pra marca pequena ter onde morar.
     shortcut: "/icon.png",
   },
 };

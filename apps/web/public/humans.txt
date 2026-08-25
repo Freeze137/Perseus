@@ -1,8 +1,10 @@
 /* AUTOR */
 
     Rafael Souza Costa
-    GitHub    github.com/Freeze137
-    Local     Brasil
+    Portfólio  portfolio-eight-eta-47.vercel.app
+    GitHub     github.com/Freeze137
+    LinkedIn   linkedin.com/in/rafael-souza-71481b2b5
+    Local      Brasil
 
     Produto, engenharia e desenho: o motor de digitação, o corpus
     determinístico, o servidor que refaz a corrida antes de acreditar nela,

@@ -1,22 +1,26 @@
 import { SITE_NAME } from "@/lib/site";
 
 /**
- * Quem escreveu o produto, e de onde vêm as frases.
+ * Quem fez, e de onde vêm as frases.
  *
- * Os dois blocos abaixo parecem a mesma coisa e não são, e é por isso que uma
- * régua os separa. O segundo não é cortesia: as frases dos bancos `tatoeba-*`
- * são usadas sob CC-BY 2.0 FR, e o crédito é condição da licença. Enquanto
- * vivia só num arquivo do repositório, a condição estava cumprida para quem
- * clona e descumprida para quem usa o site — que é justamente quem a licença
- * quer que saiba. Misturar a autoria no mesmo parágrafo diluiria isso: uma
- * obrigação legal lida como assinatura deixa de ser lida como obrigação.
+ * Os dois blocos são separados por régua de propósito. O do Tatoeba é
+ * exigência da licença CC-BY, não gentileza — grudado na assinatura ele
+ * parece gentileza e para de cumprir a licença.
  *
- * Fica nas configurações, não no rodapé, porque não existe rodapé: a tela é uma
- * superfície de digitação e um rodapé permanente competiria por atenção com a
- * única coisa que ela pede.
+ * Fica nas configurações porque não existe rodapé. A tela é pra digitar.
  */
 
-/** O sublinhado dos três links daqui, escrito uma vez. */
+/** Onde a pessoa está. Portfólio primeiro: é o que ele mesmo escolheu mostrar. */
+const LINKS = [
+  { label: "Portfólio", href: "https://portfolio-eight-eta-47.vercel.app/" },
+  { label: "GitHub", href: "https://github.com/Freeze137" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/rafael-souza-71481b2b5",
+  },
+] as const;
+
+/** Sublinhado dos links. Estava copiado três vezes. */
 const LINK =
   "text-bone underline decoration-slate underline-offset-4 transition-colors hover:decoration-bone";
 
@@ -25,20 +29,27 @@ export function CreditsPanel() {
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <h3 className="label">Créditos</h3>
-        {/* Sem "feito com carinho por". O produto não bajula quem digita e não
-            tem por que bajular quem o escreveu: a frase diz o que a pessoa fez,
-            que é a informação, e para. */}
+        {/* Nada de "feito com carinho por". Diz o que a pessoa fez e para. */}
         <p className="text-sm leading-relaxed text-ash">
-          {SITE_NAME} foi escrito por{" "}
-          <a
-            href="https://github.com/Freeze137"
-            target="_blank"
-            rel="noreferrer"
-            className={LINK}
-          >
-            Rafael Souza Costa
-          </a>
-          . Motor de digitação, corpus, servidor e desenho.
+          {SITE_NAME} foi escrito por Rafael Souza Costa. Motor de digitação,
+          corpus, servidor e desenho.
+        </p>
+        {/* Os três links numa linha só, separados por ponto. Três âncoras
+            dentro da frase acima picotavam a leitura. */}
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ash">
+          {LINKS.map((link, i) => (
+            <span key={link.href} className="flex items-center gap-x-2">
+              {i > 0 ? <span aria-hidden="true">·</span> : null}
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className={LINK}
+              >
+                {link.label}
+              </a>
+            </span>
+          ))}
         </p>
       </div>
 

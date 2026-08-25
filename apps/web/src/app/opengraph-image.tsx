@@ -2,21 +2,20 @@ import { ImageResponse } from "next/og";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 
 /**
- * The card WhatsApp and every other unfurler paints for a link to the site.
+ * O cartão que o WhatsApp e afins desenham pro link do site.
  *
- * Generated rather than committed as a PNG so it can never drift from the
- * palette in globals.css: the colours below are the same tokens the app itself
- * is built from, and a redesign that changes them changes this too.
+ * Gerado em vez de PNG commitado pra não descolar da paleta do globals.css.
+ * As cores abaixo são os mesmos tokens do app: mexeu lá, mexe aqui.
  *
- * Deliberately no custom font. Satori has to be handed font binaries, which
- * means a fetch at build time for every deploy in exchange for a typeface
- * nobody reads at this size — the fallback sans is the honest trade.
+ * Sem fonte custom de propósito. O Satori precisa receber o binário da fonte,
+ * o que dá um fetch por deploy em troca de uma tipografia que ninguém lê
+ * nesse tamanho.
  */
 export const alt = `${SITE_NAME} — treino de digitação`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-/** The palette, from globals.css. */
+/** Paleta, do globals.css. */
 const OBSIDIAN = "#070b0a";
 const SLATE = "#101917";
 const MINT = "#7df5c4";
@@ -25,11 +24,10 @@ const ASH = "#6e7f87";
 const BONE = "#e6efea";
 
 /**
- * Typed and untyped — the two halves the typing area is always showing.
+ * Digitado e não digitado, as duas metades que a área de digitação sempre mostra.
  *
- * The spaces are non-breaking on purpose. Each fragment below is its own flex
- * child, and an ordinary leading or trailing space inside one is collapsed away
- * by the layout engine: the line comes out as "constvelocidade=palavras".
+ * Espaços não-quebráveis de propósito. Cada pedaço abaixo é um filho flex, e
+ * espaço comum na ponta o layout engine come — sai "constvelocidade=palavras".
  */
 const SAMPLE: ReadonlyArray<readonly [string, string]> = [
   ["const\u00A0", MINT],
@@ -52,7 +50,7 @@ export default function Image() {
           justifyContent: "center",
           background: OBSIDIAN,
           padding: "80px 90px",
-          // The faint corner glow the app's star field leaves behind it.
+          // O brilho fraco de canto que o campo de estrelas deixa.
           backgroundImage: `radial-gradient(1000px 520px at 88% 8%, rgba(29,185,129,0.20), transparent 65%)`,
         }}
       >
@@ -78,12 +76,10 @@ export default function Image() {
           </div>
         </div>
 
-        {/* Eight letters at this size measure about 1045 of the 1020 the side
-            padding leaves — which sounds like a clip and is not: the row is
-            its own flex line, so the overflow is the trailing letterspace and
-            the right sidebearing, not ink. Measured on the generated card, the
-            final S lands ~160px clear of the edge. Going wider than this is
-            where it would start costing a letter. */}
+        {/* Oito letras nesse tamanho dão uns 1045px e o padding deixa 1020.
+            Parece corte e não é: o que passa é o tracking do fim e a lateral
+            do glifo, não tinta. Medido no cartão gerado, o último S para a
+            uns 160px da borda. Passar disso aí sim come letra. */}
         <div
           style={{
             display: "flex",

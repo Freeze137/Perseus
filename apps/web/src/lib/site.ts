@@ -28,12 +28,10 @@ const configured =
 export const SITE_URL = (configured ?? "http://localhost:3000").replace(/\/$/, "");
 
 /**
- * What the tab, the header and the share card are all called.
+ * Nome do produto. Dois esses, igual ao domínio.
  *
- * Two esses, deliberately: the wordmark follows the `perseuss.tech` domain.
- * It reads as a typo to anyone who meets it cold, so it is spelled in exactly
- * one place — every surface imports this rather than writing the word out,
- * and there is nothing left to "correct" in isolation.
+ * Parece typo pra quem vê frio. Está escrito num lugar só justamente por
+ * isso: não tem o que "corrigir" solto por aí.
  */
 export const SITE_NAME = "PERSEUSS";
 

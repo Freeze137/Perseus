@@ -4,23 +4,23 @@ import { useEffect } from "react";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 /**
- * The signature for whoever opens the devtools.
+ * Assinatura no console.
  *
- * This product is for people who type code, and that person opens the console
- * on sites that interest them. It is the one credit here the actual audience
- * has a real chance of finding unprompted — and it costs zero pixels, which is
- * the condition for existing at all on a screen that belongs to the text being
- * typed.
+ * Quem digita código abre o devtools. É o único crédito que dá pra achar
+ * sozinho sem gastar pixel de tela.
  *
- * The guard is module-level rather than effect-level: StrictMode mounts every
- * component twice in development, and a signature printed twice stops reading
- * as a signature.
+ * Aponta pro humans.txt em vez de despejar portfólio, GitHub e LinkedIn aqui:
+ * assinatura de cinco linhas no console vira log.
+ *
+ * Guarda de módulo porque StrictMode monta duas vezes em dev e sai duplicado.
  */
 let signed = false;
 
-/** From the palette in globals.css: the console cannot see CSS variables. */
+/** Da paleta do globals.css. Console não lê variável CSS. */
 const MINT = "#7df5c4";
 const ASH = "#6e7f87";
+
+const host = () => SITE_URL.replace(/^https?:\/\//, "");
 
 export function ConsoleSignature() {
   useEffect(() => {
@@ -28,7 +28,11 @@ export function ConsoleSignature() {
     signed = true;
 
     console.log(
-      `%c${SITE_NAME}%c\nEscrito por Rafael Souza Costa — github.com/Freeze137\n${SITE_URL.replace(/^https?:\/\//, "")} · /humans.txt`,
+      [
+        `%c${SITE_NAME}%c`,
+        "Escrito por Rafael Souza Costa",
+        `${host()}/humans.txt`,
+      ].join("\n"),
       `color:${MINT};font-weight:700;letter-spacing:0.3em`,
       `color:${ASH};line-height:1.7`,
     );
