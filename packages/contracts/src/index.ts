@@ -4,24 +4,23 @@ export const LanguageSchema = z.enum(['pt-BR', 'en']);
 export type Language = z.infer<typeof LanguageSchema>;
 
 /**
- * The physical keyboard in front of the typist.
+ * O teclado físico na frente da pessoa.
  *
- * A different axis from `Language` again: the prose is Portuguese or English,
- * the syntax is Rust or Go, and this is the hardware that has to produce them.
- * It is here rather than in the web app's settings alone because it changes
- * which characters are reachable, and therefore which text may be drawn — and
- * anything that changes the text has to travel with the config the server
- * regenerates from.
+ * Outro eixo, diferente de `Language`: a prosa é português ou inglês, a sintaxe
+ * é Rust ou Go, e isto é o hardware que tem que produzir os dois. Fica aqui e
+ * não só nas configurações do site porque muda quais caracteres são alcançáveis
+ * e, portanto, qual texto pode ser sorteado — e tudo que muda o texto tem que
+ * viajar junto da config que o servidor regera.
  *
- * 'abnt2'   — the Brazilian layout. Reaches everything: Ç has its own key and
- *             the accents come off the dead keys ´ ` ~ ^. Brackets are direct
- *             and braces are Shift away, as on any keyboard — AltGr buys
- *             ² ³ £ ¢ ¬ here and nothing that appears in code.
- * 'us'      — the plain American layout. ASCII and nothing else: there is no
- *             key sequence on it that produces "á" or "ç".
- * 'us-intl' — the American layout with dead keys. Same accents as ABNT2, and
- *             the same direct brackets as 'us' — at the price of ' and "
- *             becoming dead keys themselves.
+ * 'abnt2'   — layout brasileiro. Alcança tudo: Ç tem tecla própria e os acentos
+ *             saem das mortas ´ ` ~ ^. Colchete é direto e chave é Shift, como
+ *             em qualquer teclado — AltGr aqui compra ² ³ £ ¢ ¬ e nada que
+ *             apareça em código.
+ * 'us'      — layout americano puro. ASCII e mais nada: não existe sequência de
+ *             teclas nele que produza "á" ou "ç".
+ * 'us-intl' — o americano com teclas mortas. Mesmos acentos do ABNT2 e os
+ *             mesmos colchetes diretos do 'us' — ao preço de ' e " virarem
+ *             teclas mortas.
  */
 export const KeyboardLayoutSchema = z.enum(['abnt2', 'us', 'us-intl']);
 export type KeyboardLayout = z.infer<typeof KeyboardLayoutSchema>;
@@ -36,12 +35,12 @@ export const TextKindSchema = z.enum([
 export type TextKind = z.infer<typeof TextKindSchema>;
 
 /**
- * A programming language, which is a different axis from `Language`.
+ * Uma linguagem de programação, que é um eixo diferente de `Language`.
  *
- * `Language` is the human language the prose is written in; this is the syntax
- * a code snippet is written in. They never constrain each other — a Brazilian
- * and an American type the same Rust — so they are kept as separate fields
- * rather than folded into one "language" the way a single enum would tempt.
+ * `Language` é a língua humana em que a prosa está escrita; isto é a sintaxe em
+ * que o snippet está. Uma nunca restringe a outra — brasileiro e americano
+ * digitam o mesmo Rust — então são campos separados em vez de dobrados numa
+ * "linguagem" só, que é o que um enum único convidaria a fazer.
  */
 export const SyntaxSchema = z.enum([
   'typescript',
@@ -62,67 +61,68 @@ export const SyntaxSchema = z.enum([
 ]);
 export type Syntax = z.infer<typeof SyntaxSchema>;
 
-/** What the user picks. 'mix' draws across every syntax inside one run. */
+/** O que a pessoa escolhe. 'mix' sorteia entre todas as sintaxes numa corrida. */
 export const SyntaxChoiceSchema = z.union([SyntaxSchema, z.literal('mix')]);
 export type SyntaxChoice = z.infer<typeof SyntaxChoiceSchema>;
 
 /**
- * Everything needed to reproduce a test exactly. The seed is what makes a run
- * shareable: same config, same text, for anyone opening the link.
+ * Tudo que é preciso pra reproduzir um teste igualzinho. A semente é o que faz
+ * a corrida ser compartilhável: mesma config, mesmo texto, pra quem abrir o link.
  */
 export const SessionConfigSchema = z.object({
   language: LanguageSchema,
   kind: TextKindSchema,
-  /** Character budget the generator aims for. */
+  /** Orçamento de caracteres que o gerador tenta acertar. */
   length: z.int().min(10).max(2_000),
   seed: z.string().min(1).max(64),
   durationMs: z.int().positive().nullable().default(null),
   /**
-   * Only read when `kind` is 'code'; null everywhere else. Carried on every
-   * config rather than on a separate code-only type so that one seed plus one
-   * config still reproduces one text, whatever the kind.
+   * Só é lido quando `kind` é 'code'; null no resto. Fica em toda config em vez
+   * de num tipo só pra código pra que uma semente mais uma config continuem
+   * reproduzindo um texto, seja qual for o modo.
    */
   syntax: SyntaxChoiceSchema.nullable().default(null),
   /**
-   * The keyboard the run was typed on. Read by every prose builder and by none
-   * of the code one — see KeyboardLayoutSchema.
+   * O teclado em que a corrida foi digitada. Lido por todo builder de prosa e
+   * por nenhum de código — ver KeyboardLayoutSchema.
    *
-   * Defaulted rather than required so a config can still be written by hand
-   * without naming it, and defaulted to ABNT2 because that is the keyboard the
-   * default pt-BR corpus was written for.
+   * Tem default em vez de ser obrigatório pra dar pra escrever uma config na
+   * mão sem citá-lo, e o default é ABNT2 porque é o teclado pro qual o corpus
+   * pt-BR padrão foi escrito.
    */
   keyboardLayout: KeyboardLayoutSchema.default('abnt2'),
 });
 export type SessionConfig = z.infer<typeof SessionConfigSchema>;
 
 /**
- * The corpus generation that produced a text.
+ * A geração do corpus que produziu um texto.
  *
- * A seed alone stops being enough the moment results are stored: the same seed
- * and config yield different text after the banks change, so a saved run would
- * silently start replaying something its owner never typed. Bump this whenever
- * a builder changes or the banks are edited, and old results keep pointing at
- * the corpus they were actually run against.
+ * Só a semente deixa de bastar no instante em que resultado passa a ser
+ * guardado: a mesma semente e a mesma config dão texto diferente depois que os
+ * bancos mudam, então uma corrida salva começaria calada a reproduzir uma coisa
+ * que o dono nunca digitou. Suba isto sempre que um builder mudar ou os bancos
+ * forem editados, e os resultados antigos continuam apontando pro corpus contra
+ * o qual rodaram de verdade.
  *
- * 1 — the original banks, with `words` and `numbers` built from loose tokens.
- * 2 — every mode drawn from whole sentences; `code` and the snippet bank added.
- * 3 — ten more syntaxes in the snippet bank. Nothing existing was edited, but
- *     'mix' draws from a bank twice the size, so every old mixed run replays
- *     against a corpus it never saw.
- * 4 — `keyboardLayout` joined the config, and the prose pools are now drawn
- *     per reach. A US-layout run draws from the subset its keyboard can type,
- *     so the same seed and language no longer name one text on their own.
- * 5 — the Tatoeba banks joined the hand-written ones: about 5.600 sentences per
- *     language on top of the original 197. Every pool grew, so every old seed
- *     now lands somewhere else. The Portuguese ASCII pool grew the most — 22
- *     sentences to 1.761 — which means a US-layout Portuguese run is the one
- *     that changed beyond recognition.
- * 6 — the prose draw became a shuffle bag. The seed now carries a position
- *     inside it ("id.cursor"), so a text is still a pure function of the
- *     config — the server has to be able to regenerate it to score the run —
- *     but consecutive runs deal from one shuffled pass instead of sampling the
- *     whole pool afresh each time. A seed with no cursor reads as the top of
- *     the bag, which is what leaves duels untouched.
+ * 1 — os bancos originais, com `words` e `numbers` montados de tokens soltos.
+ * 2 — todo modo sorteando frase inteira; `code` e o banco de snippets entraram.
+ * 3 — mais dez sintaxes no banco de snippets. Nada existente foi editado, mas
+ *     'mix' passou a sortear de um banco do dobro do tamanho, então toda
+ *     corrida mista antiga reproduz contra um corpus que ela nunca viu.
+ * 4 — `keyboardLayout` entrou na config, e as pools de prosa passaram a ser
+ *     sorteadas por alcance. Corrida em layout US sorteia do subconjunto que o
+ *     teclado digita, então semente e língua sozinhas já não nomeiam um texto.
+ * 5 — os bancos do Tatoeba entraram junto dos escritos à mão: cerca de 5.600
+ *     frases por língua em cima das 197 originais. Toda pool cresceu, então
+ *     toda semente antiga cai em outro lugar. A pool ASCII em português foi a
+ *     que mais cresceu — de 22 frases para 1.761 — o que faz da corrida em
+ *     português com layout US a que mudou além do reconhecível.
+ * 6 — o sorteio de prosa virou sacola de embaralhamento. A semente agora carrega
+ *     uma posição dentro dela ("id.cursor"), então o texto continua sendo função
+ *     pura da config — o servidor precisa conseguir regerá-lo pra pontuar — mas
+ *     corridas seguidas distribuem de uma passada embaralhada em vez de amostrar
+ *     a pool inteira de novo toda vez. Semente sem cursor é lida como o topo da
+ *     sacola, e é isso que deixa o duelo intocado.
  * 7 — a cota de frases sem acento passou a ser servida por pool, não em bloco.
  *     Um teclado US puro em português via 32% do banco, e o que via estava
  *     empilhado num modo só: pontuação em 28%, números em 23%. Agora as pools
@@ -135,10 +135,10 @@ export const CORPUS_VERSION = 7;
 export const TypingResultSchema = z.object({
   id: z.uuid(),
   config: SessionConfigSchema,
-  /** Which corpus generation produced the text. See CORPUS_VERSION. */
+  /** Qual geração do corpus produziu o texto. Ver CORPUS_VERSION. */
   corpusVersion: z.int().positive(),
   wpm: z.number().nonnegative(),
-  /** Correct characters per minute. The honest figure for a code run. */
+  /** Caracteres certos por minuto. O número honesto pra corrida de código. */
   cpm: z.number().nonnegative(),
   rawWpm: z.number().nonnegative(),
   accuracy: z.number().min(0).max(100),
@@ -151,23 +151,23 @@ export const TypingResultSchema = z.object({
 export type TypingResult = z.infer<typeof TypingResultSchema>;
 
 /**
- * One committed character, as it goes over the wire.
+ * Um caractere confirmado, do jeito que viaja pela rede.
  *
- * `correct` is absent on purpose. The client knows it, but a leaderboard that
- * believed the client would be a leaderboard of whoever opened the console
- * first — the server recomputes it against the text it regenerates itself.
+ * `correct` está ausente de propósito. O cliente sabe, mas um ranking que
+ * acreditasse no cliente seria um ranking de quem abriu o console primeiro. O
+ * servidor recalcula contra o texto que ele mesmo regera.
  */
 export const SubmittedKeystrokeSchema = z.object({
-  /** One grapheme. Longer than a code point because "ã" can arrive composed. */
+  /** Um grafema. Maior que um code point porque "ã" pode chegar composto. */
   char: z.string().min(1).max(8),
   /**
-   * Milliseconds on the client's own clock, monotonic within one run.
+   * Milissegundos no relógio do próprio cliente, monotônico dentro de uma corrida.
    *
-   * Whole milliseconds, not the fractional figure `performance.now()` returns.
-   * The extra decimals change no score anybody can perceive and cost four bytes
-   * on every keystroke of every run, which on a long text is most of the
-   * difference between a request that fits in the body limit and one that does
-   * not. Capped at six hours: past that it is not a typing run.
+   * Milissegundo inteiro, não o número quebrado que o `performance.now()`
+   * devolve. As casas extras não mudam pontuação que alguém perceba e custam
+   * quatro bytes em cada tecla de cada corrida, o que num texto longo é boa
+   * parte da diferença entre uma requisição que cabe no limite do corpo e uma
+   * que não cabe. Teto de seis horas: além disso não é corrida de digitação.
    */
   at: z.int().nonnegative().max(21_600_000),
   index: z.int().nonnegative(),
@@ -175,120 +175,121 @@ export const SubmittedKeystrokeSchema = z.object({
 export type SubmittedKeystroke = z.infer<typeof SubmittedKeystrokeSchema>;
 
 /**
- * What a human hand can actually do, and the slack around the clock.
+ * O que uma mão humana consegue de verdade, e a folga em volta do relógio.
  *
- * These are the numbers that decide whether a timeline is refused, so they are
- * written down once, here, next to the schema they guard rather than inside the
- * service that happens to enforce them today.
+ * São os números que decidem se uma timeline é recusada, então estão escritos
+ * uma vez, aqui, ao lado do schema que guardam — e não dentro do serviço que
+ * por acaso os aplica hoje.
  *
- * They are deliberately generous. A ceiling that clips the fastest real typist
- * is worse than one a determined bot can sit under: the first breaks the sport
- * for the people it exists for, and the second only forces the cheat to be slow
- * enough to be uninteresting. Nothing here pretends to catch a bot that types
- * at a believable speed in real time — that is not detectable from a timeline,
- * and claiming otherwise would be the wrong kind of comfort.
+ * São generosos de propósito. Um teto que corta o digitador mais rápido de
+ * verdade é pior que um teto embaixo do qual um bot determinado consegue ficar:
+ * o primeiro quebra o esporte pra quem ele existe, e o segundo só obriga a
+ * fraude a ser lenta o bastante pra ser sem graça. Nada aqui finge pegar bot que
+ * digita em velocidade crível e em tempo real — isso não é detectável numa
+ * timeline, e dizer o contrário seria o tipo errado de conforto.
  */
 export const TIMELINE_LIMITS = {
   /**
-   * Characters per minute, averaged over the whole run. The verified human
-   * record is around 1 080 (216 wpm on prose); this leaves a wide margin over
-   * it and still refuses the six-figure numbers a forged clock produces.
+   * Caracteres por minuto, na média da corrida inteira. O recorde humano
+   * verificado fica em torno de 1 080 (216 ppm em prosa); isto deixa uma margem
+   * larga por cima e ainda recusa os números de seis dígitos que um relógio
+   * forjado produz.
    */
   maxCpm: 1_500,
   /**
-   * Floor on the *median* gap between keystrokes. The median rather than the
-   * minimum because rollover is real: two keys genuinely land within a few
-   * milliseconds of each other when fingers overlap. A median under this is a
-   * machine, not a fast hand.
+   * Piso do intervalo *mediano* entre teclas. Mediana e não mínimo porque
+   * rollover existe: duas teclas caem mesmo a poucos milissegundos uma da outra
+   * quando os dedos se sobrepõem. Mediana abaixo disto é máquina, não mão rápida.
    */
   minMedianGapMs: 22,
   /**
-   * Gaps longer than this are somebody answering the door, not typing. They are
-   * left out of the rhythm score rather than counted as terrible rhythm.
+   * Intervalo maior que isto é gente atendendo a porta, não digitando. Fica de
+   * fora da nota de ritmo em vez de contar como ritmo horrível.
    */
   afkGapMs: 3_000,
   /**
-   * Floor on the coefficient of variation of the gaps. Human rhythm wanders;
-   * a loop with a fixed sleep does not. Only applied once there are enough
-   * keystrokes for the figure to mean anything.
+   * Piso do coeficiente de variação dos intervalos. Ritmo humano vagueia; loop
+   * com sleep fixo não. Só é aplicado quando há teclas suficientes pro número
+   * querer dizer alguma coisa.
    */
   minGapVariation: 0.06,
-  /** Below this many keystrokes, variation is noise and is not judged. */
+  /** Abaixo desta quantidade de teclas, variação é ruído e não é julgada. */
   variationSampleFloor: 30,
   /**
-   * How far the claimed duration may exceed the wall clock the server itself
-   * measured between issuing the run ticket and receiving the submission.
-   * Covers clock skew and a slow upload, nothing more.
+   * Quanto a duração alegada pode passar do relógio de parede que o próprio
+   * servidor mediu entre emitir o bilhete e receber o envio. Cobre desvio de
+   * relógio e upload lento, mais nada.
    */
   clockSlackMs: 30_000,
 } as const;
 
 /**
- * The server's permission to open a run, handed out before the typing starts.
+ * A permissão do servidor pra abrir uma corrida, entregue antes de a digitação
+ * começar.
  *
- * It is signed and stateless: the server keeps no table of open runs, it just
- * refuses anything it did not sign. What it buys is not detection of a fast
- * fake — see TIMELINE_LIMITS for why that is not on offer — but a ceiling on
- * volume. One result per ticket, one ticket per request, and a run that claims
- * to have taken longer than the clock the server watched is refused.
+ * É assinado e sem estado: o servidor não guarda tabela de corridas abertas, só
+ * recusa o que ele não assinou. O que isso compra não é detectar fraude rápida
+ * — ver TIMELINE_LIMITS pra por que isso não está à venda — mas um teto de
+ * volume. Um resultado por bilhete, um bilhete por requisição, e corrida que
+ * alega ter durado mais que o relógio que o servidor observou é recusada.
  */
 export const RunTicketSchema = z.object({
   id: z.uuid(),
-  /** Server epoch milliseconds, from the server's own clock. */
+  /** Epoch em milissegundos, do relógio do próprio servidor. */
   issuedAt: z.int().positive(),
-  /** HMAC over the two fields above. Meaningless to the client. */
+  /** HMAC sobre os dois campos acima. Não quer dizer nada pro cliente. */
   signature: z.string().min(16).max(128),
 });
 export type RunTicket = z.infer<typeof RunTicketSchema>;
 
-/** How long a ticket can sit unused before it stops opening a run. */
+/** Quanto tempo um bilhete fica parado antes de parar de abrir corrida. */
 export const RUN_TICKET_TTL_MS = 4 * 60 * 60 * 1_000;
 
 /**
- * What the client sends up when sync is on.
+ * O que o cliente manda quando o sync está ligado.
  *
- * It sends what it did, not how it scored. The server regenerates the target
- * from `config` and `corpusVersion`, replays this timeline against it, and
- * computes the numbers itself; nothing the client claims about its own speed
- * is stored. The owner comes from the session token, never from the payload.
+ * Manda o que fez, não como se pontuou. O servidor regera o alvo a partir de
+ * `config` e `corpusVersion`, reproduz esta timeline contra ele e calcula os
+ * números sozinho; nada do que o cliente alega sobre a própria velocidade é
+ * guardado. O dono vem do token da sessão, nunca do corpo da requisição.
  */
 export const SubmitResultSchema = z.object({
   config: SessionConfigSchema,
   corpusVersion: z.int().positive(),
-  /** The ticket taken out when the run started. One result per ticket. */
+  /** O bilhete tirado quando a corrida começou. Um resultado por bilhete. */
   run: RunTicketSchema,
-  /** Capped: no legitimate run is longer, and an unbounded array is a DoS. */
+  /** Com teto: corrida legítima não passa disso, e array sem limite é DoS. */
   keystrokes: z.array(SubmittedKeystrokeSchema).min(1).max(5_000),
 });
 export type SubmitResult = z.infer<typeof SubmitResultSchema>;
 
 /**
- * Why a submission was refused, in a form the client can branch on.
+ * Por que um envio foi recusado, num formato em que o cliente consegue ramificar.
  *
- * The message is for a human reading a log; this is for the interface deciding
- * what to say. `corpus_version` in particular is not the typist's fault — their
- * tab was open across a deploy — and telling them to reload is a different
- * screen from telling them the run looked forged.
+ * A mensagem é pra pessoa lendo log; isto é pra interface decidir o que dizer.
+ * `corpus_version` em especial não é culpa de quem digitou — a aba dele ficou
+ * aberta durante um deploy — e mandar recarregar é uma tela diferente de dizer
+ * que a corrida pareceu forjada.
  */
 export const SubmitErrorCodeSchema = z.enum([
-  /** The tab is running a corpus this server can no longer regenerate. */
+  /** A aba está rodando um corpus que este servidor não regera mais. */
   'corpus_version',
-  /** Missing, forged or expired run ticket. */
+  /** Bilhete de corrida ausente, forjado ou vencido. */
   'run_ticket',
-  /** This run was already stored. */
+  /** Esta corrida já foi guardada. */
   'duplicate',
-  /** The timeline is not something a hand produced. */
+  /** A timeline não é coisa que uma mão produziu. */
   'implausible',
-  /** The timeline does not replay against the text it names. */
+  /** A timeline não reproduz contra o texto que ela mesma nomeia. */
   'invalid_timeline',
 ]);
 export type SubmitErrorCode = z.infer<typeof SubmitErrorCodeSchema>;
 
-/** The body a refused submission carries, alongside the HTTP status. */
+/** O corpo que um envio recusado carrega, junto do status HTTP. */
 export const ApiErrorBodySchema = z.object({
   code: SubmitErrorCodeSchema,
   message: z.string(),
-  /** Set on 'corpus_version': what this server can actually verify. */
+  /** Preenchido no 'corpus_version': o que este servidor consegue verificar. */
   expected: z.int().positive().optional(),
 });
 export type ApiErrorBody = z.infer<typeof ApiErrorBodySchema>;
@@ -303,31 +304,31 @@ export const LeaderboardEntrySchema = z.object({
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
 /**
- * What a board is scoped to.
+ * O escopo de um ranking.
  *
- * Code and prose never share one: five characters is a word in English prose
- * and nothing at all in Rust, so a single ordering would rank the two against a
- * ruler that only fits one of them.
+ * Código e prosa nunca dividem o mesmo: cinco caracteres são uma palavra em
+ * prosa inglesa e não são nada em Rust, então uma ordenação só classificaria os
+ * dois com uma régua que serve pra um.
  */
 export const LeaderboardQuerySchema = z.object({
   kind: TextKindSchema.default('words'),
   language: LanguageSchema.default('pt-BR'),
   syntax: SyntaxChoiceSchema.nullable().default(null),
-  /** Days back to consider. Null means all time. */
+  /** Quantos dias pra trás considerar. Null é desde sempre. */
   windowDays: z.int().positive().max(365).nullable().default(null),
   limit: z.int().positive().max(200).default(50),
 });
 export type LeaderboardQuery = z.infer<typeof LeaderboardQuerySchema>;
 
 /**
- * One of your own past runs, as the history endpoint returns it.
+ * Uma corrida sua do passado, do jeito que o endpoint de histórico devolve.
  *
- * Results were write-only until this existed: the table recorded every run and
- * offered its owner no way to read one back, so the only record a typist had of
- * their own progress was whatever was still on screen. This is read through the
- * caller's own token, inside the row-level policies, rather than with the
- * service key — your history is exactly the rows the database already agrees
- * are yours.
+ * Resultado era só de escrita até isto existir: a tabela gravava toda corrida e
+ * não oferecia ao dono jeito nenhum de ler uma de volta, então o único registro
+ * de progresso que alguém tinha era o que ainda estivesse na tela. Isto é lido
+ * pelo token de quem chama, dentro das políticas de linha, e não com a chave de
+ * serviço — seu histórico é exatamente as linhas que o banco já concorda que
+ * são suas.
  */
 export const StoredResultSchema = z.object({
   id: z.uuid(),
@@ -349,7 +350,7 @@ export const HistoryQuerySchema = z.object({
 });
 export type HistoryQuery = z.infer<typeof HistoryQuerySchema>;
 
-/** A personal history plus the bests derived from it, in one round trip. */
+/** O histórico pessoal mais os melhores dele, numa ida e volta só. */
 export const HistoryResponseSchema = z.object({
   entries: z.array(StoredResultSchema),
   best: z
@@ -362,12 +363,12 @@ export const HistoryResponseSchema = z.object({
 export type HistoryResponse = z.infer<typeof HistoryResponseSchema>;
 
 /**
- * A board plus whether it is a board at all right now.
+ * O ranking mais se ele é um ranking neste momento.
  *
- * An empty array used to mean both "nobody has ranked yet" and "the database
- * did not answer", which are opposite things to tell somebody: the first is an
- * invitation and the second is an apology. The status makes them different
- * again, and keeps the failure honest instead of dressing it as an empty list.
+ * Array vazio significava ao mesmo tempo "ninguém pontuou ainda" e "o banco não
+ * respondeu", que são coisas opostas de dizer pra alguém: a primeira é um
+ * convite e a segunda é um pedido de desculpa. O status volta a separar as
+ * duas, e mantém a falha honesta em vez de vesti-la de lista vazia.
  */
 export const LeaderboardStatusSchema = z.enum(['ok', 'unavailable']);
 export type LeaderboardStatus = z.infer<typeof LeaderboardStatusSchema>;
@@ -378,91 +379,91 @@ export const LeaderboardResponseSchema = z.object({
 });
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
 
-/** The accuracy floor a run must clear to appear on a board at all. */
+/** O piso de precisão que a corrida tem que passar pra aparecer no ranking. */
 export const LEADERBOARD_MIN_ACCURACY = 90;
 
 /* ---------------------------------------------------------------------------
  * Duel — private 1v1
  *
- * Two people, one text, one invite code. The text is never sent over the wire:
- * it is a pure function of the seed and the config, both of which the server
- * hands to both players, so the two clients generate the same characters by
- * construction. That property is why `packages/corpus` is deterministic.
+ * Duas pessoas, um texto, um código de convite. O texto nunca trafega: ele é
+ * função pura da semente e da config, que o servidor entrega aos dois
+ * jogadores, então os dois clientes geram os mesmos caracteres por construção.
+ * É por causa dessa propriedade que o `packages/corpus` é determinístico.
  *
- * The live progress that travels between them is decoration. The score is the
- * same server-side replay a solo run gets — see SubmitResultSchema — because a
- * placing that came from the realtime channel would be a placing the client
- * could type into the console, while the solo one could not.
+ * O progresso ao vivo que viaja entre eles é decoração. A pontuação é o mesmo
+ * replay no servidor que uma corrida solo recebe — ver SubmitResultSchema —
+ * porque uma colocação vinda do canal em tempo real seria uma colocação que o
+ * cliente digita no console, enquanto a solo não.
  * ------------------------------------------------------------------------- */
 
-/** A duel is two people. Not a lobby size — a rule the whole flow assumes. */
+/** Duelo é duas pessoas. Não é tamanho de sala: é regra que o fluxo inteiro supõe. */
 export const MATCH_PLAYERS = 2;
 
 /**
- * The invite alphabet, with the ambiguous glyphs removed.
+ * O alfabeto do convite, sem os glifos ambíguos.
  *
- * A code is read aloud or retyped from a screenshot at least as often as it is
- * clicked, and 0/O and 1/I are exactly the pairs that fail there.
+ * Código é lido em voz alta ou redigitado de um print pelo menos tanto quanto é
+ * clicado, e 0/O e 1/I são exatamente os pares que falham nisso.
  */
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const INVITE_CODE_LENGTH = 6;
 
 /**
- * The pause between the room filling and the text unlocking.
+ * A pausa entre a sala encher e o texto destravar.
  *
- * Both clients already have the text; what they are waiting for is each other's
- * hands. Five seconds is long enough to sit up and short enough that nobody
- * alt-tabs during it.
+ * Os dois clientes já têm o texto; o que esperam é a mão um do outro. Cinco
+ * segundos é tempo de endireitar na cadeira e pouco o bastante pra ninguém dar
+ * alt-tab no meio.
  */
 export const MATCH_COUNTDOWN_MS = 5_000;
 
 /**
- * How long the second typist has after the first one finishes.
+ * Quanto tempo o segundo tem depois que o primeiro termina.
  *
- * The alternative rules are both worse: ending the duel on the first finish
- * takes the run away from somebody three words from the end, and waiting
- * forever lets a closed tab hold the room open.
+ * As duas regras alternativas são piores: encerrar o duelo na primeira chegada
+ * tira a corrida de quem está a três palavras do fim, e esperar pra sempre deixa
+ * uma aba fechada segurando a sala aberta.
  */
 export const MATCH_GRACE_MS = 30_000;
 
 /**
- * How often a client publishes its caret position.
+ * De quanto em quanto tempo o cliente publica a posição do cursor.
  *
- * Below this the eye cannot tell the difference and the traffic doubles. The
- * updates are lossy on purpose — a dropped one costs a frame of somebody
- * else's progress bar, and the score does not come from here.
+ * Abaixo disto o olho não vê diferença e o tráfego dobra. As atualizações
+ * perdem pacote de propósito: uma perdida custa um quadro da barra de progresso
+ * do outro, e a pontuação não vem daqui.
  */
 export const MATCH_PROGRESS_MS = 200;
 
-/** A room nobody joins is swept rather than kept. */
+/** Sala em que ninguém entra é varrida, não guardada. */
 export const MATCH_LOBBY_TTL_MS = 15 * 60_000;
 
 /**
- * The ceiling on a whole duel, counted from the countdown.
+ * O teto do duelo inteiro, contado a partir da contagem regressiva.
  *
- * Reached only when both tabs are gone before either finished, which is the one
- * case the grace period cannot close: the grace clock never starts.
+ * Só é alcançado quando as duas abas somem antes de qualquer um terminar, que é
+ * o único caso que o tempo de graça não fecha: o relógio da graça nunca começa.
  */
 export const MATCH_MAX_RUN_MS = 20 * 60_000;
 
-/** How many finished duels a browser keeps in its own history list. */
+/** Quantos duelos terminados o browser guarda na lista de histórico dele. */
 export const MATCH_HISTORY_MAX = 50;
 
 /**
- * The name a player wears for one duel.
+ * O nome que o jogador veste por um duelo.
  *
- * Chosen per match rather than taken from an account: a duel needs no login,
- * and asking two friends to create accounts before they can race is the whole
- * feature's worth of friction. It is stored with the match afterwards, which is
- * what makes the history readable a month later.
+ * Escolhido por partida em vez de vir de uma conta: duelo não precisa de login,
+ * e pedir pra dois amigos criarem conta antes de correr é atrito do tamanho da
+ * feature inteira. Fica guardado com a partida depois, e é isso que faz o
+ * histórico ser legível um mês mais tarde.
  */
 export const DisplayNameSchema = z
   .string()
   .trim()
   .min(1)
   .max(20)
-  // No control characters, including the bidi overrides that let a name
-  // rearrange the line it is printed on.
+  // Nada de caractere de controle, incluindo os overrides bidi que deixam um
+  // nome reorganizar a linha em que é impresso.
   .regex(/^[^\p{C}]+$/u, 'name contains control characters');
 
 export const InviteCodeSchema = z
@@ -473,11 +474,11 @@ export const InviteCodeSchema = z
   .regex(/^[A-Z2-9]+$/, 'not an invite code');
 
 /**
- * 'lobby'     — created, waiting for the second player.
- * 'countdown' — both in, text on screen, keys not accepted yet.
- * 'running'   — typing.
- * 'done'      — scored, winner decided, written down.
- * 'abandoned' — the room died before anybody finished. No winner, no record.
+ * 'lobby'     — criada, esperando o segundo jogador.
+ * 'countdown' — os dois dentro, texto na tela, teclas ainda não aceitas.
+ * 'running'   — digitando.
+ * 'done'      — pontuado, vencedor decidido, anotado.
+ * 'abandoned' — a sala morreu antes de alguém terminar. Sem vencedor, sem registro.
  */
 export const MatchStateSchema = z.enum([
   'lobby',
@@ -489,26 +490,26 @@ export const MatchStateSchema = z.enum([
 export type MatchState = z.infer<typeof MatchStateSchema>;
 
 /**
- * How one player's duel ended.
+ * Como o duelo terminou pra um jogador.
  *
- * 'unfinished' is the interesting one: they were still typing when the grace
- * period ran out. It is stated as a fact — the text was not finished in time —
- * rather than as a joke at their expense, because the rest of this product does
- * not needle people who did badly and this is not the place to start.
+ * 'unfinished' é o interessante: ele ainda estava digitando quando o tempo de
+ * graça acabou. Está dito como fato — o texto não foi terminado a tempo — e não
+ * como piada às custas dele, porque o resto deste produto não cutuca quem foi
+ * mal e este não é o lugar pra começar.
  */
 export const MatchOutcomeSchema = z.enum([
   'won',
   'lost',
-  /** Both finished at the same score, to the second decimal. */
+  /** Os dois terminaram com a mesma pontuação, até a segunda casa. */
   'draw',
-  /** Did not reach the end of the text inside the grace period. */
+  /** Não chegou ao fim do texto dentro do tempo de graça. */
   'unfinished',
-  /** The room died before anybody finished. */
+  /** A sala morreu antes de alguém terminar. */
   'abandoned',
 ]);
 export type MatchOutcome = z.infer<typeof MatchOutcomeSchema>;
 
-/** What the server derived from one player's timeline. Never what they claimed. */
+/** O que o servidor derivou da timeline do jogador. Nunca o que ele alegou. */
 export const MatchScoreSchema = z.object({
   wpm: z.number().nonnegative(),
   cpm: z.number().nonnegative(),
@@ -519,71 +520,71 @@ export const MatchScoreSchema = z.object({
 export type MatchScore = z.infer<typeof MatchScoreSchema>;
 
 export const MatchPlayerSchema = z.object({
-  /** 1 is the host, 2 is whoever took the invite. */
+  /** 1 é quem criou, 2 é quem entrou pelo convite. */
   slot: z.int().min(1).max(MATCH_PLAYERS),
   displayName: DisplayNameSchema,
   joinedAt: z.iso.datetime(),
   /**
-   * The caret index this player last published. Decoration: it drives the
-   * other person's progress bar and nothing else, and it is deliberately not
-   * an input to the score.
+   * O índice do cursor que este jogador publicou por último. Decoração: move a
+   * barra de progresso do outro e mais nada, e de propósito não entra na
+   * pontuação.
    */
   progress: z.int().nonnegative(),
   finishedAt: z.iso.datetime().nullable(),
   score: MatchScoreSchema.nullable(),
   outcome: MatchOutcomeSchema.nullable(),
   /**
-   * Whether this player has asked for another round.
+   * Se este jogador pediu outra rodada.
    *
-   * Both have to ask. A rematch that started because one person clicked would
-   * drag the other into a race they were done with — and the person who wanted
-   * it would be typing before the one who did not had read the scoreboard.
+   * Os dois têm que pedir. Revanche que começasse porque um clicou arrastaria o
+   * outro pra uma corrida que ele já tinha encerrado — e quem quis estaria
+   * digitando antes de quem não quis ter lido o placar.
    */
   rematch: z.boolean(),
 });
 export type MatchPlayer = z.infer<typeof MatchPlayerSchema>;
 
 export const MatchSchema = z.object({
-  /** The room. Stable across rematches: it is what the link points at. */
+  /** A sala. Estável entre revanches: é pra onde o link aponta. */
   id: z.uuid(),
   /**
-   * The round being played right now, and the id the finished duel is stored
-   * under.
+   * A rodada em jogo agora, e o id sob o qual o duelo terminado é guardado.
    *
-   * A room can host several duels in a row, and each one is its own row in the
-   * history — so the room cannot be the thing that identifies a match. This is
-   * what a browser remembers when it wants to see a duel again.
+   * Uma sala hospeda vários duelos em sequência, e cada um é uma linha própria
+   * no histórico — então a sala não pode ser o que identifica a partida. É isto
+   * que o browser lembra quando quer ver um duelo de novo.
    */
   roundId: z.uuid(),
   inviteCode: InviteCodeSchema,
   state: MatchStateSchema,
-  /** Including the seed, which the server picks. Both clients build from it. */
+  /** Inclui a semente, que o servidor escolhe. Os dois clientes montam a partir dela. */
   config: SessionConfigSchema,
   corpusVersion: z.int().positive(),
   createdAt: z.iso.datetime(),
-  /** Epoch ms the keys unlock at. Null until the room fills. */
+  /** Epoch ms em que as teclas destravam. Null até a sala encher. */
   startsAt: z.int().positive().nullable(),
-  /** Epoch ms the grace period ends. Null until somebody finishes. */
+  /** Epoch ms em que o tempo de graça acaba. Null até alguém terminar. */
   graceEndsAt: z.int().positive().nullable(),
   finishedAt: z.iso.datetime().nullable(),
   winnerSlot: z.int().min(1).max(MATCH_PLAYERS).nullable(),
   players: z.array(MatchPlayerSchema).max(MATCH_PLAYERS),
   /**
-   * The server's clock when this snapshot was written.
+   * O relógio do servidor quando este retrato foi escrito.
    *
-   * Every snapshot carries it so the client can hold an offset against its own
-   * clock and count the same countdown the server is counting. Two browsers
-   * whose clocks disagree by ten seconds would otherwise start ten seconds
-   * apart — on the same text, with the same server, and no way to tell.
+   * Todo retrato carrega isso pro cliente guardar um deslocamento contra o
+   * próprio relógio e contar a mesma regressiva que o servidor conta. Sem isso,
+   * dois browsers cujos relógios discordam em dez segundos começariam dez
+   * segundos separados — no mesmo texto, com o mesmo servidor, e sem jeito de
+   * perceber.
    */
   serverNow: z.int().positive(),
 });
 export type Match = z.infer<typeof MatchSchema>;
 
 /**
- * What the host asks for. Not a full SessionConfig: the seed is the server's to
- * pick, because a client that chose the seed could draw the text, type it once
- * offline, and then open the room.
+ * O que quem cria a sala pede. Não é um SessionConfig inteiro: a semente é do
+ * servidor, porque um cliente que escolhesse a semente poderia sortear o texto,
+ * digitar uma vez offline e só então abrir a sala.
  */
 export const CreateMatchSchema = z.object({
   displayName: DisplayNameSchema,
@@ -599,15 +600,15 @@ export const JoinMatchSchema = z.object({ displayName: DisplayNameSchema });
 export type JoinMatch = z.infer<typeof JoinMatchSchema>;
 
 /**
- * Draws a different text for the room, optionally at a different length.
+ * Sorteia outro texto pra sala, opcionalmente com outro tamanho.
  *
- * The host's call, and only before the keys unlock: changing the text under
- * somebody already typing would be the same as deleting their run. The seed
- * stays the server's to pick, for the reason written above `CreateMatchSchema`
- * — a host who chose it could have typed the text already.
+ * É decisão de quem criou, e só antes de as teclas destravarem: trocar o texto
+ * debaixo de quem já está digitando é o mesmo que apagar a corrida dele. A
+ * semente continua sendo do servidor, pelo motivo escrito acima do
+ * `CreateMatchSchema` — quem escolhesse já poderia ter digitado o texto.
  *
- * `length` omitted means "same size, different words", which is what the
- * button says when nobody touches the slider.
+ * `length` omitido quer dizer "mesmo tamanho, outras palavras", que é o que o
+ * botão diz quando ninguém mexe no controle.
  */
 export const ReseedMatchSchema = z.object({
   length: z.int().min(10).max(2_000).optional(),
@@ -615,11 +616,11 @@ export const ReseedMatchSchema = z.object({
 export type ReseedMatch = z.infer<typeof ReseedMatchSchema>;
 
 /**
- * The room, the slot, and the only proof of being in it.
+ * A sala, o lugar nela, e a única prova de estar dentro.
  *
- * The token is what separates a player from a spectator holding the same code.
- * Without one, anybody who read the invite over a shoulder could publish
- * progress as either player and submit a timeline in their name.
+ * O token é o que separa um jogador de um espectador segurando o mesmo código.
+ * Sem ele, quem lesse o convite por cima do ombro poderia publicar progresso
+ * como qualquer um dos dois e enviar uma timeline no nome dele.
  */
 export const MatchCredentialsSchema = z.object({
   match: MatchSchema,
@@ -633,19 +634,19 @@ export const MatchProgressSchema = z.object({
 });
 export type MatchProgress = z.infer<typeof MatchProgressSchema>;
 
-/** The same timeline a solo run submits, minus the ticket: the room is one. */
+/** A mesma timeline que uma corrida solo envia, menos o bilhete: a sala é o bilhete. */
 export const SubmitMatchRunSchema = z.object({
   keystrokes: z.array(SubmittedKeystrokeSchema).min(1).max(5_000),
 });
 export type SubmitMatchRun = z.infer<typeof SubmitMatchRunSchema>;
 
 /**
- * What travels down the stream.
+ * O que desce pelo stream.
  *
- * Two shapes rather than one: a whole snapshot whenever the room changes state,
- * and a bare position whenever somebody's caret moves. The second is the
- * frequent one — five a second per player — and sending the entire match with
- * every caret step would be most of the bandwidth for none of the information.
+ * Dois formatos em vez de um: um retrato inteiro sempre que a sala muda de
+ * estado, e uma posição pelada sempre que o cursor de alguém anda. O segundo é
+ * o frequente — cinco por segundo por jogador — e mandar a partida inteira a
+ * cada passo do cursor seria quase toda a banda por nenhuma informação.
  */
 export const MatchEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('match'), match: MatchSchema }),
@@ -658,7 +659,7 @@ export const MatchEventSchema = z.discriminatedUnion('type', [
 ]);
 export type MatchEvent = z.infer<typeof MatchEventSchema>;
 
-/** One finished duel as the history list reads it back. */
+/** Um duelo terminado, do jeito que a lista de histórico o lê de volta. */
 export const MatchSummarySchema = z.object({
   id: z.uuid(),
   inviteCode: InviteCodeSchema,
@@ -680,11 +681,11 @@ export const MatchSummarySchema = z.object({
 export type MatchSummary = z.infer<typeof MatchSummarySchema>;
 
 /**
- * Reading a history is a batch, not a request per duel.
+ * Ler histórico é um lote, não uma requisição por duelo.
  *
- * The browser is the one holding the list of which duels are its own — there is
- * no account to hang them on — so it hands the ids back and the server returns
- * the ones it still has.
+ * Quem segura a lista de quais duelos são seus é o browser — não existe conta
+ * pra pendurá-los — então ele devolve os ids e o servidor responde com os que
+ * ainda tem.
  */
 export const MatchSummariesQuerySchema = z.object({
   ids: z.array(z.uuid()).min(1).max(MATCH_HISTORY_MAX),
@@ -700,23 +701,24 @@ export type MatchSummariesResponse = z.infer<
 >;
 
 /**
- * Why a duel request was refused, in a form the interface can branch on.
+ * Por que um pedido de duelo foi recusado, num formato em que a interface
+ * consegue ramificar.
  *
- * Separate from SubmitErrorCode because these are answers about a room rather
- * than about a timeline — and a room that is full needs a different screen from
- * a timeline that did not replay. A duel submission can still be refused for
- * any SubmitErrorCode reason: the scoring path is the same one.
+ * Separado do SubmitErrorCode porque estas são respostas sobre uma sala, não
+ * sobre uma timeline — e sala cheia pede tela diferente de timeline que não
+ * reproduziu. Um envio de duelo ainda pode ser recusado por qualquer motivo do
+ * SubmitErrorCode: o caminho de pontuação é o mesmo.
  */
 export const MatchErrorCodeSchema = z.enum([
   'match_not_found',
   'match_full',
-  /** Already running, already scored, or swept. */
+  /** Já rodando, já pontuada, ou varrida. */
   'match_closed',
-  /** Missing, forged, or for a different room. */
+  /** Ausente, forjado, ou de outra sala. */
   'match_token',
-  /** This slot already submitted its run. */
+  /** Este lugar já enviou a corrida dele. */
   'already_finished',
-  /** The keys are not unlocked yet. */
+  /** As teclas ainda não destravaram. */
   'not_started',
 ]);
 export type MatchErrorCode = z.infer<typeof MatchErrorCodeSchema>;
