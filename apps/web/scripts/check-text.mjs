@@ -69,6 +69,25 @@ const RAISING_COMPONENTS = /<(Key)\b/;
  */
 const LOOKS_LIKE_CODE = /[;={}()]|\r|\n[^\S\n]*\S+[^\S\n]*\n/;
 
+/**
+ * O arquivo sem os comentários, e do mesmo comprimento.
+ *
+ * A varredura casa `>` com `<` sem entender JSX, e comentário é onde essa
+ * ingenuidade mais dói: `// Vira <meta name="author"> e <link rel="author">`
+ * tem um nó de texto impecável no meio — o " e " — que nunca vai aparecer numa
+ * tela. Entram espaços no lugar, em vez de o trecho sair, pra as posições e
+ * portanto os números de linha continuarem valendo.
+ *
+ * Só apaga `//` que abre a linha. O `https://` no meio de uma string tem as
+ * mesmas duas barras e não é comentário nenhum.
+ */
+function withoutComments(source) {
+  const blank = (match) => match.replace(/[^\n]/g, ' ');
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/^[^\S\n]*\/\/[^\n]*/gm, blank);
+}
+
 const files = [];
 (function walk(dir) {
   for (const entry of readdirSync(dir)) {
@@ -99,7 +118,7 @@ function openingTag(source, index) {
 const findings = [];
 
 for (const file of files) {
-  const source = readFileSync(file, 'utf8');
+  const source = withoutComments(readFileSync(file, 'utf8'));
   const lineAt = (index) => source.slice(0, index).split('\n').length;
 
   const check = (text, index, kind) => {
