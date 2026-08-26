@@ -43,6 +43,16 @@ jobs:
       # Ver docs/convencoes-de-texto.md.
       - run: pnpm check:text
 
+      # Dependência com falha conhecida publicada é a única coisa aqui que pode
+      # quebrar sem ninguém ter tocado no código — o aviso chega pelo mundo, não
+      # pelo diff, e sem este passo chegaria por ninguém.
+      #
+      # `--prod` porque é o que vai pro ar: falha em ferramenta de build roda na
+      # nossa máquina e na do runner, não no browser de quem digita. E o corte em
+      # `high` é o que separa avisar de atrapalhar — abaixo disso o passo viraria
+      # vermelho crônico e a primeira coisa que se aprende a ignorar.
+      - run: pnpm audit --prod --audit-level high
+
       # O build completo é a última barreira: pega o que só aparece quando o
       # Next monta as rotas.
       - run: pnpm build
