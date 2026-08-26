@@ -21,20 +21,17 @@ function origin(value: string | undefined): string | null {
 /**
  * Para onde o browser pode abrir conexão a partir desta página.
  *
- * Sai do ambiente e não de uma lista escrita aqui porque são exatamente as
- * variáveis que o app já usa pra achar a API e o Supabase. Uma lista fixa
- * viraria mentira no primeiro deploy que trocasse de host, e a forma dessa
- * mentira seria o duelo parando em produção e continuando a funcionar local.
+ * Um endereço: a API. É tudo que este site alcança — o duelo, o histórico e o
+ * fluxo de eventos saem todos dela, e não há mais nada de fora no caminho.
  *
- * Hoje isto resolve para um endereço só: a produção não tem Supabase — sem
- * `NEXT_PUBLIC_SUPABASE_URL` o cliente do browser nem chega a ser criado, e a
- * variável vazia simplesmente não entra na política. É por isso que a lista é
- * derivada em vez de escrita: no dia em que o ranking voltar, ela volta junto.
+ * Sai do ambiente e não escrito aqui porque é a mesma variável que o app já usa
+ * pra achar a API. Um host repetido à mão viraria mentira no primeiro deploy
+ * que o trocasse, e a forma dessa mentira seria o duelo parando em produção e
+ * continuando a funcionar local.
  */
-const reachable = [
-  origin(process.env.NEXT_PUBLIC_SUPABASE_URL),
-  origin(process.env.NEXT_PUBLIC_API_URL),
-].filter((value): value is string => value !== null);
+const reachable = [origin(process.env.NEXT_PUBLIC_API_URL)].filter(
+  (value): value is string => value !== null,
+);
 
 const isDev = process.env.NODE_ENV !== "production";
 
