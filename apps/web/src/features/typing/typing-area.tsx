@@ -2,7 +2,7 @@
 
 import { isFinished, type Session } from '@perseus/engine';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Caret, type CaretTarget } from './caret';
+import { Caret, useCaret } from './caret';
 import { Char, type CharState } from './char';
 
 /**
@@ -46,7 +46,6 @@ type Line = {
 /** A caixa medida de um caractere. `width` é o que põe o cursor depois do último. */
 type Placement = { x: number; y: number; width: number; height: number };
 
-const EMPTY_CARET: CaretTarget = { x: 0, y: 0, height: 0 };
 /** Linhas de código mantidas visíveis acima e abaixo do cursor enquanto ele rola. */
 const SCROLL_MARGIN = 3;
 
@@ -63,7 +62,7 @@ export function TypingArea({
   const inputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [caret, setCaret] = useState<CaretTarget>(EMPTY_CARET);
+  const caret = useCaret();
   const [focused, setFocused] = useState(false);
 
   const cursor = session.typed.length;
@@ -124,7 +123,7 @@ export function TypingArea({
     if (!spot) return;
 
     const atEnd = cursor >= session.target.length;
-    setCaret({
+    caret.place({
       x: spot.x + (atEnd ? spot.width : 0),
       y: spot.y,
       height: spot.height,
@@ -146,7 +145,7 @@ export function TypingArea({
     else if (bottom > viewport.scrollTop + viewport.clientHeight) {
       viewport.scrollTop = bottom - viewport.clientHeight;
     }
-  }, [code, cursor, session.target.length]);
+  }, [caret, code, cursor, session.target.length]);
 
   // Mesma passada de layout do render que o moveu, pro cursor nunca ficar um
   // frame atrás do caractere.
@@ -340,7 +339,7 @@ export function TypingArea({
                   })}
                 </span>
               ))}
-          <Caret target={caret} />
+          <Caret caret={caret} />
         </div>
       </div>
 

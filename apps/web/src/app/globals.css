@@ -320,6 +320,17 @@ code {
   cursor: text;
 }
 
+/* A varredura que zera o movimento decorativo.
+
+   Continua sendo `*` porque o que ela existe pra pegar é justamente o que
+   ninguém lembrou de marcar: um `transition` novo que entrar amanhã já nasce
+   obedecendo a chave, e essa é a única forma de regra que não apodrece.
+
+   O que ela não pode fazer é confundir enfeite com retorno. O que a chave pede
+   é nenhum movimento grande atravessando o campo de visão; ela não pede uma
+   interface que responda pior. As exceções abaixo são só isso — cada uma dura
+   menos que um décimo de segundo, anda menos que a largura de uma letra, e é a
+   resposta a uma tecla e não a decoração de uma tela. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -327,6 +338,14 @@ code {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* O tremor do erro sobrevive: 60 ms e dois pixels, no caractere que a pessoa
+     acabou de errar. É metade do sinal de erro — a outra metade é a cor, e cor
+     sozinha é o que um daltônico recebe. Zerar isto não deixava ninguém menos
+     enjoado, deixava o erro mais silencioso. */
+  .char[data-state="wrong"] {
+    animation-duration: 60ms !important;
   }
 }
 
