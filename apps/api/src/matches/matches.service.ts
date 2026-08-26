@@ -99,7 +99,7 @@ export class MatchesService {
       throw new HttpException(
         {
           code: 'match_quota' satisfies MatchErrorCode,
-          message: `you already have ${MAX_ROOMS_PER_CREATOR} duels waiting — close one, or let it expire`,
+          message: `Você já tem ${MAX_ROOMS_PER_CREATOR} duelos esperando. Feche um, ou espere ele expirar.`,
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );
@@ -108,7 +108,7 @@ export class MatchesService {
     if (this.registry.size >= MAX_ROOMS) {
       throw new ServiceUnavailableException({
         code: 'match_closed' satisfies MatchErrorCode,
-        message: 'too many duels are open right now — try again in a minute',
+        message: 'Tem duelos demais abertos agora. Tente de novo em um minuto.',
       });
     }
 
@@ -125,7 +125,9 @@ export class MatchesService {
     // Recusado aqui e não na regressiva: sala cuja config não produz texto
     // deixaria duas pessoas olhando uma tela vazia com o relógio já andando.
     if (generate(config).length === 0) {
-      throw new BadRequestException('that configuration produces no text');
+      throw new BadRequestException(
+        'Essa configuração não produz texto nenhum.',
+      );
     }
 
     const now = Date.now();
@@ -184,8 +186,8 @@ export class MatchesService {
           : 'match_closed') satisfies MatchErrorCode,
         message:
           room.players.length >= MATCH_PLAYERS
-            ? 'this duel already has two players'
-            : 'this duel is no longer open',
+            ? 'Esta sala já tem dois jogadores.'
+            : 'Este duelo já começou.',
       });
     }
 
@@ -234,14 +236,14 @@ export class MatchesService {
     if (slot !== 1) {
       throw new UnauthorizedException({
         code: 'match_token' satisfies MatchErrorCode,
-        message: 'only the host draws the text',
+        message: 'Só quem abriu a sala sorteia o texto.',
       });
     }
 
     if (room.state !== 'lobby') {
       throw new ConflictException({
         code: 'match_closed' satisfies MatchErrorCode,
-        message: 'the text is fixed once the duel starts',
+        message: 'O texto não muda depois que o duelo começa.',
       });
     }
 
@@ -254,7 +256,9 @@ export class MatchesService {
     // Mesma guarda da criação, pelo mesmo motivo: configuração que não produz
     // texto deixaria duas pessoas olhando uma tela vazia.
     if (generate(config).length === 0) {
-      throw new BadRequestException('that configuration produces no text');
+      throw new BadRequestException(
+        'Essa configuração não produz texto nenhum.',
+      );
     }
 
     room.config = config;
@@ -280,7 +284,7 @@ export class MatchesService {
     if (room.state !== 'done') {
       throw new ConflictException({
         code: 'match_closed' satisfies MatchErrorCode,
-        message: 'a rematch is offered after the duel, not during it',
+        message: 'A revanche é oferecida depois do duelo, não durante.',
       });
     }
 
@@ -289,7 +293,7 @@ export class MatchesService {
     if (room.players.length < MATCH_PLAYERS) {
       throw new ConflictException({
         code: 'match_closed' satisfies MatchErrorCode,
-        message: 'the other player has left',
+        message: 'O outro jogador saiu.',
       });
     }
 
@@ -413,19 +417,19 @@ export class MatchesService {
     if (room.state === 'countdown') {
       throw new BadRequestException({
         code: 'not_started' satisfies MatchErrorCode,
-        message: 'the duel has not started yet',
+        message: 'As teclas ainda não foram liberadas.',
       });
     }
     if (room.state !== 'running') {
       throw new ConflictException({
         code: 'match_closed' satisfies MatchErrorCode,
-        message: 'this duel is already over',
+        message: 'Este duelo já acabou.',
       });
     }
     if (me.finishedAt !== null) {
       throw new ConflictException({
         code: 'already_finished' satisfies MatchErrorCode,
-        message: 'you already submitted this duel',
+        message: 'Você já enviou a sua corrida.',
       });
     }
 
@@ -598,7 +602,7 @@ export class MatchesService {
     if (slot === null) {
       throw new UnauthorizedException({
         code: 'match_token' satisfies MatchErrorCode,
-        message: 'you are not a player in this duel',
+        message: 'Esta aba não é jogadora deste duelo.',
       });
     }
 
@@ -608,7 +612,7 @@ export class MatchesService {
       // token sobreviveu a ela. De qualquer jeito não é cadeira nesta mesa.
       throw new UnauthorizedException({
         code: 'match_token' satisfies MatchErrorCode,
-        message: 'you are not a player in this duel',
+        message: 'Esta aba não é jogadora deste duelo.',
       });
     }
 
@@ -703,7 +707,7 @@ export class MatchesService {
     // Trinta e duas colisões seguidas não é azar, é tabela cheia.
     throw new ServiceUnavailableException({
       code: 'match_closed' satisfies MatchErrorCode,
-      message: 'could not allocate an invite code — try again',
+      message: 'Não foi possível reservar um código. Tente de novo.',
     });
   }
 
@@ -711,7 +715,8 @@ export class MatchesService {
   private gone(): NotFoundException {
     return new NotFoundException({
       code: 'match_not_found' satisfies MatchErrorCode,
-      message: 'this duel does not exist, or it has already ended',
+      message:
+        'Não achamos esta sala. Duelos expiram alguns minutos depois que a última pessoa sai.',
     });
   }
 }

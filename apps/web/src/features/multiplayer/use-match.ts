@@ -2,7 +2,8 @@
 
 import { MatchEventSchema, type Match } from "@perseus/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, matchStreamUrl, readMatch } from "@/lib/api";
+import { matchStreamUrl, readMatch } from "@/lib/api";
+import { explainRefusal } from "./duel-copy";
 
 export type MatchLink = {
   match: Match | null;
@@ -85,11 +86,7 @@ export function useMatch(
       })
       .catch((cause: unknown) => {
         if (!alive) return;
-        setError(
-          cause instanceof ApiError
-            ? cause.message
-            : "não foi possível entrar na sala",
-        );
+        setError(explainRefusal(cause));
       });
 
     const source = new EventSource(matchStreamUrl(matchId, token));

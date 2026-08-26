@@ -12,7 +12,8 @@ import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { TypingArea } from "@/features/typing/typing-area";
 import { useTypingSession } from "@/features/typing/use-typing-session";
-import { ApiError, finishMatch, publishProgress } from "@/lib/api";
+import { finishMatch, publishProgress } from "@/lib/api";
+import { explainRefusal } from "./duel-copy";
 import { DuelResult } from "./duel-result";
 import { DuelTrack } from "./duel-track";
 import { LeaveButton } from "./leave-button";
@@ -189,11 +190,7 @@ export function DuelScreen({
       })
       .catch((error: unknown) => {
         setSubmission("failed");
-        setRefusal(
-          error instanceof ApiError
-            ? error.message
-            : "não foi possível enviar a corrida",
-        );
+        setRefusal(explainRefusal(error));
       });
   }, [session, match.id, token, onMatch]);
 
@@ -361,7 +358,7 @@ function status(state: {
   connected: boolean;
   them: string;
 }): string {
-  if (state.refusal) return `A corrida não foi aceita: ${state.refusal}`;
+  if (state.refusal) return `A corrida não foi aceita. ${state.refusal}`;
   if (state.submission === "sending") return "Enviando sua corrida…";
 
   if (state.finishedMine && !state.finishedTheirs) {

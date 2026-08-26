@@ -65,7 +65,7 @@ export class RateLimitGuard implements CanActivate {
       throw new HttpException(
         {
           code: 'rate_limited',
-          message: `too many requests — try again in ${retryAfter}s`,
+          message: `Você está pedindo rápido demais. Tente de novo em ${retryAfter}s.`,
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );

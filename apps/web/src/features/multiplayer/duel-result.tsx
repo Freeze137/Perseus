@@ -5,7 +5,8 @@ import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiError, requestRematch } from "@/lib/api";
+import { requestRematch } from "@/lib/api";
+import { explainRefusal } from "./duel-copy";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
@@ -90,11 +91,7 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
     requestRematch(match.id, token)
       .then(onMatch)
       .catch((error: unknown) => {
-        setRefusal(
-          error instanceof ApiError
-            ? error.message
-            : "não foi possível pedir revanche",
-        );
+        setRefusal(explainRefusal(error));
       })
       .finally(() => setAsking(false));
   }, [match.id, token, onMatch]);
@@ -243,7 +240,7 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
             precisa fazer algo ou se já fez. */}
         <p aria-live="polite" className="text-sm text-ash">
           {refusal
-            ? `A revanche não saiu: ${refusal}`
+            ? `A revanche não saiu. ${refusal}`
             : iAsked
               ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
               : theyAsked

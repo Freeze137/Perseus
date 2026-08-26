@@ -3,8 +3,8 @@
 import type { Match, MatchCredentials } from "@perseus/contracts";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiError, joinMatch, previewMatch } from "@/lib/api";
-import { describeConfig } from "./duel-copy";
+import { joinMatch, previewMatch } from "@/lib/api";
+import { describeConfig, explainRefusal } from "./duel-copy";
 
 type Props = {
   code: string;
@@ -36,7 +36,7 @@ export function DuelJoin({ code, onJoined }: Props) {
         if (alive) setRoom(match);
       })
       .catch((error: unknown) => {
-        if (alive) setProblem(explain(error));
+        if (alive) setProblem(explainRefusal(error));
       });
     return () => {
       alive = false;
@@ -55,7 +55,7 @@ export function DuelJoin({ code, onJoined }: Props) {
       // um recarregamento, e um escritor por chave é a regra inteira.
       .then(onJoined)
       .catch((error: unknown) => {
-        setProblem(explain(error));
+        setProblem(explainRefusal(error));
         setJoining(false);
       });
   };
@@ -122,25 +122,3 @@ export function DuelJoin({ code, onJoined }: Props) {
   );
 }
 
-/**
- * A recusa, nas palavras de quem passou por ela.
- *
- * Os códigos do servidor são pra ramificar, não pra ler — "match_full" é um
- * fato sobre uma sala, e o que quem está do lado de fora precisa é o que fazer
- * a respeito.
- */
-function explain(error: unknown): string {
-  if (!(error instanceof ApiError)) {
-    return "Não foi possível falar com o servidor de duelos.";
-  }
-  switch (error.code) {
-    case "match_full":
-      return "Esta sala já tem dois jogadores.";
-    case "match_closed":
-      return "Este duelo já começou.";
-    case "match_not_found":
-      return "Código não encontrado. Salas expiram depois de alguns minutos sem ninguém.";
-    default:
-      return error.message;
-  }
-}

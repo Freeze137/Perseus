@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/features/settings/use-settings";
-import { ApiError, createMatch } from "@/lib/api";
-import { describeConfig } from "./duel-copy";
+import { createMatch } from "@/lib/api";
+import { describeConfig, explainRefusal } from "./duel-copy";
 import { MatchHistoryPanel } from "./match-history-panel";
 import { rememberSeat } from "./match-storage";
 
@@ -54,11 +54,7 @@ export function NewDuelPanel() {
         router.push(`/duelo/${credentials.match.inviteCode}`);
       })
       .catch((error: unknown) => {
-        setProblem(
-          error instanceof ApiError
-            ? error.message
-            : "Não foi possível abrir a sala.",
-        );
+        setProblem(explainRefusal(error));
         setOpening(false);
       });
   };

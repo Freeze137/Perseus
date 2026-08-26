@@ -1,5 +1,6 @@
 import type { SessionConfig, TextKind } from "@perseus/contracts";
 import { syntaxLabel } from "@/features/settings/syntax-options";
+import { ApiError } from "@/lib/api";
 
 /**
  * Como a sala está configurada, numa linha.
@@ -30,4 +31,30 @@ export function describeConfig(config: SessionConfig): string {
 export function inviteLink(code: string): string {
   if (typeof window === "undefined") return `/duelo/${code}`;
   return `${window.location.origin}/duelo/${code}`;
+}
+
+/**
+ * A recusa, na frase que quem passou por ela consegue agir.
+ *
+ * A frase vem do servidor e é usada como veio. Não é preguiça: o código do erro
+ * é grosso demais pra escrever a frase a partir dele — `match_closed` é a mesma
+ * etiqueta pra sala que já começou, pra revanche pedida cedo demais, pro
+ * parceiro que saiu e pra casa cheia de salas. Quatro conselhos diferentes
+ * debaixo de um rótulo só, e só o servidor sabe qual dos quatro aconteceu.
+ *
+ * O que é escrito aqui é o que ele não chegou a dizer: o pedido que não saiu da
+ * máquina, e a resposta que voltou num formato que este site não reconhece. Nos
+ * dois casos a mensagem que existe é do browser, em inglês, e não é para
+ * ninguém ler.
+ */
+export function explainRefusal(error: unknown): string {
+  if (!(error instanceof ApiError)) return "Algo deu errado por aqui.";
+  // Status zero é o que a camada de rede põe quando a API não foi alcançada.
+  if (error.status === 0) {
+    return "Não foi possível falar com o servidor de duelos.";
+  }
+  if (error.status === 502) {
+    return "O servidor de duelos respondeu algo que este site não entendeu.";
+  }
+  return error.message;
 }
