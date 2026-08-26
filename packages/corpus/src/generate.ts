@@ -25,10 +25,28 @@ import { reachOf, reaches, type Reach } from './reach';
  * Perder essa separação seria nunca mais conseguir reimportar sem catar as
  * originais na mão.
  */
-const PHRASES: Record<Language, readonly Phrase[]> = {
-  'pt-BR': [...PHRASES_PT_BR, ...TATOEBA_PT_BR],
-  en: [...PHRASES_EN, ...TATOEBA_EN],
+const BANKS: Record<Language, () => readonly Phrase[]> = {
+  'pt-BR': () => [...PHRASES_PT_BR, ...TATOEBA_PT_BR],
+  en: () => [...PHRASES_EN, ...TATOEBA_EN],
 };
+
+/**
+ * O banco montado, por língua, na primeira vez que alguém pedir.
+ *
+ * Ninguém digita em duas línguas na mesma corrida, e a maioria não digita em
+ * duas nunca. Montar as duas na abertura era juntar onze mil frases pra usar as
+ * de uma delas.
+ */
+const banks = new Map<Language, readonly Phrase[]>();
+
+function bankOf(language: Language): readonly Phrase[] {
+  let bank = banks.get(language);
+  if (!bank) {
+    bank = BANKS[language]();
+    banks.set(language, bank);
+  }
+  return bank;
+}
 
 /**
  * Frase feita só de letra, espaço e ponto final.
@@ -39,39 +57,51 @@ const PHRASES: Record<Language, readonly Phrase[]> = {
  */
 const PLAIN_SENTENCE = /^[\p{L}\p{M} ]+\.$/u;
 
+/** De onde cada modo de prosa sorteia, antes do alcance entrar. */
+type PoolKind = 'all' | 'simple' | 'punctuated' | 'numeric';
+
 /**
- * Todo texto que alguém digita sai de um destes pools.
+ * O que cada pool tira do banco.
  *
- * Separado por alcance além de por língua, e separado uma vez no load do módulo
- * em vez de a cada sorteio: os bancos têm milhares de frases cada, e um filtro
- * rodando a cada regeração do tamanho de uma tecla pagaria pela mesma resposta
- * de novo e de novo.
+ * Só a peneira mora aqui; o resultado é montado sob demanda logo abaixo.
  */
-const POOLS = {
-  all: byLanguage((bank) => bank),
-  simple: byLanguage((bank) =>
-    bank.filter((phrase) => PLAIN_SENTENCE.test(phrase.text)),
-  ),
+const SELECT: Record<PoolKind, (bank: readonly Phrase[]) => readonly Phrase[]> = {
+  all: (bank) => bank,
+  simple: (bank) => bank.filter((phrase) => PLAIN_SENTENCE.test(phrase.text)),
   // Pontuação interna, com a marca final cortada antes. Frase cuja única
   // pontuação é o ponto de interrogação do fim não treina nada do que este modo
   // existe pra treinar — vírgula e ponto e vírgula são o ponto inteiro, e um
   // banco grande o bastante pra ter milhares de perguntas simples enche o modo
   // com elas se o filtro olhar o último caractere.
-  punctuated: byLanguage((bank) =>
-    bank.filter((phrase) => /[,;:!?]/.test(phrase.text.slice(0, -1))),
-  ),
-  numeric: byLanguage((bank) =>
-    bank.filter((phrase) => phrase.tags.includes('numbers')),
-  ),
-} as const;
+  punctuated: (bank) => bank.filter((phrase) => /[,;:!?]/.test(phrase.text.slice(0, -1))),
+  numeric: (bank) => bank.filter((phrase) => phrase.tags.includes('numbers')),
+};
 
-function byLanguage(
-  select: (bank: readonly Phrase[]) => readonly Phrase[],
-): Record<Language, Record<Reach, readonly Phrase[]>> {
-  return {
-    'pt-BR': byReach(select(PHRASES['pt-BR'])),
-    en: byReach(select(PHRASES.en)),
-  };
+/**
+ * Todo texto que alguém digita sai de um destes pools — montado na primeira vez
+ * que este modo e esta língua aparecem, e guardado dali em diante.
+ *
+ * O filtro continua sem rodar a cada sorteio, que era o ponto de separar isto
+ * uma vez só: a segunda corrida do mesmo modo lê o mesmo array. O que mudou é
+ * *quando* a conta acontece. Montar os oito pools no load do módulo cobrava a
+ * peneira de onze mil frases — nas duas línguas, nos quatro modos — de quem
+ * abriu a página pra fazer uma corrida de palavras em português, antes mesmo da
+ * primeira letra aparecer. Agora quem paga é o primeiro sorteio de cada modo, e
+ * paga só o que aquele modo usa.
+ */
+const pools = new Map<string, Record<Reach, readonly Phrase[]>>();
+
+function poolsOf(
+  kind: PoolKind,
+  language: Language,
+): Record<Reach, readonly Phrase[]> {
+  const key = `${kind}:${language}`;
+  let pool = pools.get(key);
+  if (!pool) {
+    pool = byReach(SELECT[kind](bankOf(language)));
+    pools.set(key, pool);
+  }
+  return pool;
 }
 
 /**
@@ -83,9 +113,17 @@ function byLanguage(
  * Os bancos em inglês são ASCII puro, então isso não custa nada pra eles.
  */
 function byReach(pool: readonly Phrase[]): Record<Reach, readonly Phrase[]> {
+  // A versão ASCII é montada só se alguém olhar. Teclado que alcança tudo — o
+  // ABNT2 do Rafael, e todo layout com acento — sai por `reachFor` antes de
+  // chegar aqui, e pra ele essa varredura caractere a caractere era trabalho
+  // cujo resultado ninguém ia ler.
+  let ascii: readonly Phrase[] | null = null;
   return {
     full: pool,
-    ascii: pool.filter((phrase) => reaches('ascii', phrase.text)),
+    get ascii(): readonly Phrase[] {
+      ascii ??= pool.filter((phrase) => reaches('ascii', phrase.text));
+      return ascii;
+    },
   };
 }
 
@@ -96,7 +134,7 @@ const BY_SYNTAX = SNIPPETS.reduce<Record<string, Snippet[]>>((groups, snippet) =
 }, {});
 
 export function phrases(language: Language): readonly Phrase[] {
-  return PHRASES[language];
+  return bankOf(language);
 }
 
 type ProseKind = Exclude<TextKind, 'code'>;
@@ -108,7 +146,7 @@ type ProseKind = Exclude<TextKind, 'code'>;
  * responder a mesma pergunta que o builder — se este teclado estreita este pool
  * — e dois lugares decidindo isso separado são dois lugares pra errar.
  */
-const KIND_POOLS: Record<ProseKind, keyof typeof POOLS> = {
+const KIND_POOLS: Record<ProseKind, PoolKind> = {
   words: 'simple',
   quote: 'all',
   punctuation: 'punctuated',
@@ -117,7 +155,7 @@ const KIND_POOLS: Record<ProseKind, keyof typeof POOLS> = {
 
 /** Os dois alcances do pool desta config. Nunca chamado pra código. */
 function poolsFor(config: SessionConfig): Record<Reach, readonly Phrase[]> {
-  return POOLS[KIND_POOLS[config.kind as ProseKind]][config.language];
+  return poolsOf(KIND_POOLS[config.kind as ProseKind], config.language);
 }
 
 /**
