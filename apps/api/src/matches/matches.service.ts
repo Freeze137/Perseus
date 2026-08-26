@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -32,6 +34,7 @@ import { generate, randomSeed } from '@perseus/corpus';
 import { ResultsService } from '../results/results.service';
 import {
   MAX_ROOMS,
+  MAX_ROOMS_PER_CREATOR,
   MatchRegistryService,
   type Room,
   type RoomPlayer,
@@ -88,7 +91,20 @@ export class MatchesService {
    * sala já sabendo cada caractere — o que não é fraudar a pontuação, é fraudar
    * a outra pessoa.
    */
-  create(payload: CreateMatch): MatchCredentials {
+  create(payload: CreateMatch, creator: string): MatchCredentials {
+    // Antes do teto global de propósito. Quem encheu a casa tem que ouvir isso
+    // e não "o servidor está cheio", que manda esperar quando o conserto é
+    // fechar uma sala que já é sua.
+    if (this.registry.liveFor(creator) >= MAX_ROOMS_PER_CREATOR) {
+      throw new HttpException(
+        {
+          code: 'match_quota' satisfies MatchErrorCode,
+          message: `you already have ${MAX_ROOMS_PER_CREATOR} duels waiting — close one, or let it expire`,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     if (this.registry.size >= MAX_ROOMS) {
       throw new ServiceUnavailableException({
         code: 'match_closed' satisfies MatchErrorCode,
@@ -117,6 +133,7 @@ export class MatchesService {
       id: randomUUID(),
       roundId: randomUUID(),
       inviteCode: this.freshCode(),
+      creator,
       config,
       corpusVersion: CORPUS_VERSION,
       createdAt: now,

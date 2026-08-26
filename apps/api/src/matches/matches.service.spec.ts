@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import {
   MATCH_COUNTDOWN_MS,
   TIMELINE_LIMITS,
   MATCH_GRACE_MS,
+  MATCH_LOBBY_TTL_MS,
   MATCH_MAX_RUN_MS,
   type CreateMatch,
   type MatchEvent,
@@ -16,7 +18,11 @@ import {
 } from '@perseus/contracts';
 import { generate } from '@perseus/corpus';
 import { applyInput, createSession } from '@perseus/engine';
-import { MatchRegistryService, type Room } from './match-registry.service';
+import {
+  MAX_ROOMS_PER_CREATOR,
+  MatchRegistryService,
+  type Room,
+} from './match-registry.service';
 import { MatchTokenService } from './match-token.service';
 import { MatchesService } from './matches.service';
 import type { MatchStoreService } from './match-store.service';
@@ -26,6 +32,15 @@ import type { SupabaseService } from '../supabase/supabase.service';
 
 /** A pontuação é pura; no banco só se escreve. */
 const offline = { enabled: false } as unknown as SupabaseService;
+
+/**
+ * Quem abre as salas destes testes.
+ *
+ * Mesmo formato que o `callerKey` do rate limiter produz pra chamador sem
+ * conta, que é todo chamador de duelo: o serviço só compara a string consigo
+ * mesma, e um fixture com outra forma esconderia o dia em que ela mudasse.
+ */
+const CREATOR = 'ip:198.51.100.7';
 
 const REQUEST: CreateMatch = {
   displayName: 'rafael',
@@ -111,7 +126,7 @@ function build() {
 
 /** Uma sala com os dois jogadores dentro e a regressiva já gasta. */
 function running(service: MatchesService) {
-  const host = service.create(REQUEST);
+  const host = service.create(REQUEST, CREATOR);
   const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
   jest.advanceTimersByTime(MATCH_COUNTDOWN_MS);
   return { host, guest, config: host.match.config };
@@ -126,7 +141,7 @@ describe('MatchesService', () => {
 
   it('opens a room with a text and a code nobody chose', () => {
     const { service } = build();
-    const created = service.create(REQUEST);
+    const created = service.create(REQUEST, CREATOR);
 
     expect(created.slot).toBe(1);
     expect(created.match.state).toBe('lobby');
@@ -138,9 +153,29 @@ describe('MatchesService', () => {
     expect(generate(created.match.config).length).toBeGreaterThan(0);
   });
 
+  it('lets one address hold only so many lobbies, and gives the room back', () => {
+    const { service } = build();
+
+    // Todas legítimas. O teto é de salas de pé e não de chamadas por minuto, e
+    // nenhuma destas chega perto do orçamento do rate limiter — que é
+    // exatamente o buraco: ritmo educado sustentado enchia o registro inteiro.
+    for (let index = 0; index < MAX_ROOMS_PER_CREATOR; index += 1) {
+      service.create(REQUEST, CREATOR);
+    }
+
+    expect(() => service.create(REQUEST, CREATOR)).toThrow(HttpException);
+    // A festa de um endereço não é paga pelo vizinho.
+    expect(() => service.create(REQUEST, 'ip:203.0.113.9')).not.toThrow();
+
+    // Lobby em que ninguém entrou expira sozinho, e a vaga volta com ele.
+    // Contagem que só sobe trancaria quem passou a noite abrindo duelo.
+    jest.advanceTimersByTime(MATCH_LOBBY_TTL_MS + 1);
+    expect(() => service.create(REQUEST, CREATOR)).not.toThrow();
+  });
+
   it('starts the countdown when the second player arrives', () => {
     const { service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
     const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
 
     expect(guest.slot).toBe(2);
@@ -160,7 +195,7 @@ describe('MatchesService', () => {
 
   it('refuses a third player and an invite nobody issued', () => {
     const { service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
     service.join(host.match.inviteCode, { displayName: 'amiga' });
 
     expect(() =>
@@ -182,7 +217,7 @@ describe('MatchesService', () => {
       service.finish(host.match.id, undefined, { keystrokes: [] }),
     ).toThrow(UnauthorizedException);
     // Um token de verdade, de outra sala.
-    const other = build().service.create(REQUEST);
+    const other = build().service.create(REQUEST, CREATOR);
     expect(() => service.progress(host.match.id, other.token, 1)).toThrow(
       UnauthorizedException,
     );
@@ -190,7 +225,7 @@ describe('MatchesService', () => {
 
   it('refuses a run submitted before the keys unlock', () => {
     const { service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
     service.join(host.match.inviteCode, { displayName: 'amiga' });
 
     expect(() =>
@@ -289,7 +324,7 @@ describe('MatchesService', () => {
 
   it('closes the room when the host walks out of an empty lobby', () => {
     const { save, service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
 
     const left = service.leave(host.match.id, host.token);
 
@@ -302,7 +337,7 @@ describe('MatchesService', () => {
 
   it('ends the duel for both when one leaves during the countdown', () => {
     const { service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
     const guest = service.join(host.match.inviteCode, { displayName: 'amiga' });
 
     service.leave(host.match.id, host.token);
@@ -390,7 +425,7 @@ describe('MatchesService', () => {
 
   it('draws a new text for the host, and refuses everyone else', () => {
     const { service } = build();
-    const host = service.create(REQUEST);
+    const host = service.create(REQUEST, CREATOR);
     const first = host.match.config;
 
     const reseeded = service.reseed(host.match.id, host.token, {});

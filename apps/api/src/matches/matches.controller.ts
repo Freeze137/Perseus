@@ -8,9 +8,11 @@ import {
   Param,
   Post,
   Query,
+  Req,
   Sse,
   type MessageEvent,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { Observable } from 'rxjs';
 import {
   CreateMatchSchema,
@@ -25,7 +27,7 @@ import {
   type MatchEvent,
   type MatchSummariesResponse,
 } from '@perseus/contracts';
-import { RateLimit } from '../rate-limit.guard';
+import { RateLimit, callerKey } from '../rate-limit.guard';
 import { parse } from '../validation';
 import { MatchesService } from './matches.service';
 
@@ -45,11 +47,22 @@ export class MatchesController {
   /**
    * Abre uma sala. Barato de chamar e fácil de scriptar, daí o orçamento
    * apertado: vinte salas por minuto é mais duelo do que se joga numa hora.
+   *
+   * O orçamento sozinho não bastava, e é por isso que o serviço também conta
+   * salas de pé por criador. Vinte por minuto é ritmo educado, mas um lobby
+   * vazio sobrevive quinze minutos, e ritmo educado sustentado enche o registro
+   * inteiro — o limite que importa aqui é o de quanto alguém segura ao mesmo
+   * tempo, não o de com que velocidade pede.
    */
   @Post()
   @RateLimit({ limit: 20, windowMs: 60_000 })
-  create(@Body() body: unknown): MatchCredentials {
-    return this.matches.create(parse(CreateMatchSchema, body));
+  create(@Req() request: Request, @Body() body: unknown): MatchCredentials {
+    // Quem cria é contado pela mesma chave que o rate limiter usa: sem conta
+    // num duelo, quem chama é o endereço de onde a chamada veio.
+    return this.matches.create(
+      parse(CreateMatchSchema, body),
+      callerKey(request),
+    );
   }
 
   /**

@@ -33,6 +33,14 @@ export type Room = {
    */
   roundId: string;
   readonly inviteCode: string;
+  /**
+   * Quem abriu esta sala, na mesma chave com que o rate limiter conta chamador.
+   *
+   * Existe pro teto por criador saber o que devolver quando a sala morre. Não
+   * sai daqui: não vai pra rede, não vai pro histórico e não é identidade de
+   * jogador — é endereço, que é o que se tem quando o duelo não tem conta.
+   */
+  readonly creator: string;
   /** Sorteada de novo por quem criou, entre rodadas: semente nova e talvez tamanho novo. */
   config: SessionConfig;
   readonly corpusVersion: number;
@@ -69,6 +77,22 @@ type Watcher = {
 export const MAX_ROOMS = 200;
 
 /**
+ * Teto de salas vivas por criador.
+ *
+ * O teto global sozinho não protegia ninguém, e dá pra fazer a conta: criar
+ * aceita vinte por minuto e um lobby vazio vive quinze antes de expirar, o que
+ * deixa um endereço só segurando trezentas salas — mais que as duzentas que
+ * cabem. Um script educado, sem estourar rate limit nenhum, fechava o duelo pra
+ * todo mundo em dez minutos, e a mensagem que os outros liam era a de casa
+ * cheia. Rate limit conta chamada por minuto; isto conta o que ficou de pé.
+ *
+ * Cinco porque duelo é de dois e a sala expira sozinha: mais que isso não é
+ * alguém esperando amigos. E não menos, porque um escritório inteiro sai pelo
+ * mesmo endereço e não pode ficar com uma sala pra todos.
+ */
+export const MAX_ROOMS_PER_CREATOR = 5;
+
+/**
  * Todo duelo vivo, e todo mundo escutando um.
  *
  * Em memória de propósito. Duelo é duas pessoas por noventa segundos: a sala
@@ -90,6 +114,8 @@ export const MAX_ROOMS = 200;
 export class MatchRegistryService implements OnModuleDestroy {
   private readonly rooms = new Map<string, Room>();
   private readonly codes = new Map<string, string>();
+  /** Quantas salas vivas cada criador tem. A chave sai quando chega a zero. */
+  private readonly held = new Map<string, number>();
   private readonly listeners = new Map<string, Set<Watcher>>();
   private readonly timers = new Map<string, Map<string, NodeJS.Timeout>>();
 
@@ -100,6 +126,12 @@ export class MatchRegistryService implements OnModuleDestroy {
   add(room: Room): void {
     this.rooms.set(room.id, room);
     this.codes.set(room.inviteCode, room.id);
+    this.held.set(room.creator, (this.held.get(room.creator) ?? 0) + 1);
+  }
+
+  /** Quantas salas este criador tem de pé agora. */
+  liveFor(creator: string): number {
+    return this.held.get(creator) ?? 0;
   }
 
   byId(id: string): Room | null {
@@ -140,6 +172,12 @@ export class MatchRegistryService implements OnModuleDestroy {
     this.clearTimers(id);
     this.codes.delete(room.inviteCode);
     this.rooms.delete(id);
+    // Devolvido aqui e em nenhum outro lugar. Toda morte de sala passa por
+    // este método — lobby que expirou, duelo varrido, processo indo embora — e
+    // uma contagem que só subisse trancaria quem jogou a noite inteira.
+    const rest = (this.held.get(room.creator) ?? 1) - 1;
+    if (rest > 0) this.held.set(room.creator, rest);
+    else this.held.delete(room.creator);
     // Os ouvintes são avisados de que a sala acabou em vez de largados
     // calados. Sala terminada mantém os streams abertos pra revanche alcançar
     // as duas abas, o que faz deste o momento em que esses streams não têm mais
@@ -231,6 +269,7 @@ export class MatchRegistryService implements OnModuleDestroy {
     for (const id of [...this.rooms.keys()]) this.clearTimers(id);
     this.rooms.clear();
     this.codes.clear();
+    this.held.clear();
     for (const set of this.listeners.values()) {
       for (const watcher of set) watcher.end();
     }

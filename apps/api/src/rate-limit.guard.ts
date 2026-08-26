@@ -92,8 +92,12 @@ export class RateLimitGuard implements CanActivate {
  * O guard roda depois do AuthGuard nas rotas que têm um, então chamador
  * autenticado é contado como ele mesmo — dividir o endereço do escritório não
  * pode significar dividir o orçamento.
+ *
+ * Exportada porque o teto de salas por criador conta a mesma pessoa, e duas
+ * definições de "quem é o chamador" seriam duas respostas diferentes pra
+ * mesma pergunta no dia em que uma delas mudasse.
  */
-function callerKey(request: Request): string {
+export function callerKey(request: Request): string {
   if (request.caller) return `user:${request.caller.userId}`;
   // `ip` respeita o trust-proxy configurado no boot; sem aquilo um deploy atrás
   // de proxy contaria todo chamador como o proxy.

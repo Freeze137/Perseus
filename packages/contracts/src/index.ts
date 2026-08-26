@@ -714,6 +714,13 @@ export const MatchErrorCodeSchema = z.enum([
   'match_full',
   /** Já rodando, já pontuada, ou varrida. */
   'match_closed',
+  /**
+   * Quem está chamando já tem salas abertas demais esperando alguém.
+   *
+   * Separado de `match_closed` porque o conserto é outro: aquele manda esperar
+   * a casa esvaziar, este manda fechar uma sala que é sua.
+   */
+  'match_quota',
   /** Ausente, forjado, ou de outra sala. */
   'match_token',
   /** Este lugar já enviou a corrida dele. */
