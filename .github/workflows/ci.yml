@@ -100,5 +100,9 @@ jobs:
       # `--require-all` faz toolchain ausente ser falha. Sem isso o job passaria
       # verde no dia em que a imagem do runner parasse de trazer uma delas, e o
       # portão viraria enfeite sem ninguém notar.
-      - run: pnpm --filter @perseus/corpus build
+      # `build:packages` e não o build do corpus sozinho: o corpus importa
+      # `Syntax` de @perseus/contracts, que resolve pelo `dist` do vizinho. Sem
+      # construir os dois na ordem, o tsc do corpus procura um arquivo que
+      # ninguém gerou ainda.
+      - run: pnpm build:packages
       - run: node packages/corpus/snippet-check/run.mjs --require-all
