@@ -16,6 +16,7 @@
  *   node snippet-check/run.mjs                 todas as sintaxes com asserções
  *   node snippet-check/run.mjs --syntax=rust   só uma
  *   node snippet-check/run.mjs --keep          não apaga o diretório de trabalho
+ *   node snippet-check/run.mjs --format-only   só o formato, sem toolchain nenhuma
  */
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -44,6 +45,8 @@ const only = process.argv
 const keep = process.argv.includes('--keep');
 /** No CI toolchain ausente é falha; na máquina de quem escreve, é um pulo. */
 const requireAll = process.argv.includes('--require-all');
+/** Só o que dá pra saber sem compilador: serve nas quinze, em qualquer máquina. */
+const formatOnly = process.argv.includes('--format-only');
 
 /**
  * Lê `asserts/<sintaxe>.txt`, que é uma sequência de `//== <id>` seguida do
@@ -86,9 +89,28 @@ function formatProblems(code, indent) {
     if (!usesTab && /^ /m.test(code)) problems.push('espaço onde a linguagem usa tab');
   } else if (indent !== null) {
     if (code.includes(TAB)) problems.push('tab onde a linguagem usa espaço');
+
+    // A regra vale pra linha que abre nível, não pra continuação de expressão.
+    // C, C++, Java e C# alinham o argumento na coluna do parêntese que ficou
+    // aberto — é o que o formatador de cada uma produz — e essa coluna não tem
+    // motivo nenhum pra cair num múltiplo de quatro. Exigir isso proibia o
+    // estilo da própria linguagem, do mesmo jeito que quase proibiu o
+    // alinhamento por coluna do SQL.
+    //
+    // Continuação é linha que começa com colchete ou parêntese ainda aberto.
+    // Chave fica de fora da conta de propósito: ela abre bloco, e bloco é
+    // exatamente o que a regra existe pra medir.
+    let open = 0;
     for (const line of code.split(LF)) {
+      const continuing = open > 0;
+      for (const symbol of line) {
+        if (symbol === '(' || symbol === '[') open += 1;
+        else if (symbol === ')' || symbol === ']') open = Math.max(0, open - 1);
+      }
+      if (!line.trim() || continuing) continue;
+
       const width = line.length - line.trimStart().length;
-      if (line.trim() && width % indent !== 0) {
+      if (width % indent !== 0) {
         problems.push(`indentação não é múltiplo de ${indent}: "${line.trim().slice(0, 32)}"`);
         break;
       }
@@ -188,14 +210,18 @@ function checkKotlin(config, entries, work) {
 
   const compiled = attempt(config.batch.compile(sources, out), work);
   if (compiled) {
-    // Falha de compilação nomeia o arquivo, então cada snippet leva o pedaço da
-    // mensagem que é dele. Sem isso um erro afundaria os vinte juntos.
+    // Compilação em lote que falha não deixa nenhum snippet provado: o
+    // compilador parou, e ninguém rodou. A versão anterior marcava só os
+    // arquivos citados na mensagem e reportava os outros como `ok` — quinze
+    // verdes que nunca tinham sido executados, que é pior do que não checar,
+    // porque parece checagem.
+    //
+    // Quem é citado leva a mensagem; o resto leva o motivo de não ter rodado.
     for (const { snippet } of entries) {
-      const mine = compiled.includes(`${className(snippet.id)}.kt`);
-      if (mine) results.get(snippet.id).push(compiled);
-    }
-    if (![...results.values()].some((problems) => problems.length)) {
-      for (const { snippet } of entries) results.get(snippet.id).push(compiled);
+      const named = compiled.includes(`${className(snippet.id)}.kt`);
+      results
+        .get(snippet.id)
+        .push(named ? compiled : 'não rodou: o lote não compilou');
     }
     return results;
   }
@@ -231,6 +257,23 @@ try {
     const missing = pool.length - entries.length;
     if (entries.length === 0) {
       skipped.push(`${syntax} (${pool.length} sem asserção)`);
+      continue;
+    }
+
+    // Formato não precisa de compilador, e é o que a máquina de quem escreve
+    // consegue checar sobre as quinze linguagens de uma vez. Vale pros 300, e
+    // não só pros que têm asserção: indentação torta é indentação torta com ou
+    // sem alguém tendo escrito um teste pra ela.
+    if (formatOnly) {
+      console.log(`\n${syntax}`);
+      for (const snippet of SNIPPETS.filter((s) => s.syntax === syntax)) {
+        checked += 1;
+        const problems = formatProblems(snippet.code, config.indent);
+        if (problems.length) {
+          failed += 1;
+          console.log(`  FAIL ${snippet.id}  ${problems.join(' | ')}`);
+        }
+      }
       continue;
     }
 
