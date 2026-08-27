@@ -156,12 +156,17 @@ export default function Home() {
    * antes de existir resultado, então corrida abandonada não pode ser pontuada,
    * enviada nem classificada. Também não emite tecla, e é isso que impede o
    * campo de estrelas de piscar por uma corrida que está sendo descartada.
+   *
+   * Vale também antes da primeira tecla, e é aí que estava o defeito. A dica
+   * dos atalhos aparece justamente enquanto a corrida não começou — some
+   * quando ela começa, porque daí em diante o lembrete vive no HUD. Só que
+   * Escape saía sem fazer nada nesse estado: a tecla era anunciada exatamente
+   * na tela em que ela não respondia. Olhar um texto e não querer digitar
+   * aquele é o momento mais óbvio de pedir outro, e agora é o que acontece.
    */
   const cancelRun = useCallback(() => {
     // Painel aberto é dono do Escape — o aperto que o fecha para ali.
     if (drawer !== null || settingsOpen || duelOpen) return;
-    // Nada em andamento: sem reset, sem semente nova, sem render nenhum.
-    if (!running) return;
     // Reset e avanço juntos: o avanço é quem fornece texto novo, o reset é
     // quem garante sessão limpa mesmo se uma semente um dia repetir o texto.
     restart();
@@ -173,12 +178,14 @@ export default function Home() {
     // que ser audível nas duas.
     setAnnouncement("");
     cancelTimers.current.forEach(window.clearTimeout);
+    // Antes da primeira tecla não houve digitação, e dizer que ela foi
+    // cancelada seria narrar uma corrida que não existiu.
+    const spoken = running
+      ? "Digitação cancelada. Texto novo carregado."
+      : "Texto novo carregado.";
     cancelTimers.current = [
       window.setTimeout(() => setSwapping(false), SWAP_MS),
-      window.setTimeout(
-        () => setAnnouncement("Digitação cancelada. Texto novo carregado."),
-        ANNOUNCE_MS,
-      ),
+      window.setTimeout(() => setAnnouncement(spoken), ANNOUNCE_MS),
     ];
     // `bag` e `deferredConfig` entram aqui porque o avanço lê os dois. Sem
     // eles o Esc andaria a partir do cursor que existia quando este callback
