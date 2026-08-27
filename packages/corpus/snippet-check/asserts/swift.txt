@@ -17,7 +17,7 @@ check(indexOf(values, target: 7) == 3, "finds")
 check(indexOf(values, target: 4) == nil, "misses")
 check(indexOf([], target: 1) == nil, "empty")
 //== sw-009
-check(try parsePort("8080") == 8080, "accepts")
+check((try? parsePort("8080")) == 8080, "accepts")
 do {
     _ = try parsePort("abc")
     check(false, "accepted letters")
