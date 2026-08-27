@@ -1,0 +1,85 @@
+//== c-005 | algorithm
+check(gcd(12, 18) == 6, "twelve and eighteen");
+check(gcd(17, 5) == 1, "coprime");
+check(gcd(-12, 18) == 6, "negative stays positive");
+check(gcd(7, 0) == 7, "zero");
+//== c-006 | function
+int a = 1;
+int b = 2;
+swap(&a, &b);
+check(a == 2 && b == 1, "swaps");
+//== c-007 | collection
+int values[] = {3, 9, 2, 7};
+check(max_of(values, 4) == 9, "finds the max");
+int single[] = {-5};
+check(max_of(single, 1) == -5, "single element");
+//== c-008 | struct
+struct point origin = {0.0, 0.0};
+struct point far = {3.0, 4.0};
+check(distance(origin, far) == 5.0, "three four five");
+check(distance(origin, origin) == 0.0, "same point");
+//== c-009 | algorithm
+int values[] = {5, 2, 9, 1, 3};
+insertion_sort(values, 5);
+check(values[0] == 1 && values[4] == 9, "ends are right");
+check(values[1] == 2 && values[2] == 3 && values[3] == 5, "middle is right");
+//== c-010 | string
+check(is_palindrome("arara", 5) == 1, "arara");
+check(is_palindrome("perseus", 7) == 0, "not a palindrome");
+check(is_palindrome("", 0) == 1, "empty");
+//== c-011 | string
+char text[] = "perseuss 42";
+to_upper(text);
+check(strcmp(text, "PERSEUSS 42") == 0, "uppercases letters only");
+//== c-012 | algorithm
+check(factorial(0) == 1ULL, "zero");
+check(factorial(5) == 120ULL, "five");
+check(factorial(20) == 2432902008176640000ULL, "twenty");
+//== c-013 | collection
+int values[] = {1, 2, 1, 3, 1};
+check(count_of(values, 5, 1) == 3, "counts three");
+check(count_of(values, 5, 9) == 0, "counts none");
+//== c-014 | struct
+struct node *head = NULL;
+head = push(head, 1);
+head = push(head, 2);
+check(head != NULL && head->value == 2, "last in is first");
+check(head->next != NULL && head->next->value == 1, "chains");
+check(head->next->next == NULL, "ends");
+free(head->next);
+free(head);
+//== c-015 | error
+int result = 0;
+check(safe_divide(9, 3, &result) == 1, "divides");
+check(result == 3, "quotient");
+check(safe_divide(9, 0, &result) == 0, "refuses zero");
+check(result == 3, "leaves the result alone");
+//== c-016 | collection
+int values[] = {1, 2, 3, 4};
+reverse_ints(values, 4);
+check(values[0] == 4 && values[3] == 1, "reversed");
+check(values[1] == 3 && values[2] == 2, "middle too");
+//== c-017 | string
+char text[] = "perseus   ";
+check(trim_end(text) == 7, "reports the new length");
+check(strcmp(text, "perseus") == 0, "trims");
+//== c-018 | algorithm
+check(fibonacci(0) == 0UL, "zero");
+check(fibonacci(10) == 55UL, "tenth");
+check(fibonacci(40) == 102334155UL, "fortieth");
+//== c-019 | io
+FILE *out = tmpfile();
+check(out != NULL, "opened");
+check(write_line(out, "perseus") == 1, "wrote");
+rewind(out);
+char line[32];
+check(fgets(line, sizeof line, out) != NULL, "read back");
+check(strcmp(line, "perseus\n") == 0, "with the newline");
+fclose(out);
+//== c-020 | string
+char room[8];
+check(copy_bounded(room, "perseus", sizeof room) == 7, "fits exactly");
+check(strcmp(room, "perseus") == 0, "copied");
+char tight[4];
+check(copy_bounded(tight, "perseus", sizeof tight) == 3, "truncates");
+check(strcmp(tight, "per") == 0, "and terminates");

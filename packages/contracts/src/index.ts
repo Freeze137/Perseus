@@ -129,8 +129,16 @@ export type SessionConfig = z.infer<typeof SessionConfigSchema>;
  *     ficam parelhas em torno de 43%. Números continua em 23% por limite da
  *     língua, não do filtro — existem 483 frases portuguesas com dígitos e sem
  *     nenhum acento em todo o Tatoeba.
+ * 8 — o banco de snippets foi de 65 para 300, vinte por linguagem nas quinze.
+ *     Antes eram quatro ou cinco por linguagem: quem escolhia Rust via o banco
+ *     inteiro em cinco corridas. Mudar o pool muda o texto que uma semente
+ *     produz, e é por isso que isto é versão nova e não só conteúdo novo — o
+ *     servidor regera o texto a partir da semente pra pontuar, e uma aba
+ *     parada na 7 seria recusada com `corpus_version` em vez de pontuada
+ *     errado. Todo snippet novo compila e roda com asserção; ver
+ *     `packages/corpus/snippet-check`.
  */
-export const CORPUS_VERSION = 7;
+export const CORPUS_VERSION = 8;
 
 export const TypingResultSchema = z.object({
   id: z.uuid(),

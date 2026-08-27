@@ -56,3 +56,49 @@ jobs:
       # O build completo é a última barreira: pega o que só aparece quando o
       # Next monta as rotas.
       - run: pnpm build
+
+  # Os snippets do corpus são código de quinze linguagens guardado como texto.
+  # O `pnpm test` guarda o formato deles — ASCII, ids únicos, indentação — e não
+  # sabe dizer se compilam. Snippet quebrado é alguém treinando um erro com a
+  # confiança de quem treina o certo, e é a única falha do banco que o próprio
+  # banco não enxerga.
+  #
+  # Job separado do `check` porque o que ele instala são quinze toolchains, e
+  # segurar o portão de lint e tipos atrás de um SDK do Swift seria pagar
+  # minutos em toda mudança de CSS.
+  snippets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # O runner já traz Go, Rust, .NET, Ruby, PHP, Python, GCC e JDK. Kotlin e
+      # Swift são os dois que precisam ser pedidos.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: fwilhe2/setup-kotlin@main
+        with:
+          version: 2.1.0
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+
+      - run: pnpm install --frozen-lockfile
+
+      # `--require-all` faz toolchain ausente ser falha. Sem isso o job passaria
+      # verde no dia em que a imagem do runner parasse de trazer uma delas, e o
+      # portão viraria enfeite sem ninguém notar.
+      - run: pnpm --filter @perseus/corpus build
+      - run: node packages/corpus/snippet-check/run.mjs --require-all

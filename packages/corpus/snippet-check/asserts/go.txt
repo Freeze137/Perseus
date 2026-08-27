@@ -1,0 +1,78 @@
+//== go-006
+check(Slugify("Hello World, 42 Times!") == "hello-world-42-times", "slugs")
+check(Slugify("  --  ") == "", "nothing but separators")
+//== go-007
+got := Unique([]string{"a", "b", "a", "c", "b"})
+check(len(got) == 3, "three left")
+check(got[0] == "a" && got[2] == "c", "first order kept")
+check(len(Unique(nil)) == 0, "empty")
+//== go-008
+groups := Chunk([]int{1, 2, 3, 4, 5}, 2)
+check(len(groups) == 3, "three groups")
+check(len(groups[2]) == 1, "short tail")
+check(len(Chunk([]int{}, 3)) == 0, "empty")
+//== go-009
+values := []int{1, 3, 5, 7, 9}
+check(BinarySearch(values, 7) == 3, "finds")
+check(BinarySearch(values, 4) == -1, "misses")
+check(BinarySearch(nil, 1) == -1, "empty")
+//== go-010
+port, err := ParsePort("8080")
+check(err == nil && port == 8080, "accepts")
+_, err = ParsePort("70000")
+check(err != nil, "refuses out of range")
+var portErr *PortError
+check(errors.As(err, &portErr), "carries the typed error")
+check(portErr.Raw == "70000", "keeps the raw value")
+//== go-011
+out := MapConcurrent([]string{"a", "b", "c"}, strings.ToUpper)
+check(len(out) == 3, "same length")
+check(out[0] == "A" && out[2] == "C", "order preserved")
+//== go-012
+calls := 0
+double := Memoize(func(n int) int {
+	calls++
+	return n * 2
+})
+check(double(4) == 8, "computes")
+check(double(4) == 8, "cached")
+check(calls == 1, "computed once")
+//== go-013
+source := []string{"bb", "a", "ccc"}
+sorted := LongestFirst(source)
+check(sorted[0] == "ccc" && sorted[2] == "a", "longest first")
+check(source[0] == "bb", "does not mutate")
+//== go-014
+total := TotalArea([]Shape{Circle{Radius: 1}, Circle{Radius: 2}})
+check(math.Abs(total-5*math.Pi) < 1e-9, "sums the areas")
+check(TotalArea(nil) == 0, "empty")
+//== go-015
+check(ReverseRunes("perseus") == "suesrep", "reverses")
+check(ReverseRunes("") == "", "empty")
+//== go-016
+check(Fibonacci(0) == 0, "zero")
+check(Fibonacci(10) == 55, "tenth")
+check(Fibonacci(40) == 102334155, "fortieth")
+//== go-017
+count, err := CountLines(strings.NewReader("one\ntwo\nthree\n"))
+check(err == nil, "no error")
+check(count == 3, "three lines")
+count, err = CountLines(strings.NewReader(""))
+check(err == nil && count == 0, "empty")
+//== go-018
+even := Filter([]int{1, 2, 3, 4}, func(n int) bool { return n%2 == 0 })
+check(len(even) == 2, "two kept")
+check(even[0] == 2 && even[1] == 4, "the right two")
+//== go-019
+ctx := context.Background()
+value, err := FirstResult(ctx, []func() string{func() string { return "done" }})
+check(err == nil && value == "done", "takes the first")
+
+dead, cancel := context.WithCancel(context.Background())
+cancel()
+_, err = FirstResult(dead, nil)
+check(err != nil, "honours a cancelled context")
+//== go-020
+check(Sum([]int{1, 2, 3}) == 6, "ints")
+check(Sum([]float64{1.5, 2.5}) == 4.0, "floats")
+check(Sum([]int{}) == 0, "empty")

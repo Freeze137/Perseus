@@ -1,0 +1,86 @@
+//== py-006
+assert slugify("Hello World, 42 Times!") == "hello-world-42-times"
+assert slugify("   ") == ""
+//== py-007
+assert list(chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
+assert list(chunks([], 3)) == []
+//== py-008
+assert invert({"a": 1, "b": 2}) == {1: "a", 2: "b"}
+assert invert({}) == {}
+//== py-009
+assert quicksort([3, 1, 4, 1, 5, 9, 2, 6]) == [1, 1, 2, 3, 4, 5, 6, 9]
+assert quicksort([]) == []
+assert quicksort([7]) == [7]
+//== py-010
+origin = Point(0.0, 0.0)
+far = Point(3.0, 4.0)
+assert origin.distance_to(far) == 5.0
+assert repr(far) == "Point(x=3.0, y=4.0)"
+//== py-011
+assert parse_port("8080") == 8080
+for bad in ("abc", "0", "70000"):
+    try:
+        parse_port(bad)
+    except ParseError:
+        continue
+    raise AssertionError(f"accepted {bad}")
+//== py-012
+import asyncio as _asyncio
+
+
+async def _fetch(url):
+    await _asyncio.sleep(0)
+    return url.upper()
+
+
+assert _asyncio.run(fetch_all(["a", "b"], _fetch)) == ["A", "B"]
+//== py-013
+_calls = []
+
+
+@once
+def _build(seed):
+    _calls.append(seed)
+    return seed * 2
+
+
+assert _build(3) == 6
+assert _build(9) == 6
+assert _calls == [3]
+assert _build.__name__ == "_build"
+//== py-014
+assert format_duration(0) == "00:00:00"
+assert format_duration(3661) == "01:01:01"
+assert format_duration(59.9) == "00:00:59"
+//== py-015
+assert top_by([1, 5, 3, 9], lambda value: value, 2) == [9, 5]
+assert top_by([], lambda value: value, 3) == []
+//== py-016
+assert fibonacci(0) == 0
+assert fibonacci(10) == 55
+assert fibonacci(40) == 102334155
+//== py-017
+import json as _json
+import tempfile as _tempfile
+from pathlib import Path as _Path
+
+with _tempfile.TemporaryDirectory() as _home:
+    _file = _Path(_home) / "config.json"
+    _file.write_text(_json.dumps({"port": 80}), encoding="utf-8")
+    assert load_config(_file, {}) == {"port": 80}
+    assert load_config(_Path(_home) / "gone.json", {"fallback": True}) == {"fallback": True}
+//== py-018
+assert list(moving_average([1, 2, 3, 4], 2)) == [1.5, 2.5, 3.5]
+assert list(moving_average([5, 5, 5], 3)) == [5.0]
+//== py-019
+class _Person:
+    def __init__(self, name):
+        self.name = name
+
+
+_sorted = sort_by_name([_Person("zoe"), _Person("ana")])
+assert [person.name for person in _sorted] == ["ana", "zoe"]
+//== py-020
+_top = most_common_words("the cat the dog THE bird", 2)
+assert _top[0] == ("the", 3)
+assert len(_top) == 2

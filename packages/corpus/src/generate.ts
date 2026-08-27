@@ -303,9 +303,18 @@ const BUILDERS: Record<TextKind, Builder> = {
   // um banco menor.
   code: (random, config) => ({
     text: drawCode(random, config.length, config.syntax ?? 'mix'),
-    // Código não tem sacola: o pool de snippets tem 66 entradas e uma corrida
-    // leva quase todas, então não há o que distribuir sem repetir. A variedade
-    // continua vindo do seed, que o cursor muda a cada corrida nova.
+    // Código não tem sacola: o sorteio é o seed puro, sem cursor que avance.
+    //
+    // Enquanto eram quatro ou cinco snippets por linguagem isso não custava
+    // nada — uma corrida levava quase todos, e não havia o que distribuir sem
+    // repetir. Com vinte, custa: duas corridas seguidas na mesma linguagem
+    // podem sortear o mesmo snippet, que é exatamente o que a sacola adia.
+    //
+    // Dar sacola ao código não é trocar este zero por um número. O pool muda
+    // de tamanho conforme a sintaxe escolhida, e a posição guardada no seed
+    // teria de saber de qual pool ela é — senão trocar de linguagem herdaria
+    // um cursor que não descreve nada. Fica anotado como trabalho, não como
+    // esquecimento.
     drawn: 0,
   }),
 };

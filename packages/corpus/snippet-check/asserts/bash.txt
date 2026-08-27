@@ -1,0 +1,82 @@
+//== sh-005 | function
+require bash || fail "bash should be found"
+if require definitely-not-a-real-command 2>/dev/null; then
+  fail "missing command should fail"
+fi
+//== sh-006 | string
+same "$(trim '   padded   ')" "padded" "trims both ends"
+same "$(trim 'inner  space')" "inner  space" "keeps the inside"
+same "$(trim '')" "" "empty"
+//== sh-007 | collection
+same "$(join_by , a b c)" "a,b,c" "joins three"
+same "$(join_by , solo)" "solo" "single"
+same "$(join_by ' - ' x y)" "x - y" "multi-char separator"
+//== sh-008 | io
+printf 'one\ntwo\n' > lines.txt
+declare -a got
+read_lines got lines.txt
+same "${#got[@]}" "2" "two lines"
+same "${got[1]}" "two" "second line"
+//== sh-009 | function
+message="$(log INFO deploying 2>&1)"
+case "$message" in
+  *"[INFO]"*) : ;;
+  *) fail "level missing: $message" ;;
+esac
+case "$message" in
+  *deploying*) : ;;
+  *) fail "text missing: $message" ;;
+esac
+//== sh-010 | script
+test -d "$work" || fail "work dir not created"
+test -f "$work/log" || fail "log not written"
+same "$(cat "$work/log")" "building in $work" "log names the dir"
+//== sh-011 | collection
+same "$(printf 'a\nb\na\nc\nb\n' | unique_lines | tr '\n' ' ')" "a b c " "keeps first order"
+same "$(printf '' | unique_lines)" "" "empty"
+//== sh-012 | string
+same "$(slugify 'Hello World, 42 Times!')" "hello-world-42-times" "slugs"
+same "$(slugify '  --Trim--  ')" "trim" "strips the edges"
+//== sh-013 | io
+printf 'first\n' > target.txt
+printf 'second\n' | write_atomic target.txt
+same "$(cat target.txt)" "second" "replaced"
+same "$(ls target.txt.* 2>/dev/null | wc -l)" "0" "left no temp behind"
+//== sh-014 | collection
+same "$(printf '3 a\n4 b\n5 c\n' | sum_column)" "12" "sums the first column"
+same "$(printf '' | sum_column)" "0" "empty is zero"
+//== sh-015 | function
+wait_for 2 true || fail "true should pass at once"
+if wait_for 1 false; then
+  fail "false should time out"
+fi
+//== sh-016 | io
+mkdir -p pile
+printf 'x' > pile/old.txt
+sleep 1
+printf 'x' > pile/new.txt
+same "$(basename "$(newest_in pile)")" "new.txt" "picks the newest"
+//== sh-017 | function
+printf 'yes\nno\nyes\n' > hits.txt
+same "$(count_matches yes hits.txt)" "2" "counts two"
+same "$(count_matches nothing hits.txt)" "0" "counts none without failing"
+//== sh-018 | script
+text="$(usage)"
+case "$text" in
+  *"--dry-run"*) : ;;
+  *) fail "flag missing" ;;
+esac
+case "$text" in
+  *"usage: deploy"*) : ;;
+  *) fail "header missing" ;;
+esac
+//== sh-019 | function
+parse_flags --dry-run app
+same "$dry_run" "1" "reads the flag"
+same "${rest[0]}" "app" "keeps the rest"
+parse_flags app
+same "$dry_run" "0" "defaults off"
+//== sh-020 | collection
+same "$(largest_of 3 9 2)" "9" "finds the largest"
+same "$(largest_of 5)" "5" "single"
+same "$(largest_of -9 -2)" "-2" "negatives"

@@ -7,3 +7,6 @@ allowBuilds:
   unrs-resolver: false
   # Downloads the Electron binary the desktop shell runs on.
   electron: true
+
+minimumReleaseAgeExclude:
+  - '@electric-sql/pglite@0.5.8'

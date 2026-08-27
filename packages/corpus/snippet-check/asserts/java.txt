@@ -1,0 +1,71 @@
+//== java-005 | string
+check(slugify("Hello World, 42 Times!").equals("hello-world-42-times"), "slugs");
+check(slugify("---").equals(""), "strips edges");
+//== java-006 | collection
+Map<Integer, List<String>> lengths = byLength(List.of("aa", "b", "cc"));
+check(lengths.get(2).size() == 2, "groups by length");
+check(lengths.get(1).getFirst().equals("b"), "keeps the single");
+//== java-007 | iterator
+List<List<Integer>> groups = chunk(List.of(1, 2, 3, 4, 5), 2);
+check(groups.size() == 3, "three groups");
+check(groups.getLast().size() == 1, "short tail");
+check(chunk(List.of(), 3).isEmpty(), "empty");
+//== java-008 | function
+int[] calls = {0};
+Function<Integer, Integer> doubled = memoize(n -> {
+    calls[0]++;
+    return n * 2;
+});
+check(doubled.apply(4) == 8, "computes");
+check(doubled.apply(4) == 8, "cached");
+check(calls[0] == 1, "computed once");
+//== java-009 | error
+ParseException failure = new ParseException("port", "not a number");
+check(failure instanceof RuntimeException, "is unchecked");
+check(failure.field().equals("port"), "keeps the field");
+check(failure.getMessage().equals("not a number"), "keeps the message");
+//== java-010 | async
+check(fetchAll(List.of("a", "b")).join().equals(List.of("A", "B")), "maps all");
+check(fetchAll(List.of()).join().isEmpty(), "empty");
+//== java-011 | type
+check(Math.abs(area(new Circle(1)) - Math.PI) < 1e-9, "circle");
+check(area(new Square(3)) == 9.0, "square");
+//== java-012 | io
+Path temp = Files.createTempFile("snippet", ".txt");
+Files.writeString(temp, "one\ntwo\n", StandardCharsets.UTF_8);
+check(readLines(temp).equals(List.of("one", "two")), "reads both lines");
+Files.delete(temp);
+//== java-013 | algorithm
+check(editDistance("kitten", "sitting") == 3, "kitten");
+check(editDistance("", "abc") == 3, "from empty");
+check(editDistance("same", "same") == 0, "identical");
+//== java-014 | struct
+check(new Port(8080).number() == 8080, "accepts");
+try {
+    new Port(70000);
+    throw new AssertionError("accepted out of range");
+} catch (IllegalArgumentException expected) {
+    check(expected.getMessage().contains("70000"), "names the value");
+}
+//== java-015 | collection
+Map<Boolean, List<Integer>> split = partition(List.of(1, 2, 3, 4), n -> n % 2 == 0);
+check(split.get(true).equals(List.of(2, 4)), "kept");
+check(split.get(false).equals(List.of(1, 3)), "rest");
+//== java-016 | string
+check(formatDuration(0).equals("00:00:00"), "zero");
+check(formatDuration(3661).equals("01:01:01"), "an hour and change");
+//== java-017 | class
+Counter<String> counter = new Counter<>();
+check(counter.add("a") == 1, "first");
+check(counter.add("a") == 2, "second");
+check(counter.get("a") == 2, "reads back");
+check(counter.get("missing") == 0, "defaults to zero");
+//== java-018 | collection
+check(longestFirst(List.of("bb", "a", "ccc")).equals(List.of("ccc", "bb", "a")), "sorts");
+//== java-019 | algorithm
+check(fibonacci(0) == 0, "zero");
+check(fibonacci(10) == 55, "tenth");
+check(fibonacci(90) == 2880067194370816120L, "big and exact");
+//== java-020 | iterator
+check(takeWhileBelow(List.of(1, 2, 9, 3), 5).equals(List.of(1, 2)), "stops at nine");
+check(takeWhileBelow(List.of(9), 5).isEmpty(), "stops immediately");
