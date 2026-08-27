@@ -13,12 +13,14 @@
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "validate:content": "pnpm build && node scripts/content-review.mjs"
+    "validate:content": "pnpm build && node scripts/content-review.mjs",
+    "check:snippets": "pnpm build && node snippet-check/run.mjs"
   },
   "dependencies": {
     "@perseus/contracts": "workspace:*"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "typescript": "^5.9.0",
     "vitest": "^4.1.10"
   }

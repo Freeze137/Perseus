@@ -1,0 +1,71 @@
+//== rs-006
+check(slugify("Hello World, 42 Times!") == "hello-world-42-times", "slugs");
+check(slugify("  --  ").is_empty(), "nothing but separators");
+//== rs-007
+let got = unique(&["a", "b", "a", "c", "b"]);
+check(got.len() == 3, "three left");
+check(got[0] == "a" && got[2] == "c", "first order kept");
+check(unique(&[]).is_empty(), "empty");
+//== rs-008
+let groups = chunk(&[1, 2, 3, 4, 5], 2);
+check(groups.len() == 3, "three groups");
+check(groups[2].len() == 1, "short tail");
+check(chunk::<i32>(&[], 3).is_empty(), "empty");
+//== rs-009
+let values = [1, 3, 5, 7, 9];
+check(index_of(&values, 7) == Some(3), "finds");
+check(index_of(&values, 4).is_none(), "misses");
+check(index_of(&[], 1).is_none(), "empty");
+//== rs-010
+let circle = Shape::Circle { radius: 1.0 };
+check((circle.area() - std::f64::consts::PI).abs() < 1e-9, "circle");
+check(Shape::Square { side: 3.0 }.area() == 9.0, "square");
+//== rs-011
+let failure = ParseError {
+    field: "port".to_string(),
+};
+check(failure.to_string() == "could not parse port", "displays");
+let boxed: Box<dyn std::error::Error> = Box::new(failure);
+check(boxed.to_string().contains("port"), "works as an error");
+//== rs-012
+let player = Player {
+    handle: "ana".to_string(),
+};
+check(player.name() == "ana", "names itself");
+check(player.greeting() == "hello, ana", "uses the default method");
+//== rs-013
+let groups = by_length(&["aa", "b", "cc"]);
+check(groups[&2].len() == 2, "two of length two");
+check(groups[&1] == vec!["b".to_string()], "one of length one");
+check(by_length(&[]).is_empty(), "empty");
+//== rs-014
+let mut memo = Memo::new();
+check(memo.factorial(0) == 1, "zero");
+check(memo.factorial(5) == 120, "five");
+check(memo.factorial(20) == 2_432_902_008_176_640_000, "twenty");
+check(memo.cache.contains_key(&20), "remembered");
+//== rs-015
+check(title_case("the QUICK brown fox") == "The Quick Brown Fox", "title cases");
+check(title_case("").is_empty(), "empty");
+//== rs-016
+check(fibonacci(0) == 0, "zero");
+check(fibonacci(10) == 55, "tenth");
+check(fibonacci(90) == 2_880_067_194_370_816_120, "ninetieth");
+//== rs-017
+check(initials("Rafael Souza Costa") == Some("R.C.".to_string()), "first and last");
+check(initials("Solo").is_none(), "one name is not enough");
+check(initials("").is_none(), "empty");
+//== rs-018
+let averages = moving_average(&[1.0, 2.0, 3.0, 4.0], 2);
+check(averages.len() == 3, "three windows");
+check((averages[0] - 1.5).abs() < 1e-9, "first window");
+check((averages[2] - 3.5).abs() < 1e-9, "last window");
+//== rs-019
+let config = Config::default().host("localhost").port(8080);
+check(config.host == "localhost", "keeps the host");
+check(config.port == 8080, "keeps the port");
+check(Config::default() == Config { host: String::new(), port: 0 }, "empty default");
+//== rs-020
+let (even, odd) = split_even(&[1, 2, 3, 4]);
+check(even == vec![2, 4], "kept");
+check(odd == vec![1, 3], "rest");

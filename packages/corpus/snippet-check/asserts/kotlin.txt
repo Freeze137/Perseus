@@ -1,0 +1,78 @@
+//== kt-005
+check(slugify("Hello World, 42 Times!") == "hello-world-42-times", "slugs")
+check(slugify("  --  ") == "", "nothing but separators")
+//== kt-006
+val lengths = byLength(listOf("aa", "b", "cc"))
+check(lengths[2]?.size == 2, "two of length two")
+check(lengths[1]?.first() == "b", "one of length one")
+//== kt-007
+val groups = chunk(listOf(1, 2, 3, 4, 5), 2)
+check(groups.size == 3, "three groups")
+check(groups.last().size == 1, "short tail")
+check(chunk(emptyList<Int>(), 3).isEmpty(), "empty")
+//== kt-008
+val values = listOf(1, 3, 5, 7, 9)
+check(indexOf(values, 7) == 3, "finds")
+check(indexOf(values, 4) == -1, "misses")
+check(indexOf(emptyList(), 1) == -1, "empty")
+//== kt-009
+check(parsePort("8080") == 8080, "accepts")
+for (bad in listOf("abc", "0", "70000")) {
+    try {
+        parsePort(bad)
+        check(false, "accepted " + bad)
+    } catch (expected: ParseException) {
+        check(expected.field == "port", "names the field")
+    }
+}
+//== kt-010
+check(Math.abs(area(Shape.Circle(1.0)) - Math.PI) < 1e-9, "circle")
+check(area(Shape.Square(3.0)) == 9.0, "square")
+check(Shape.Circle(1.0) == Shape.Circle(1.0), "data classes compare by value")
+//== kt-011
+var calls = 0
+val doubled = memoize<Int, Int> { n ->
+    calls += 1
+    n * 2
+}
+check(doubled(4) == 8, "computes")
+check(doubled(4) == 8, "cached")
+check(calls == 1, "computed once")
+//== kt-012
+val (even, odd) = split(listOf(1, 2, 3, 4)) { it % 2 == 0 }
+check(even == listOf(2, 4), "kept")
+check(odd == listOf(1, 3), "rest")
+//== kt-013
+val counter = Counter<String>()
+check(counter.add("a") == 1, "first")
+check(counter.add("a") == 2, "second")
+check(counter.get("a") == 2, "reads back")
+check(counter.get("missing") == 0, "defaults to zero")
+//== kt-014
+check(formatDuration(0) == "00:00:00", "zero")
+check(formatDuration(3661) == "01:01:01", "an hour and change")
+check(formatDuration(86400) == "24:00:00", "a whole day")
+//== kt-015
+check(fibonacci(0) == 0L, "zero")
+check(fibonacci(10) == 55L, "tenth")
+check(fibonacci(90) == 2880067194370816120L, "ninetieth")
+//== kt-016
+val config = Config()
+check(config.origin == "http://localhost:8080", "builds the origin")
+check(config.copy(port = 443).origin == "http://localhost:443", "copy changes one field")
+check(Config() == Config(), "data classes compare by value")
+//== kt-017
+val found = primes(30).toList()
+check(found.first() == 2, "starts at two")
+check(found == listOf(2, 3, 5, 7, 11, 13, 17, 19, 23, 29), "the primes below thirty")
+check(primes(1).toList().isEmpty(), "nothing below two")
+//== kt-018
+check(longestFirst(listOf("bb", "a", "ccc")) == listOf("ccc", "bb", "a"), "longest first")
+check(longestFirst(listOf("bb", "aa")) == listOf("aa", "bb"), "ties break by name")
+//== kt-019
+check("the QUICK brown fox".titleCase() == "The Quick Brown Fox", "title cases")
+check("".titleCase() == "", "empty")
+//== kt-020
+check(readPort("8080").getOrNull() == 8080, "accepts")
+check(readPort("abc").isFailure, "refuses letters")
+check(readPort("70000").isFailure, "refuses out of range")

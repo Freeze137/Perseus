@@ -1,0 +1,82 @@
+//== js-005 | iterator
+check(JSON.stringify([...range(0, 5)]) === '[0,1,2,3,4]', 'counts up');
+check(JSON.stringify([...range(0, 6, 2)]) === '[0,2,4]', 'steps');
+check([...range(3, 3)].length === 0, 'empty');
+//== js-006 | collection
+check(JSON.stringify(unique([1, 2, 2, 3, 1])) === '[1,2,3]', 'dedupes');
+check(unique([]).length === 0, 'empty');
+//== js-007 | class
+const bus = new Emitter();
+const seen = [];
+bus.on('tick', (n) => seen.push(n));
+bus.on('tick', (n) => seen.push(n * 2));
+bus.emit('tick', 3);
+bus.emit('other', 9);
+check(JSON.stringify(seen) === '[3,6]', 'fans out to both handlers');
+//== js-008 | string
+check(formatRow(['a', 'bb'], 4) === 'a    | bb', 'pads and trims the tail');
+check(formatRow([1, 2], 2) === '1  | 2', 'coerces numbers');
+//== js-009 | async
+settle([Promise.resolve(1), Promise.reject(new Error('x')), Promise.resolve(3)]).then(
+  (out) => {
+    check(JSON.stringify(out.done) === '[1,3]', 'keeps the fulfilled');
+    check(out.failed === 1, 'counts the rejected');
+  },
+);
+//== js-010 | algorithm
+check(binarySearch([1, 3, 5, 7, 9], 7) === 3, 'finds');
+check(binarySearch([1, 3, 5], 4) === -1, 'misses');
+check(binarySearch([], 1) === -1, 'empty');
+//== js-011 | function
+const add3 = curry((a, b, c) => a + b + c);
+check(add3(1)(2)(3) === 6, 'one at a time');
+check(add3(1, 2)(3) === 6, 'mixed arity');
+check(add3(1, 2, 3) === 6, 'all at once');
+//== js-012 | collection
+check(JSON.stringify(flatten([1, [2, 3], 4])) === '[1,2,3,4]', 'one level');
+check(JSON.stringify(flatten([1, [2, [3]]], 2)) === '[1,2,3]', 'two levels');
+check(JSON.stringify(flatten([1, [2, [3]]], 0)) === '[1,[2,[3]]]', 'depth zero');
+//== js-013 | error
+const bad = new ValidationError('email', 'is required');
+check(bad instanceof Error, 'is an Error');
+check(bad.field === 'email', 'keeps the field');
+check(bad.name === 'ValidationError', 'names itself');
+//== js-014 | io
+check(safeParse('{"a":1}', null).a === 1, 'parses');
+check(safeParse('not json', 'fallback') === 'fallback', 'falls back');
+//== js-015 | struct
+const config = makeConfig('localhost', 8080);
+check(config.origin === 'http://localhost:8080', 'builds the origin');
+check(Object.isFrozen(config), 'frozen');
+//== js-016 | algorithm
+const fib = memoFib();
+check(fib(10) === 55, 'tenth');
+check(fib(0) === 0 && fib(1) === 1, 'seeds');
+check(fib(70) === 190392490709135, 'stays fast and exact');
+//== js-017 | collection
+const sorted = sortBy([{ n: 3 }, { n: 1 }, { n: 2 }], (x) => x.n);
+check(JSON.stringify(sorted.map((x) => x.n)) === '[1,2,3]', 'sorts');
+const source = [{ n: 2 }, { n: 1 }];
+sortBy(source, (x) => x.n);
+check(source[0].n === 2, 'does not mutate');
+//== js-018 | iterator
+async function* ticks() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+collect(ticks()).then((items) => {
+  check(JSON.stringify(items) === '[1,2,3]', 'drains the async source');
+});
+//== js-019 | string
+check(titleCase('the QUICK brown fox') === 'The Quick Brown Fox', 'title cases');
+check(titleCase('') === '', 'empty');
+//== js-020 | function
+let ran = 0;
+const bump = throttle(() => {
+  ran += 1;
+}, 1000);
+bump();
+bump();
+bump();
+check(ran === 1, 'only the first passes');
