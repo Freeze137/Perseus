@@ -193,7 +193,11 @@ export const SYNTAXES = {
         // nome completo (`kotlin.math.hypot`), que é a convenção do banco.
         code,
         '',
-        'fun check(ok: Boolean, what: String) {',
+        // `private` porque o lote inteiro compila junto, no mesmo pacote: sem
+        // isso os dezesseis declaram o mesmo `check` de topo e o compilador
+        // recusa os dezesseis por sobrecarga conflitante. Topo privado, em
+        // Kotlin, enxerga só o próprio arquivo.
+        'private fun check(ok: Boolean, what: String) {',
         '    if (!ok) throw AssertionError("failed: " + what)',
         '}',
         '',

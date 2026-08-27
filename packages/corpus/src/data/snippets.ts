@@ -2708,16 +2708,16 @@ public static double Area(Shape shape) => shape switch
     id: 'cs-018',
     syntax: 'csharp',
     tags: ['collection'],
-    code: `public static (List<T> Kept, List<T> Rest) Partition<T>(
+    code: `public static (List<T> Kept, List<T> Dropped) Partition<T>(
     IEnumerable<T> items, Func<T, bool> keep)
 {
     var kept = new List<T>();
-    var rest = new List<T>();
+    var dropped = new List<T>();
     foreach (var item in items)
     {
-        (keep(item) ? kept : rest).Add(item);
+        (keep(item) ? kept : dropped).Add(item);
     }
-    return (kept, rest);
+    return (kept, dropped);
 }`,
   },
   {
