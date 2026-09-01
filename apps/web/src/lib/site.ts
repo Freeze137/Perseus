@@ -36,3 +36,14 @@ export const SITE_URL = (configured ?? "http://localhost:3000").replace(/\/$/, "
 export const SITE_NAME = "PERSEUSS";
 
 export const SITE_TAGLINE = "Treino de digitação — português, inglês e código.";
+
+/**
+ * O título que o Google mostra em azul, e o mesmo que vai no cartão de link.
+ *
+ * Escrito com as palavras que alguém digitaria na busca — "treinador de
+ * digitação", "código" — porque o resultado precisa parecer a resposta da
+ * pergunta que trouxe a pessoa até ele. O separador é `·` e não travessão:
+ * o travessão é largo e rouba caractere de um título que o Google já corta
+ * perto dos 60.
+ */
+export const SITE_TITLE = `${SITE_NAME} · Treinador de digitação para texto e código`;

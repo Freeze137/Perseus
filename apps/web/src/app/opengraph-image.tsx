@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
+import { SITE_NAME, SITE_TAGLINE, SITE_TITLE } from "@/lib/site";
 
 /**
  * O cartão que o WhatsApp e afins desenham pro link do site.
@@ -11,7 +11,7 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
  * o que dá um fetch por deploy em troca de uma tipografia que ninguém lê
  * nesse tamanho.
  */
-export const alt = `${SITE_NAME} — treino de digitação`;
+export const alt = SITE_TITLE;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

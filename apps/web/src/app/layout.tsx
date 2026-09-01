@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ConsoleSignature } from "@/components/shell/console-signature";
 import { AmbientBackground } from "@/features/ambient/ambient-background";
-import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
+import { SITE_NAME, SITE_TAGLINE, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // next/font hospeda no build. Sem request pra CDN de fonte e sem pulo de
@@ -49,7 +49,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — treino de digitação`,
+    default: SITE_TITLE,
     template: `%s · ${SITE_NAME}`,
   },
   description: DESCRIPTION,
@@ -62,20 +62,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — treino de digitação`,
+    title: SITE_TITLE,
     description: SITE_TAGLINE,
     url: SITE_URL,
     locale: "pt_BR",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — treino de digitação`,
+    title: SITE_TITLE,
     description: SITE_TAGLINE,
-  },
-  icons: {
-    // icon.png e apple-icon.png do lado deste arquivo o Next pega sozinho.
-    // Só está escrito aqui pra marca pequena ter onde morar.
-    shortcut: "/icon.png",
   },
 };
 
