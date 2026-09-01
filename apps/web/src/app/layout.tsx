@@ -59,6 +59,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Rafael Souza Costa", url: "https://github.com/Freeze137" }],
   creator: "Rafael Souza Costa",
   alternates: { canonical: "/" },
+  // O Search Console revalida de tempos em tempos e devolve a propriedade
+  // se o sinal sumir. Fica aqui junto do resto do metadata, e não como tag
+  // solta no HTML, pra não virar linha órfã que alguém limpa sem saber.
+  verification: { google: "RtSo2Vx6OtL25RgCsMWxn7I7C5MccHoVwhg3qr9Oa9E" },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
