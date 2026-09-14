@@ -38,11 +38,29 @@ export function Select<T extends string>({
 }: Props<T>) {
   return (
     <span className={`relative inline-flex items-center ${className}`}>
+      {/* A mesma estrela que marca a linha escolhida na lista, parada no
+          controle fechado.
+
+          Ela só existir com a lista aberta fazia a marca ler como efeito do
+          clique: aparecia, e ia embora junto com o popup. Parada aqui ela diz
+          uma coisa que vale o tempo todo — este eixo tem um valor, e é este —
+          e a lista passa a confirmar um glifo que a pessoa já conhece em vez
+          de apresentar um novo no momento da escolha.
+
+          Texto e não SVG de propósito: é literalmente o mesmo caractere na
+          mesma família e no mesmo tamanho que `option::checkmark` usa, então
+          as duas marcas não podem divergir de forma. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-2.5 text-[0.6875rem] leading-none text-emerald"
+      >
+        ✦
+      </span>
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onValueChange(event.target.value as T)}
-        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-ash transition-colors hover:text-bone focus-visible:text-bone"
+        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-7 pr-7 text-sm font-medium text-ash transition-colors hover:text-bone focus-visible:text-bone"
         {...props}
       >
         {options.map((option) => (
