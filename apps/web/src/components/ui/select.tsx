@@ -20,6 +20,13 @@ type Props<T extends string> = Omit<
  *
  * Uma listbox feita à mão custaria navegação por teclado, suporte a leitor de
  * tela e o seletor do celular, e não compraria nada de que o desenho precisa.
+ *
+ * A lista aberta era o que sobrava de fora: quem a desenhava era o sistema, e
+ * `<option>` pintado de obsidiana chegava branco no Windows. Quem resolve é
+ * `appearance: base-select`, na folha global sob `.select-native` — o popup
+ * passa a aceitar CSS sem que isto deixe de ser um `select`. A classe existe
+ * porque uma utilitária `appearance-none` venceria a regra de elemento por
+ * especificidade e desligaria o recurso calada.
  */
 export function Select<T extends string>({
   value,
@@ -35,7 +42,7 @@ export function Select<T extends string>({
         aria-label={label}
         value={value}
         onChange={(event) => onValueChange(event.target.value as T)}
-        className="h-8 cursor-pointer appearance-none rounded-sm bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-ash transition-colors hover:text-bone focus-visible:text-bone"
+        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-3 pr-7 text-sm font-medium text-ash transition-colors hover:text-bone focus-visible:text-bone"
         {...props}
       >
         {options.map((option) => (

@@ -366,3 +366,128 @@ code {
   width: 0;
   height: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Select
+
+   O controle fechado sempre foi nosso; a lista aberta nunca foi. Quem a
+   desenhava era o Windows, e por isso um `<option>` marcado `bg-obsidian`
+   chegava branco na tela: `<option>` não é caixa, é item que o sistema
+   operacional pinta. `appearance: base-select` move esse desenho pra cá sem
+   trocar o elemento — continua um `select`, com a navegação por teclado, o
+   leitor de tela e o seletor do celular que uma listbox à mão cobraria pra
+   devolver. Navegador que não conhece a regra cai no popup de antes, que é
+   feio e funciona.
+
+   `appearance` fica sob `.select-native`, e não sob `select`, porque uma
+   utilitária do Tailwind ganha de seletor de elemento na especificidade: um
+   `appearance-none` na marcação desligaria isto sem avisar ninguém.
+--------------------------------------------------------------------------- */
+.select-native {
+  appearance: none;
+}
+
+/* O foco global arredonda em 2px, o que quadraria um controle que é redondo.
+   Fora do `@supports`: quem decide esta forma é o controle fechado, que é
+   nosso nos dois caminhos. */
+.select-native:focus-visible {
+  border-radius: 9999px;
+}
+
+@supports (appearance: base-select) {
+  .select-native,
+  .select-native::picker(select) {
+    appearance: base-select;
+  }
+
+  /* A seta do popup nativo por cima da nossa seriam duas. A nossa fica, porque
+     é a que o navegador sem `base-select` também mostra. */
+  .select-native::picker-icon {
+    display: none;
+  }
+
+  .select-native::picker(select) {
+    margin-block-start: 0.375rem;
+    border: var(--rule);
+    border-radius: 14px;
+    padding: 0.25rem;
+    background: var(--color-obsidian);
+    /* Sombra preta sobre preto não separa nada. O que tira a lista do plano da
+       página é o fio de ardósia acima, e um halo de esmeralda fraco o bastante
+       pra ler como borda iluminada e não como brilho. */
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-emerald) 12%, transparent);
+  }
+
+  .select-native option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    padding: 0.375rem 0.625rem;
+    background: transparent;
+    color: var(--color-ash);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  /* O tique é uma estrela de quatro pontas. O nome é uma constelação, o fundo
+     da página é um campo de estrelas, e a Fase 2 desenha o teclado como carta
+     celeste — o glifo que marca a escolha pode vir do mesmo lugar. Marca
+     estado; não é enfeite, porque algum glifo tem que estar ali. */
+  .select-native option::checkmark {
+    content: "✦";
+    color: var(--color-emerald);
+    font-size: 0.6875rem;
+    line-height: 1;
+  }
+
+  /* Escondida, e não removida: a calha continua ocupando o espaço dela, então
+     o rótulo de uma opção fica no mesmo x quer esteja marcada ou não. Rótulo
+     que pula quando a pessoa escolhe é o que denuncia menu remendado. */
+  .select-native option:not(:checked)::checkmark {
+    visibility: hidden;
+  }
+
+  .select-native option:checked {
+    background: color-mix(in oklab, var(--color-emerald) 10%, transparent);
+    color: var(--color-bone);
+  }
+
+  .select-native option:hover,
+  .select-native option:focus {
+    background: var(--color-slate);
+    color: var(--color-bone);
+    outline: none;
+  }
+
+  /* A lista chega de cima, curta. Fica aqui dentro em vez de na varredura de
+     movimento reduzido porque aquela regra alcança `*`, `::before` e `::after`
+     e não alcança `::picker()` — escrita como preferência positiva, a chave
+     ligada simplesmente não produz transição nenhuma pra ela zerar. */
+  @media (prefers-reduced-motion: no-preference) {
+    .select-native::picker(select) {
+      opacity: 1;
+      translate: 0 0;
+      transition:
+        opacity 120ms var(--ease-snap),
+        translate 120ms var(--ease-snap),
+        overlay 120ms allow-discrete,
+        display 120ms allow-discrete;
+    }
+
+    .select-native:not(:open)::picker(select) {
+      opacity: 0;
+      translate: 0 -0.25rem;
+    }
+
+    @starting-style {
+      .select-native:open::picker(select) {
+        opacity: 0;
+        translate: 0 -0.25rem;
+      }
+    }
+  }
+}
+
