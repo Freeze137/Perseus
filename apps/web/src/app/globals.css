@@ -462,29 +462,43 @@ code {
     outline: none;
   }
 
-  /* A lista chega de cima, curta. Fica aqui dentro em vez de na varredura de
-     movimento reduzido porque aquela regra alcança `*`, `::before` e `::after`
-     e não alcança `::picker()` — escrita como preferência positiva, a chave
-     ligada simplesmente não produz transição nenhuma pra ela zerar. */
-  @media (prefers-reduced-motion: no-preference) {
-    .select-native::picker(select) {
-      opacity: 1;
-      translate: 0 0;
-      transition:
-        opacity 120ms var(--ease-snap),
-        translate 120ms var(--ease-snap),
-        overlay 120ms allow-discrete,
-        display 120ms allow-discrete;
-    }
+  /* A lista chega desvanecendo, sempre; de cima, pra quem aceita movimento.
 
-    .select-native:not(:open)::picker(select) {
+     A transição fica aqui dentro e não na varredura de movimento reduzido
+     porque aquela regra alcança `*`, `::before` e `::after` e não alcança
+     `::picker()`: um zero global não chegaria nesta lista de qualquer jeito.
+
+     O que a chave desliga é o deslize, e só ele. O desvanecimento fica, pelo
+     mesmo motivo que `springs.ts` já deixa a opacidade cruzar sob a chave —
+     desvanecer não desloca nada no campo de visão, e a alternativa honesta a
+     um deslize não é o popup que aparece pronto no primeiro quadro. */
+  .select-native::picker(select) {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+      opacity 120ms var(--ease-snap),
+      translate 120ms var(--ease-snap),
+      overlay 120ms allow-discrete,
+      display 120ms allow-discrete;
+  }
+
+  .select-native:not(:open)::picker(select) {
+    opacity: 0;
+  }
+
+  @starting-style {
+    .select-native:open::picker(select) {
       opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .select-native:not(:open)::picker(select) {
       translate: 0 -0.25rem;
     }
 
     @starting-style {
       .select-native:open::picker(select) {
-        opacity: 0;
         translate: 0 -0.25rem;
       }
     }
@@ -505,27 +519,44 @@ code {
    sair bonito é manter na barra, por um quinto de segundo, um controle que não
    comanda mais nada.
 
-   Sob `no-preference` em vez de dentro da varredura de movimento reduzido:
-   isto é decoração de tela, não resposta a uma tecla, e é exatamente o que a
-   chave existe pra desligar. Escrito como preferência positiva, quem pediu
-   menos movimento simplesmente não recebe transição nenhuma pra zerar.
+   O deslize é o que a chave de movimento reduzido desliga — a varredura lá em
+   cima zera esta animação como zera qualquer outra. O que ela não pode fazer é
+   devolver o piscar: quem pediu menos movimento recebe o mesmo controle
+   entrando só na opacidade, logo abaixo. Desvanecer não atravessa o campo de
+   visão de ninguém, e continua dizendo que a barra trocou de peça.
 --------------------------------------------------------------------------- */
-@media (prefers-reduced-motion: no-preference) {
+.control-enter {
+  animation: control-in 220ms var(--ease-snap) both;
+}
+
+/* Entra deslizando de onde foi empurrado, e não de cima: a barra é uma linha,
+   e um controle que desce nela atravessa o caminho dos vizinhos em vez de
+   abrir espaço entre eles. */
+@keyframes control-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* A alternativa, e o `!important` que ela precisa pra existir: a varredura
+   aplica `animation-duration: 0.01ms !important` em `*`, e só um seletor de
+   classe também importante passa por cima dela. */
+@media (prefers-reduced-motion: reduce) {
   .control-enter {
-    animation: control-in 220ms var(--ease-snap) both;
+    animation: control-fade 160ms var(--ease-snap) both !important;
   }
 
-  /* Entra deslizando de onde foi empurrado, e não de cima: a barra é uma
-     linha, e um controle que desce nela atravessa o caminho dos vizinhos em
-     vez de abrir espaço entre eles. */
-  @keyframes control-in {
+  @keyframes control-fade {
     from {
       opacity: 0;
-      transform: translateX(-0.5rem);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
     }
   }
 }
