@@ -491,3 +491,41 @@ code {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Start bar
+
+   Trocar o modo troca quais controles a barra tem: o seletor de idioma sai
+   quando o texto vira código, e o de linguagem de programação entra no lugar
+   dele. Os dois faziam isso seco, no mesmo quadro, e o que o olho registrava
+   não era "o modo mudou", era um piscar — a barra parecia ter se remontado
+   sozinha.
+
+   Entrada só. A saída continua imediata de propósito: o controle que some some
+   porque deixou de valer pra este modo, e segurá-lo na tela mais 200ms pra ele
+   sair bonito é manter na barra, por um quinto de segundo, um controle que não
+   comanda mais nada.
+
+   Sob `no-preference` em vez de dentro da varredura de movimento reduzido:
+   isto é decoração de tela, não resposta a uma tecla, e é exatamente o que a
+   chave existe pra desligar. Escrito como preferência positiva, quem pediu
+   menos movimento simplesmente não recebe transição nenhuma pra zerar.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .control-enter {
+    animation: control-in 220ms var(--ease-snap) both;
+  }
+
+  /* Entra deslizando de onde foi empurrado, e não de cima: a barra é uma
+     linha, e um controle que desce nela atravessa o caminho dos vizinhos em
+     vez de abrir espaço entre eles. */
+  @keyframes control-in {
+    from {
+      opacity: 0;
+      transform: translateX(-0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}

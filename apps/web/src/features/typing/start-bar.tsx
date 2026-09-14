@@ -47,7 +47,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
           taken by the syntax picker below, so the bar stays one row either
           way — one "which language" control, whichever axis is in play. */}
       {isCode ? null : (
-        <>
+        <span className="control-enter flex items-center gap-1.5">
           <Select
             label="Idioma"
             value={language}
@@ -55,7 +55,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
             onValueChange={setLanguage}
           />
           <Divider />
-        </>
+        </span>
       )}
       <Select label="Tipo de texto" value={kind} options={KIND_OPTIONS} onValueChange={setKind} />
       <Divider />
@@ -63,7 +63,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
           through settings for which code is the one step nobody should have to
           take. Mounted only in code, where it is the only control that matters. */}
       {isCode ? (
-        <>
+        <span className="control-enter flex items-center gap-1.5">
           <Select
             label="Linguagem de programação"
             value={syntax}
@@ -71,7 +71,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
             onValueChange={setSyntax}
           />
           <Divider />
-        </>
+        </span>
       ) : null}
       <Select
         label="Tamanho do texto"
