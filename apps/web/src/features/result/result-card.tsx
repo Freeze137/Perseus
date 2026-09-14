@@ -4,6 +4,7 @@ import type { TextKind } from '@perseus/contracts';
 import { keyStats, metrics, type Session } from '@perseus/engine';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { Hint } from '@/components/ui/hint';
 import type { SyncState } from '@/features/sync/use-result-sync';
 import type { FrameReport } from '@/features/settings/use-frame-rate';
 import { TIERS, type PerformanceTier } from '@/features/settings/performance-tiers';
@@ -54,6 +55,10 @@ export function ResultCard({
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+      // Enter em cima de um botão pertence ao botão. Sem esta linha, chegar de
+      // Tab em "Novo texto" e apertar Enter fazia as duas coisas — o clique e
+      // o reinício daqui — e a tela obedecia a um comando que ninguém deu.
+      if (event.target instanceof HTMLElement && event.target.closest('button')) return;
       if (event.key === 'Enter') {
         event.preventDefault();
         onRestart();
@@ -102,13 +107,81 @@ export function ResultCard({
 
       <Block delay={80}>
         <dl className="grid grid-cols-2 gap-x-10 gap-y-4 sm:grid-cols-5">
-          <Stat label="Consistência" value={`${Math.round(stats.consistency)}%`} />
+          <Stat
+            label="Consistência"
+            value={`${Math.round(stats.consistency)}%`}
+            hint={
+              <>
+                <p>
+                  Quanto o seu ritmo variou de um segundo para o outro. 100 é a
+                  mesma quantidade de teclas em todo segundo da corrida. Pausa
+                  de mais de três segundos sai da conta: ela já custou PPM, e
+                  cobrar de novo mediria a interrupção, não a digitação.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">Em código</strong> ela cai
+                  quando o texto alterna palavra e símbolo —{' '}
+                  <code className="font-mono text-bone">!==</code> custa mais
+                  que qualquer letra ao lado dele, e a conta é por segundo.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">No duelo</strong> não vale
+                  ponto. Ela diz se a sua velocidade é sua ou foi sorte de um
+                  trecho fácil.
+                </p>
+              </>
+            }
+          />
           <Stat
             label="CPM"
             value={String(Math.round(stats.cpm))}
             tone={isCode ? 'lead' : 'plain'}
+            hint={
+              <>
+                <p>
+                  Caracteres corretos por minuto. A mesma corrida do PPM, sem
+                  dividir por cinco. Só o que saiu certo entra, e a indentação
+                  automática fica de fora: ela apareceu sozinha.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">Em código</strong> é a régua
+                  honesta. O PPM chama cinco caracteres de palavra, uma medida
+                  herdada da prosa em inglês, e uma chave que fecha não é um
+                  quinto de palavra.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">No duelo</strong> não vale
+                  ponto — o servidor compara PPM mesmo quando o texto é código.
+                  Os dois sobem pelo mesmo motivo, porque os dois contam só o
+                  acerto, mas quem decide a partida é o PPM.
+                </p>
+              </>
+            }
           />
-          <Stat label="PPM bruto" value={String(Math.round(stats.rawWpm))} />
+          <Stat
+            label="PPM bruto"
+            value={String(Math.round(stats.rawWpm))}
+            hint={
+              <>
+                <p>
+                  Tudo que você digitou dividido por cinco, por minuto, tecla
+                  errada incluída. É a velocidade da mão antes de descontar o
+                  preço do erro.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">Em código</strong> costuma abrir
+                  mais distância do PPM que em prosa: símbolo erra mais que
+                  letra, e cada erro sai da conta que vale.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-bone">No duelo</strong> não vale
+                  ponto, e é por isso que ele interessa. A distância entre ele e
+                  o seu PPM é exatamente o que os erros cobraram — corrida que
+                  você já fez e não levou. Ganha o maior PPM.
+                </p>
+              </>
+            }
+          />
           <Stat label="Acertos" value={String(stats.correct)} />
           <Stat
             label="Erros"
@@ -248,17 +321,23 @@ function Stat({
   label,
   value,
   tone = 'plain',
+  hint,
 }: {
   label: string;
   value: string;
   /** 'lead' marca o número que de fato importa nesta corrida. */
   tone?: 'plain' | 'warm' | 'lead';
+  /** Para o número cujo nome não diz o que ele mede. Acertos e erros dizem. */
+  hint?: ReactNode;
 }) {
   const colour =
     tone === 'warm' ? 'text-rust' : tone === 'lead' ? 'text-mint' : 'text-bone';
   return (
     <div className="flex flex-col gap-1">
-      <dt className="label">{label}</dt>
+      <dt className="label flex items-center gap-1.5">
+        {label}
+        {hint ? <Hint term={label}>{hint}</Hint> : null}
+      </dt>
       <dd className={`display text-2xl tabular-nums ${colour}`}>
         {value}
       </dd>
