@@ -112,20 +112,27 @@ export function Modal({ open, onClose, title, children }: Props) {
           onAnimationComplete={() => {
             if (!open) ref.current?.close();
           }}
-          className="glow-box scroll-silent pointer-events-auto max-h-full w-[min(30rem,100%)] overflow-y-auto rounded-md p-6"
+          className="glow-edge relative pointer-events-auto flex max-h-full w-[min(30rem,100%)] flex-col rounded-md"
         >
-          <header className="mb-4 flex items-center justify-between">
-            <h2 className="label">{title}</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar"
-              className="grid h-8 w-8 place-items-center rounded-sm text-ash transition-colors hover:bg-slate hover:text-bone"
-            >
-              ✕
-            </button>
-          </header>
-          {children}
+          {/* A rolagem desceu um nível. O aro é um pseudo-elemento da moldura,
+              e enquanto a moldura era também o container que rola ele aparecia
+              cortado na altura visível e subia junto com o texto — uma borda
+              que rola com o conteúdo é uma borda que não é borda. Agora a
+              moldura fica parada segurando o aro, e o miolo rola dentro dela. */}
+          <div className="scroll-silent min-h-0 overflow-y-auto rounded-md p-6">
+            <header className="mb-4 flex items-center justify-between">
+              <h2 className="label">{title}</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Fechar"
+                className="grid h-8 w-8 place-items-center rounded-sm text-ash transition-colors hover:bg-slate hover:text-bone"
+              >
+                ✕
+              </button>
+            </header>
+            {children}
+          </div>
         </motion.div>
       </div>
     </dialog>

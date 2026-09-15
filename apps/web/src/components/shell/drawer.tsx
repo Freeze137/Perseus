@@ -75,7 +75,7 @@ export function Drawer({ open, onClose, title, side, children }: Props) {
         animate={{ x: open ? 0 : side === "left" ? "-100%" : "100%" }}
         transition={transitionFor(level, SPRING.panel)}
         data-side={side}
-        className={`glow-side fixed inset-y-0 z-30 flex w-[min(22rem,88vw)] flex-col gap-5 bg-obsidian p-6 ${
+        className={`glow-edge fixed inset-y-0 z-30 flex w-[min(22rem,88vw)] flex-col gap-5 p-6 ${
           side === "left" ? "left-0" : "right-0"
         }`}
       >

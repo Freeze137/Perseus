@@ -833,89 +833,120 @@ code {
 /* ---------------------------------------------------------------------------
    Glow edge
 
-   O aro verde que pulsa nos painéis: as duas gavetas e os dois diálogos. Ele
-   faz num painel o que o aro dos links faz na coluna — diz que aquilo é uma
-   camada acesa por cima da página, e não um pedaço mais claro dela.
+   O aro dos painéis: duas luzes orbitando a borda, cabeça acesa e cauda que
+   apaga atrás dela. As duas gavetas e os dois diálogos usam o mesmo aro — é
+   uma camada por cima da página, e as quatro são a mesma camada.
 
-   Pulsar e não girar. Girar é bom num alvo de 40px que a pessoa mira; num
-   painel de 480px a volta viraria um carrossel na borda do texto que ela está
-   lendo. O que pulsa é o brilho, que fica parado no lugar.
+   A mecânica vem do comet border do Originkit e a aritmética dos ângulos é a
+   dele: cauda de 42% num arco de 180°, duas cabeças opostas, queda da luz em
+   21° e retomada nos últimos 25°. O que não vem é a implementação. Lá um
+   `requestAnimationFrame` gira um quadrado superdimensionado e um listener de
+   `pointermove` no `window` acelera a volta no hover. Aqui a primeira regra do
+   produto é que nada entre no caminho crítico da tecla, e um laço de rAF mais
+   um listener global durante a digitação são exatamente isso. A volta é um
+   ângulo registrado que o compositor interpola sozinho, e não há hover: painel
+   é superfície de leitura, não alvo que se mira.
 
-   O halo mora em `box-shadow` do próprio elemento, e não num pseudo-elemento:
-   o painel do diálogo é o container que rola, e um brilho em `::before`
-   apareceria cortado e rolaria junto com o conteúdo.
+   A espessura também não vem. Lá são 4px; aqui a régua da casa é 1px, e borda
+   colorida grossa num painel de texto lê como fantasia de terminal — que é o
+   anti-exemplo que este projeto tem escrito no PRODUCT.md.
+
+   As cores são as nossas: menta na cabeça, esmeralda na cauda, e ardósia como
+   base. A base é o que sobra quando a luz passou, e é ela que mantém a borda
+   desenhada o tempo todo em vez de deixar o painel sem beirada entre duas
+   passagens.
 --------------------------------------------------------------------------- */
-.glow-box {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--color-obsidian), var(--color-obsidian)) padding-box,
-    linear-gradient(
-        135deg,
-        color-mix(in oklab, var(--color-emerald) 70%, transparent),
-        var(--color-mint),
-        color-mix(in oklab, var(--color-emerald) 70%, transparent)
-      )
-      border-box;
-  animation: edge-pulse 3.2s ease-in-out infinite;
+@property --edge-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
 
-/* Na gaveta o fio é de um lado só — o de dentro, virado pra página. Os outros
-   três estão fora da tela, e um aro inteiro ali seria três quartos de
-   desenho que ninguém vê. */
-.glow-side {
-  animation: edge-pulse 3.2s ease-in-out infinite;
+/* Sem `position` aqui: a gaveta é `fixed` por utilitária, e um `relative` nesta
+   classe venceria — mesma especificidade, nossa folha depois — e arrancaria o
+   painel da borda da tela. Quem posiciona continua sendo a marcação; esta
+   classe só exige que ela posicione. */
+.glow-edge {
+  background: var(--color-obsidian);
+  /* Sombra de verdade, com deslocamento e desfoque, mais um floreio curto de
+     esmeralda. Halo sozinho não é profundidade: ele não diz de onde vem a luz,
+     e um painel que flutua sem sombra sobre preto puro não flutua. */
+  box-shadow:
+    0 18px 40px -28px var(--color-void),
+    0 0 18px -10px color-mix(in oklab, var(--color-emerald) 50%, transparent);
 }
 
-.glow-side::after {
+/* O anel é um pseudo-elemento com preenchimento e duas máscaras que se
+   excluem: a de fora cobre a caixa inteira, a de dentro cobre o miolo, e o que
+   sobra é exatamente a moldura da espessura do preenchimento. É assim que uma
+   borda recebe gradiente sem deixar de ser uma borda. */
+.glow-edge::before {
   content: "";
   position: absolute;
-  inset-block: 0;
-  width: 1px;
-  background: var(--grad-edge);
-  animation: edge-line-pulse 3.2s ease-in-out infinite;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--edge-angle) at 50% 50%,
+    var(--color-mint) 0deg,
+    color-mix(in oklab, var(--color-emerald) 72%, transparent) 21deg,
+    color-mix(in oklab, var(--color-slate) 70%, transparent) 43deg,
+    color-mix(in oklab, var(--color-slate) 70%, transparent) 109deg,
+    color-mix(in oklab, var(--color-emerald) 72%, transparent) 155deg,
+    var(--color-mint) 180deg,
+    color-mix(in oklab, var(--color-emerald) 72%, transparent) 201deg,
+    color-mix(in oklab, var(--color-slate) 70%, transparent) 223deg,
+    color-mix(in oklab, var(--color-slate) 70%, transparent) 289deg,
+    color-mix(in oklab, var(--color-emerald) 72%, transparent) 335deg,
+    var(--color-mint) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: edge-orbit 9s linear infinite;
 }
 
-.glow-side[data-side="left"]::after {
-  right: 0;
+@keyframes edge-orbit {
+  to {
+    --edge-angle: 360deg;
+  }
 }
 
-.glow-side[data-side="right"]::after {
-  left: 0;
+/* Com movimento reduzido a luz para de andar, e é o caso mais claro em que ela
+   tem que parar: luz que atravessa a borda de um painel de 480px é justamente
+   o movimento grande cruzando o campo de visão que a chave recusa. O que fica
+   é o aro inteiro num verde só, respirando — desvanecer não é movimento, e é
+   essa a alternativa que o resto do site já usa.
+
+   O `!important` contraria a varredura global de propósito: sem ele a duração
+   iria a zero e o aro congelaria num quadro do cometa, ou seja, num lado claro
+   e três apagados. */
+@media (prefers-reduced-motion: reduce) {
+  .glow-edge::before {
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--color-emerald) 70%, transparent),
+      var(--color-mint),
+      color-mix(in oklab, var(--color-emerald) 70%, transparent)
+    );
+    animation: edge-breathe 5s ease-in-out infinite !important;
+    animation-duration: 5s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
-@keyframes edge-pulse {
+@keyframes edge-breathe {
   0%,
   100% {
-    box-shadow: 0 0 14px -6px color-mix(in oklab, var(--color-emerald) 40%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 26px -4px color-mix(in oklab, var(--color-emerald) 62%, transparent),
-      0 0 8px -2px color-mix(in oklab, var(--color-mint) 28%, transparent);
-  }
-}
-
-@keyframes edge-line-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   50% {
     opacity: 1;
-  }
-}
-
-/* Com movimento reduzido o pulso fica, mais lento. O que a chave recusa é
-   movimento grande atravessando a visão, e um brilho que respira na borda não
-   atravessa nada: ele não anda, não escala e não muda de lugar. A varredura
-   global zeraria a duração e deixaria o aro parado num quadro só, então este
-   é um dos poucos lugares que a contrariam de propósito — como o tremor do
-   caractere errado e a respiração do loader. */
-@media (prefers-reduced-motion: reduce) {
-  .glow-box,
-  .glow-side,
-  .glow-side::after {
-    animation-duration: 5s !important;
-    animation-iteration-count: infinite !important;
   }
 }
