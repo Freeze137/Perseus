@@ -84,20 +84,13 @@ export function PanelDock({
         aria-expanded={open}
         aria-controls="panel-dock-body"
         onClick={() => setOpen(!open)}
-        className="dock-key dock-head"
+        className="dock-key dock-bars"
       >
-        {/* Seta lateral, e não as três barras: elas foram pro seletor, onde a
-            pessoa pediu por elas, e a mesma marca em dois lugares diferentes
-            marcaria duas coisas diferentes. A seta aponta pra onde a coluna
-            vai — pra fora quando está pra abrir, pra dentro quando está pra
-            recolher. */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 10 6"
-          className="dock-head-arrow h-2 w-3 fill-none stroke-current stroke-[1.5]"
-        >
-          <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <span aria-hidden="true" className="dock-bars-box">
+          <span className="dock-bar dock-bar-top" />
+          <span className="dock-bar dock-bar-middle" />
+          <span className="dock-bar dock-bar-bottom" />
+        </span>
         {/* Nome parado. Quem conta o estado é `aria-expanded`, e rótulo que
             troca de palavra faz o leitor de tela anunciar um controle novo
             onde só houve uma mudança de estado. */}
@@ -108,7 +101,7 @@ export function PanelDock({
         id="panel-dock-body"
         data-open={open}
         inert={!open}
-        className="dock-body control-enter flex flex-col items-center gap-3"
+        className="dock-body flex flex-col items-center gap-3"
       >
         <ul className="flex flex-col gap-2">
           {entries.map((entry) => (

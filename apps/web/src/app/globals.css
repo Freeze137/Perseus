@@ -402,11 +402,14 @@ code {
    de sumir no lugar. Três barras cruzando no centro seriam um X que aparece;
    assim é um X que se forma.
 
-   Os números são outros. Lá a barra tem 7px numa caixa de 50 e é quase branca;
-   aqui a caixa é a marca de um controle de 32px de altura, a barra tem 1.5px e
-   a cor é a do rótulo ao lado — ardósia parada, osso sob o ponteiro. Barra
-   branca de 7px numa barra de início seria a coisa mais clara da tela, num
-   controle cujo trabalho é recuar quando a corrida começa.
+   Os números são outros, e a primeira tentativa errou neles. Três barras de
+   1.5px empilhadas põem o triplo da tinta que a seta punha — a seta eram dois
+   traços curtos formando um V, e três barras cheias do mesmo peso leem como um
+   bloco ao lado de um rótulo de 14px. Agora a barra tem 1px e 11px de largura,
+   que é aproximadamente a tinta que a seta tinha. A cor é a do rótulo ao lado:
+   ardósia parada, osso sob o ponteiro. Barra branca de 7px, como no original,
+   seria a coisa mais clara da tela num controle cujo trabalho é recuar quando a
+   corrida começa.
 
    Fora do `@supports` pelo mesmo motivo do foco: a marca é nossa nos dois
    caminhos. Onde `:open` não existe as barras ficam paradas, que é o que a
@@ -417,8 +420,8 @@ code {
 .select-bars {
   display: block;
   position: absolute;
-  width: 0.75rem;
-  height: 0.625rem;
+  width: 0.6875rem;
+  height: 0.5rem;
   color: var(--color-ash);
   transition: color 200ms var(--ease-snap);
 }
@@ -432,8 +435,8 @@ code {
 .select-bar {
   position: absolute;
   left: 0;
-  width: 0.75rem;
-  height: 1.5px;
+  width: 0.6875rem;
+  height: 1px;
   border-radius: 100px;
   background: currentColor;
   transition:
@@ -446,7 +449,7 @@ code {
 }
 
 .select-bar-middle {
-  top: 4.25px;
+  top: 3.5px;
 }
 
 .select-bar-bottom {
@@ -456,20 +459,20 @@ code {
 .select-native:open + .select-bars .select-bar-top {
   transform: rotate(45deg);
   transform-origin: top left;
-  width: 0.8125rem;
+  width: 0.75rem;
   left: 1px;
 }
 
 .select-native:open + .select-bars .select-bar-bottom {
   transform: rotate(-45deg);
   transform-origin: top left;
-  width: 0.8125rem;
+  width: 0.75rem;
   left: 1px;
   box-shadow: 0 0 8px color-mix(in oklab, var(--color-emerald) 50%, transparent);
 }
 
 .select-native:open + .select-bars .select-bar-middle {
-  transform: translateX(-0.75rem);
+  transform: translateX(-0.6875rem);
   opacity: 0;
 }
 
@@ -671,26 +674,94 @@ code {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-emerald) 45%, transparent);
 }
 
-/* A seta da cabeça aponta pra onde a coluna vai: pra fora quando ela está
-   recolhida e pode abrir, pra dentro quando está aberta e pode recolher. É a
-   mesma seta que estava no seletor, deitada — e é ela que fica aqui porque as
-   três barras foram pra lá. */
-.dock-head-arrow {
-  transform: rotate(-90deg);
-  transition: transform 300ms var(--ease-snap);
+/* As três barras que viram X, na cabeça da coluna.
+
+   Elas estão aqui e no seletor, e a repetição foi pedida. O gesto é o mesmo nos
+   dois — três traços que caem num X — e o que muda é a escala: aqui a tecla tem
+   40px como as outras da coluna e a barra tem 2px; no seletor a marca acompanha
+   um rótulo e a barra tem 1px.
+
+   O giro em torno do canto de cima à esquerda é o que faz o X se formar em vez
+   de aparecer: as duas de fora caem de um vértice ao outro em vez de pivotar no
+   meio, e a do meio sai deslizando pro lado. */
+.dock-bars-box {
+  position: relative;
+  display: block;
+  width: 1rem;
+  height: 0.875rem;
 }
 
-.dock-head[data-open="true"] .dock-head-arrow {
-  transform: rotate(90deg);
+.dock-bar {
+  position: absolute;
+  left: 0;
+  width: 1rem;
+  height: 2px;
+  border-radius: 100px;
+  background: currentColor;
+  transition:
+    transform 240ms var(--ease-snap),
+    opacity 240ms var(--ease-snap);
 }
 
-/* Recolhida, a coluna sai do layout em vez de ficar transparente ocupando
-   lugar: transparente, a cabeça ficaria no topo de uma coluna invisível e
-   subiria pra longe do centro da tela. Abrir reaproveita a entrada da barra de
-   início, que já desliza de onde foi empurrada e já tem o ramo da chave de
-   movimento. Fechar é instantâneo, como toda saída aqui. */
+.dock-bar-top {
+  top: 0;
+}
+
+.dock-bar-middle {
+  top: 6px;
+}
+
+.dock-bar-bottom {
+  bottom: 0;
+}
+
+.dock-bars[data-open="true"] .dock-bar-top {
+  transform: rotate(45deg);
+  transform-origin: top left;
+  width: 1.125rem;
+  left: 1px;
+}
+
+.dock-bars[data-open="true"] .dock-bar-bottom {
+  transform: rotate(-45deg);
+  transform-origin: top left;
+  width: 1.125rem;
+  left: 1px;
+  box-shadow: 0 0 10px color-mix(in oklab, var(--color-emerald) 55%, transparent);
+}
+
+.dock-bars[data-open="true"] .dock-bar-middle {
+  transform: translateX(-0.875rem);
+  opacity: 0;
+}
+
+/* Entra e sai, nas duas direções e rápido: 160ms pra abrir, 120ms pra
+   recolher. Saída mais curta que entrada porque quem fecha já decidiu — a
+   entrada é quem tem uma chegada pra contar.
+
+   Recolhida, ela continua ocupando o lugar dela em vez de sair do layout. Sair
+   parece a escolha óbvia e é a errada: a coluna está centrada na vertical, e
+   tirar sete teclas do meio dela faria a cabeça escorregar pro centro da tela
+   no mesmo instante em que a pessoa clicou nela. Ocupando, a cabeça não se
+   move, e o que a pessoa clicou continua debaixo do dedo.
+
+   `visibility` junto da opacidade pra coluna recolhida sair da árvore de
+   acessibilidade e da ordem de tabulação, e ela transiciona com o resto pra não
+   cortar a saída no primeiro quadro. */
+.dock-body {
+  transform-origin: left center;
+  transition:
+    opacity 160ms var(--ease-snap),
+    transform 160ms var(--ease-snap),
+    visibility 160ms;
+}
+
 .dock-body[data-open="false"] {
-  display: none;
+  opacity: 0;
+  transform: translateX(-0.5rem) scale(0.96);
+  visibility: hidden;
+  pointer-events: none;
+  transition-duration: 120ms;
 }
 
 /* Em cima abre uma gaveta desta página; embaixo você sai dela. Duas coisas
