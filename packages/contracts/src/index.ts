@@ -302,12 +302,318 @@ export const ApiErrorBodySchema = z.object({
 });
 export type ApiErrorBody = z.infer<typeof ApiErrorBodySchema>;
 
+/* ---------------------------------------------------------------------------
+ * Identidade e patente
+ *
+ * O ranking precisa saber de quem é a corrida, e o produto decidiu não pedir
+ * conta pra isso — pela mesma razão que o duelo não pede: o que está sendo
+ * guardado é uma velocidade de digitação e um apelido, e cobrar e-mail por isso
+ * seria recolher um passivo em troca de nada.
+ *
+ * O que existe no lugar é um passaporte assinado, que o browser guarda, mais um
+ * código de recuperação que o dono guarda. O primeiro é conveniência; o segundo
+ * é o que impede um "limpar dados de navegação" de apagar uma patente.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * As duas famílias que uma patente pode ter.
+ *
+ * Prosa e código nunca dividem escada, pelo mesmo motivo que já não dividem
+ * ranking: cinco caracteres são uma palavra em prosa inglesa e não são nada em
+ * Rust. Duas famílias e não uma por modo porque quinze sintaxes vezes cinco
+ * tipos de texto seriam setenta e cinco patentes, e patente que quase ninguém
+ * divide com ninguém não classifica nada.
+ */
+export const RankFamilySchema = z.enum(['prose', 'code']);
+export type RankFamily = z.infer<typeof RankFamilySchema>;
+
+/** A que escada um modo pertence. Código de um lado, todo o resto do outro. */
+export function familyOf(kind: TextKind): RankFamily {
+  return kind === 'code' ? 'code' : 'prose';
+}
+
+/**
+ * Os cinco degraus, nomeados pelas estrelas da constelação de Perseu.
+ *
+ * A escada é de **temperatura**, não de magnitude — vermelha, laranja, branca,
+ * branco-azulada, azul —, e a diferença é visível: as magnitudes aparentes de
+ * Perseu não acompanham a cor (Menkib é azul escaldante e das mais fracas no
+ * céu; Mirfak é a mais brilhante da constelação e branco-amarela), então uma
+ * escada por brilho daria cinco emblemas sem progressão nenhuma pro olho. Por
+ * temperatura a sequência é a própria OBAFGKM, que é a escada que os
+ * astrônomos usam, e "mais quente" não precisa ser explicado a ninguém.
+ *
+ * Nomear pelas estrelas em vez de Bronze/Prata/Ouro não é tema pendurado por
+ * cima: o nome do produto é a constelação, e o `PRODUCT.md` já prometeu por
+ * escrito um teclado desenhado como carta estelar "onde o brilho de cada tecla
+ * reflete o domínio real do digitador". A patente é essa frase um nível acima.
+ */
+export const TierIdSchema = z.enum([
+  'gorgonea',
+  'miram',
+  'mirfak',
+  'algol',
+  'atik',
+]);
+export type TierId = z.infer<typeof TierIdSchema>;
+
+export type TierInfo = {
+  /** O nome próprio, como aparece na vitrine. */
+  readonly star: string;
+  /** A designação de Bayer. É o que faz a estrela ser localizável de verdade. */
+  readonly designation: string;
+  /** A classe espectral real. É daqui que a cor do emblema sai. */
+  readonly spectral: string;
+  /**
+   * O ppm em que o degrau começa, por família. O primeiro começa em zero — ele
+   * é onde todo mundo entra, não um degrau que se conquista.
+   */
+  readonly from: Readonly<Record<RankFamily, number>>;
+};
+
+/**
+ * Na ordem, do primeiro degrau ao último.
+ *
+ * Os números de código são mais baixos que os de prosa porque a mesma mão
+ * digita código mais devagar — parênteses, sublinhados e maiúsculas no meio da
+ * palavra custam o que uma frase não cobra. Mesma escada, duas réguas.
+ */
+export const TIERS: Readonly<Record<TierId, TierInfo>> = {
+  gorgonea: {
+    star: 'Gorgonea Tertia',
+    designation: 'ρ Persei',
+    spectral: 'M4',
+    from: { prose: 0, code: 0 },
+  },
+  miram: {
+    star: 'Miram',
+    designation: 'η Persei',
+    spectral: 'K3',
+    from: { prose: 45, code: 30 },
+  },
+  mirfak: {
+    star: 'Mirfak',
+    designation: 'α Persei',
+    spectral: 'F5',
+    from: { prose: 70, code: 45 },
+  },
+  algol: {
+    star: 'Algol',
+    designation: 'β Persei',
+    spectral: 'B8',
+    from: { prose: 95, code: 60 },
+  },
+  atik: {
+    star: 'Atik',
+    designation: 'ζ Persei',
+    spectral: 'B1',
+    from: { prose: 120, code: 80 },
+  },
+};
+
+/** Do mais frio ao mais quente. A vitrine e a escada leem os dois daqui. */
+export const TIER_ORDER = TierIdSchema.options;
+
+/**
+ * O período real de Algol, em dias.
+ *
+ * Algol é binária eclipsante: a companheira passa na frente e a estrela perde
+ * mais de um terço do brilho por algumas horas, a cada 2,87 dias. É por isso
+ * que os árabes a chamaram de estrela demônio, e é por isso que o emblema dessa
+ * patente pisca nesse ritmo em vez de num ritmo bonito escolhido a dedo.
+ */
+export const ALGOL_PERIOD_DAYS = 2.867;
+
+/** Em que degrau um ppm cai, dentro da régua da família. */
+export function tierOf(family: RankFamily, wpm: number): TierId {
+  let found: TierId = 'gorgonea';
+  for (const id of TIER_ORDER) {
+    if (wpm >= TIERS[id].from[family]) found = id;
+  }
+  return found;
+}
+
+/**
+ * Quantas corridas a patente olha, e quantas ela exige pra existir.
+ *
+ * A patente sai da média das cinco corridas válidas mais recentes, e não da
+ * melhor: o board é recorde — a melhor corrida que você já fez, e ela
+ * aconteceu — e a patente é o que você sustenta. Uma corrida de sorte entra no
+ * board, como deve, e não promove ninguém.
+ *
+ * As mais recentes, e não as cinco melhores, porque a patente fala do presente.
+ * É a mesma razão pela qual a dormência existe.
+ */
+export const PATENTE_SAMPLE = 5;
+export const PATENTE_MIN_RUNS = 5;
+
+/**
+ * Quantos dias sem corrida deixam a patente dormente.
+ *
+ * Dormente não é rebaixado, e a diferença é o produto inteiro: nada é perdido,
+ * a marca continua no banco, e uma corrida válida reacende. O que expirou foi a
+ * afirmação, não a conquista — uma medida de duas semanas atrás não é prova do
+ * que a mão faz hoje. E nada aqui pede sua volta: a hora em que isto virar
+ * contagem regressiva e notificação é a hora em que virou o Duolingo que o
+ * `PRODUCT.md` nomeia como anti-referência.
+ */
+export const PATENTE_DORMANT_DAYS = 7;
+
+export const PatenteSchema = z.object({
+  family: RankFamilySchema,
+  tier: TierIdSchema,
+  /** A média das últimas `PATENTE_SAMPLE` corridas válidas. */
+  wpm: z.number().nonnegative(),
+  /** Quantas corridas válidas a família tem, ao todo. */
+  runs: z.int().nonnegative(),
+  lastRunAt: z.iso.datetime(),
+  /** True quando a última corrida é mais velha que `PATENTE_DORMANT_DAYS`. */
+  dormant: z.boolean(),
+});
+export type Patente = z.infer<typeof PatenteSchema>;
+
+/**
+ * O nome no ranking.
+ *
+ * Mesmo teto do apelido de duelo, por serem a mesma coisa vista de dois
+ * lugares. Sem espaço nas pontas e sem dois nomes que diferem só na caixa —
+ * `citext` no banco cuida do segundo, e é o que impede duas pessoas de
+ * disputarem o board parecendo uma só.
+ */
+export const UsernameSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(20)
+  .regex(/^[\p{L}\p{N}_ -]+$/u, 'letras, números, espaço, hífen ou sublinhado');
+export type Username = z.infer<typeof UsernameSchema>;
+
+/**
+ * O código de recuperação: seis palavras sorteadas, mostradas uma vez.
+ *
+ * Palavras e não caracteres porque isto é copiado à mão. Um bloco de base32 tem
+ * 0 e O, 1 e l, e quem transcreve erra; seis palavras sobrevivem a ser lidas em
+ * voz alta e cabem num papel. A entropia é a da lista, não a do formato.
+ *
+ * Aceita separado por hífen ou por espaço, em qualquer caixa: quem digita isto
+ * está tendo um dia ruim — perdeu o navegador, trocou de máquina — e recusar
+ * por causa de um espaço a mais seria escolher o pior momento possível pra ser
+ * exigente com formatação.
+ */
+export const RecoveryCodeSchema = z
+  .string()
+  .trim()
+  .transform((value) =>
+    value
+      .toLowerCase()
+      .split(/[\s-]+/u)
+      .filter(Boolean),
+  )
+  .pipe(z.array(z.string().min(2).max(20)).length(6));
+export type RecoveryCode = z.infer<typeof RecoveryCodeSchema>;
+
+/**
+ * O passaporte: quem você é, assinado.
+ *
+ * Sem estado do lado do servidor, como o bilhete de corrida — ele não guarda
+ * tabela de passaportes emitidos, só recusa o que não assinou. Quem tem a
+ * string é você, e é só isso que ela autoriza: mandar corrida com aquele nome e
+ * ler o seu próprio histórico. Não há senha por trás, não há e-mail amarrado, e
+ * não há nada aqui que sirva pra outra coisa se vazar.
+ */
+export const PassportSchema = z.object({
+  playerId: z.uuid(),
+  /** HMAC sobre o id. Não quer dizer nada pro cliente. */
+  signature: z.string().min(16).max(128),
+});
+export type Passport = z.infer<typeof PassportSchema>;
+
+export const PlayerSchema = z.object({
+  id: z.uuid(),
+  username: UsernameSchema,
+  createdAt: z.iso.datetime(),
+});
+export type Player = z.infer<typeof PlayerSchema>;
+
+export const CreatePlayerSchema = z.object({ username: UsernameSchema });
+export type CreatePlayer = z.infer<typeof CreatePlayerSchema>;
+
+export const RecoverPlayerSchema = z.object({ code: RecoveryCodeSchema });
+export type RecoverPlayer = z.infer<typeof RecoverPlayerSchema>;
+
+/**
+ * O que volta na criação, e só nela.
+ *
+ * O código de recuperação aparece aqui uma vez e nunca mais: o banco guarda só
+ * o hash dele. Um produto que consegue te mostrar seu código de novo é um
+ * produto que guardou seu código.
+ */
+export const PlayerCredentialsSchema = z.object({
+  player: PlayerSchema,
+  passport: PassportSchema,
+  recoveryCode: z.string(),
+});
+export type PlayerCredentials = z.infer<typeof PlayerCredentialsSchema>;
+
+/** Você, como a tela de identidade lê: o nome, as duas patentes, o total. */
+export const IdentitySchema = z.object({
+  player: PlayerSchema,
+  patentes: z.array(PatenteSchema),
+  totalRuns: z.int().nonnegative(),
+});
+export type Identity = z.infer<typeof IdentitySchema>;
+
+/**
+ * Onde a corrida que acabou de ser enviada deixou você.
+ *
+ * Volta junto do resultado, na mesma ida e volta, porque a carta de resultado
+ * precisa dos dois ao mesmo tempo e uma segunda requisição faria o número
+ * aparecer depois da tela. `previousTier` diferente de `tier` é o único momento
+ * em que a vitrine se abre sozinha.
+ */
+export const StandingSchema = z.object({
+  /** Posição no board do modo que acabou de ser digitado. */
+  position: z.int().positive(),
+  /** Quantas pessoas estão classificadas naquele board. */
+  total: z.int().nonnegative(),
+  /** True quando esta corrida melhorou o próprio recorde. */
+  personalBest: z.boolean(),
+  patente: PatenteSchema.nullable(),
+  previousTier: TierIdSchema.nullable(),
+});
+export type Standing = z.infer<typeof StandingSchema>;
+
+/**
+ * A resposta de um envio: o que foi pontuado, e onde isso te deixou.
+ *
+ * `standing` é null quando não há passaporte na requisição. Corrida anônima
+ * continua sendo pontuada e devolvida — o treinador nunca dependeu de conta, e
+ * não é agora que passa a depender — ela só não classifica ninguém.
+ */
+export const SubmitResponseSchema = z.object({
+  result: TypingResultSchema,
+  standing: StandingSchema.nullable(),
+});
+export type SubmitResponse = z.infer<typeof SubmitResponseSchema>;
+
 export const LeaderboardEntrySchema = z.object({
   rank: z.int().positive(),
   username: z.string().min(1).max(32),
   wpm: z.number().nonnegative(),
   accuracy: z.number().min(0).max(100),
   achievedAt: z.iso.datetime(),
+  /**
+   * A patente da família deste board, ou null pra quem ainda não tem cinco
+   * corridas nela.
+   *
+   * Null e `dormant` são coisas diferentes e as duas aparecem: a primeira é
+   * "ainda não deu pra medir", a segunda é "a medida envelheceu". Um emblema
+   * apagado num board é informação sobre quem anda sumido, e é o motivo de a
+   * linha ficar no board mesmo dormente — a velocidade é fato, a patente é
+   * afirmação sobre hoje.
+   */
+  tier: TierIdSchema.nullable(),
+  dormant: z.boolean(),
 });
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
@@ -387,8 +693,21 @@ export const LeaderboardResponseSchema = z.object({
 });
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
 
-/** O piso de precisão que a corrida tem que passar pra aparecer no ranking. */
-export const LEADERBOARD_MIN_ACCURACY = 90;
+/**
+ * O piso de precisão que a corrida tem que passar pra contar — no ranking e na
+ * patente, com um número só.
+ *
+ * Baixo de propósito, e é o motor que deixa ele poder ser. `wpm` conta apenas
+ * as posições que batem com o alvo (`metrics.ts`), então tecla errada não vira
+ * velocidade nenhuma: quem digita sujo já sai com número baixo antes de
+ * qualquer piso opinar. O que sobra pro piso é recusar a corrida que foi outra
+ * atividade, não escolher quem digita bem.
+ *
+ * Dois pisos — um pro board e outro pra patente — seriam um produto que se
+ * explica duas vezes. 'Ranqueou mas não contou pra patente' é uma frase que
+ * ninguém deveria ter que entender.
+ */
+export const LEADERBOARD_MIN_ACCURACY = 75;
 
 /* ---------------------------------------------------------------------------
  * Duel — private 1v1
