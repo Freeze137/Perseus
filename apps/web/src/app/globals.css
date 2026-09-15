@@ -402,15 +402,16 @@ code {
    de sumir no lugar. Três barras cruzando no centro seriam um X que aparece;
    assim é um X que se forma.
 
-   O tamanho saiu da proporção do original em vez do meu palpite, que errou
-   duas vezes — primeiro grosso demais, depois fino ao ponto de virar três
-   riscos. Lá a barra tem 7px numa caixa de 45 por 40: razão de 6.4 de largura
-   por espessura, e folga de 9.5px entre barras. Numa marca de 14px isso dá
-   barra de 2px, caixa de 12px e folga de 3px, que é o que está aqui.
+   Todos os números são os do original numa escala só: 0.30 dele, o que põe a
+   caixa de 50 por 40 em 15 por 12 e mantém cada proporção de pé — a barra, a
+   folga entre elas, a largura que a diagonal ganha ao girar, e os dois
+   deslocamentos que alinham o X. Chutar cada valor separado foi o que errou
+   duas vezes antes, primeiro grosso e depois fino ao ponto de virar riscos.
 
-   A cor não vem do original. Lá a barra é quase branca; aqui ela é a do rótulo
-   ao lado — ardósia parada, osso sob o ponteiro — porque branco puro numa barra
-   cujo trabalho é recuar durante a corrida seria a coisa mais clara da tela.
+   A cor é osso parada e menta sob o ponteiro. Osso é o quase-branco desta casa,
+   que é o que o original usa; menta porque um controle deste site que responde
+   ao ponteiro responde em verde. A barra fica mais clara que o rótulo ao lado
+   dela de propósito: é a marca que diz o que o controle faz.
 
    Fora do `@supports` pelo mesmo motivo do foco: a marca é nossa nos dois
    caminhos. Onde `:open` não existe as barras ficam paradas, que é o que a
@@ -421,23 +422,23 @@ code {
 .select-bars {
   display: block;
   position: absolute;
-  width: 0.875rem;
-  height: 0.75rem;
-  color: var(--color-ash);
+  width: 15px;
+  height: 12px;
+  color: var(--color-bone);
   transition: color 200ms var(--ease-snap);
 }
 
 .select-native:hover + .select-bars,
 .select-native:focus-visible + .select-bars,
 .select-native:open + .select-bars {
-  color: var(--color-bone);
+  color: var(--color-mint);
 }
 
 .select-bar {
   position: absolute;
   left: 0;
-  width: 0.875rem;
-  height: 2px;
+  width: 13.5px;
+  height: 2.1px;
   border-radius: 100px;
   background: currentColor;
   transition:
@@ -450,30 +451,35 @@ code {
 }
 
 .select-bar-middle {
-  top: 5px;
+  top: 5.1px;
 }
 
 .select-bar-bottom {
   bottom: 0;
 }
 
+/* O `left` na de cima e o `bottom` na de baixo não são enfeite: são a correção
+   de simetria do X. Girando em torno do canto de cima à esquerda, as duas
+   diagonais nasceriam em x diferentes, e esses dois números fazem as duas
+   partirem do mesmo ponto. No original são 5px e -1px numa caixa de 50 por 40;
+   aqui são os mesmos, na escala desta caixa. */
 .select-native:open + .select-bars .select-bar-top {
   transform: rotate(45deg);
   transform-origin: top left;
-  width: 0.9375rem;
-  left: 1px;
+  width: 14.4px;
+  left: 1.5px;
 }
 
 .select-native:open + .select-bars .select-bar-bottom {
   transform: rotate(-45deg);
   transform-origin: top left;
-  width: 0.9375rem;
-  left: 1px;
+  width: 14.4px;
+  bottom: -0.3px;
   box-shadow: 0 0 8px color-mix(in oklab, var(--color-emerald) 50%, transparent);
 }
 
 .select-native:open + .select-bars .select-bar-middle {
-  transform: translateX(-0.875rem);
+  transform: translateX(-6px);
   opacity: 0;
 }
 
@@ -688,15 +694,15 @@ code {
 .dock-bars-box {
   position: relative;
   display: block;
-  width: 1rem;
-  height: 0.875rem;
+  width: 17.5px;
+  height: 14px;
 }
 
 .dock-bar {
   position: absolute;
   left: 0;
-  width: 1rem;
-  height: 2px;
+  width: 15.75px;
+  height: 2.45px;
   border-radius: 100px;
   background: currentColor;
   transition:
@@ -709,7 +715,7 @@ code {
 }
 
 .dock-bar-middle {
-  top: 6px;
+  top: 5.95px;
 }
 
 .dock-bar-bottom {
@@ -719,20 +725,20 @@ code {
 .dock-bars[data-open="true"] .dock-bar-top {
   transform: rotate(45deg);
   transform-origin: top left;
-  width: 1.125rem;
-  left: 1px;
+  width: 16.8px;
+  left: 1.75px;
 }
 
 .dock-bars[data-open="true"] .dock-bar-bottom {
   transform: rotate(-45deg);
   transform-origin: top left;
-  width: 1.125rem;
-  left: 1px;
+  width: 16.8px;
+  bottom: -0.35px;
   box-shadow: 0 0 10px color-mix(in oklab, var(--color-emerald) 55%, transparent);
 }
 
 .dock-bars[data-open="true"] .dock-bar-middle {
-  transform: translateX(-0.875rem);
+  transform: translateX(-7px);
   opacity: 0;
 }
 
