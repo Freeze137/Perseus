@@ -19,7 +19,11 @@ node_modules
 # Não fazem parte da API.
 docs
 deploy
-supabase
 apps/web/app
 apps/web/components
 apps/web/public
+
+# As migrações entram, e só elas: é de dentro do container que elas rodam,
+# porque é ele que tem o DATABASE_URL. O resto de `supabase/` fica de fora.
+supabase/*
+!supabase/migrations
