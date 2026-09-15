@@ -43,6 +43,14 @@ export type Settings = {
    * nível entrega, e pra garantia de que nenhum deles entrega nada do produto.
    */
   performance: PerformanceTier;
+  /**
+   * Se a coluna de painéis está aberta.
+   *
+   * Aberta por padrão: um atalho que nasce escondido custa a todo mundo a
+   * descoberta dele, e o que esta preferência compra é a tela mais vazia
+   * possível pra quem quiser pedir por ela — não o contrário.
+   */
+  dockOpen: boolean;
   setLanguage: (language: Language) => void;
   setKind: (kind: TextKind) => void;
   setSyntax: (syntax: SyntaxChoice) => void;
@@ -50,6 +58,7 @@ export type Settings = {
   setKeyboardLayout: (layout: KeyboardLayout) => void;
   setShowKeyboard: (show: boolean) => void;
   setPerformance: (tier: PerformanceTier) => void;
+  setDockOpen: (open: boolean) => void;
 };
 
 export const useSettings = create<Settings>()(
@@ -64,6 +73,7 @@ export const useSettings = create<Settings>()(
       keyboardLayout: "abnt2",
       showKeyboard: true,
       performance: "full",
+      dockOpen: true,
       setLanguage: (language) => set({ language }),
       setKind: (kind) => set({ kind }),
       setSyntax: (syntax) => set({ syntax }),
@@ -71,6 +81,7 @@ export const useSettings = create<Settings>()(
       setKeyboardLayout: (keyboardLayout) => set({ keyboardLayout }),
       setShowKeyboard: (showKeyboard) => set({ showKeyboard }),
       setPerformance: (performance) => set({ performance }),
+      setDockOpen: (dockOpen) => set({ dockOpen }),
     }),
     {
       name: "perseus:settings",

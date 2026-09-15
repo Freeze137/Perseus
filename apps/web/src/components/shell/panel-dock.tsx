@@ -1,6 +1,7 @@
 "use client";
 
 import { LinkMark } from "@/components/shell/link-marks";
+import { useSettings } from "@/features/settings/use-settings";
 import { PERSONAL_LINKS } from "@/lib/links";
 
 type Props = {
@@ -43,6 +44,16 @@ type Entry = {
  * O rótulo continua no DOM com `opacity: 0`, e não `sr-only` nem
  * `visibility: hidden`: transparente ele ainda é o nome acessível do botão,
  * então a mesma marcação serve o olho e o leitor de tela.
+ *
+ * As três barras na cabeça abrem e fecham o conjunto — é o único lugar do site
+ * onde um hambúrguer diz a verdade, porque é o único conjunto que existe pra
+ * abrir. Aberta por padrão e a escolha fica guardada: atalho que nasce
+ * escondido cobra de todo mundo a descoberta dele, e o que isto compra é a tela
+ * mais vazia possível pra quem pedir por ela.
+ *
+ * `aria-expanded` no botão e `inert` no corpo, então quem navega por teclado ou
+ * leitor de tela recebe o mesmo estado que o olho recebe — e não tabula por
+ * sete controles que não estão na tela.
  */
 export function PanelDock({
   onOpenRanking,
@@ -60,42 +71,75 @@ export function PanelDock({
     { glyph: "⚙", label: "Configurações", onSelect: onOpenSettings },
   ];
 
+  const open = useSettings((state) => state.dockOpen);
+  const setOpen = useSettings((state) => state.setDockOpen);
+
   return (
     <nav
       aria-label="Painéis e links do autor"
       data-dimmed={dimmed}
       className="panel-dock fixed left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-25 hover:opacity-100"
     >
-      <ul className="flex flex-col gap-2">
-        {entries.map((entry) => (
-          <li key={entry.label}>
-            <button type="button" onClick={entry.onSelect} className="dock-key">
-              <span aria-hidden="true" className="dock-glyph">
-                {entry.glyph}
-              </span>
-              <span className="dock-label">{entry.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <button
+        type="button"
+        data-open={open}
+        aria-expanded={open}
+        aria-controls="panel-dock-body"
+        onClick={() => setOpen(!open)}
+        className="dock-key dock-bars"
+      >
+        <span aria-hidden="true" className="dock-bars-box">
+          <span className="dock-bar dock-bar-top" />
+          <span className="dock-bar dock-bar-middle" />
+          <span className="dock-bar dock-bar-bottom" />
+        </span>
+        {/* Nome parado. Quem conta o estado é `aria-expanded`, e rótulo que
+            troca de palavra faz o leitor de tela anunciar um controle novo
+            onde só houve uma mudança de estado. */}
+        <span className="dock-label">Painéis</span>
+      </button>
 
-      <span aria-hidden="true" className="dock-rule" />
+      <div
+        id="panel-dock-body"
+        data-open={open}
+        inert={!open}
+        className="dock-body control-enter flex flex-col items-center gap-3"
+      >
+        <ul className="flex flex-col gap-2">
+          {entries.map((entry) => (
+            <li key={entry.label}>
+              <button
+                type="button"
+                onClick={entry.onSelect}
+                className="dock-key"
+              >
+                <span aria-hidden="true" className="dock-glyph">
+                  {entry.glyph}
+                </span>
+                <span className="dock-label">{entry.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
 
-      <ul className="flex flex-col gap-2">
-        {PERSONAL_LINKS.map((link) => (
-          <li key={link.id}>
-            <a
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-              className="dock-key dock-link"
-            >
-              <LinkMark id={link.id} />
-              <span className="dock-label">{link.label}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+        <span aria-hidden="true" className="dock-rule" />
+
+        <ul className="flex flex-col gap-2">
+          {PERSONAL_LINKS.map((link) => (
+            <li key={link.id}>
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="dock-key dock-link"
+              >
+                <LinkMark id={link.id} />
+                <span className="dock-label">{link.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   );
 }

@@ -614,6 +614,80 @@ code {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-emerald) 45%, transparent);
 }
 
+/* As três barras que viram X, na cabeça da coluna.
+
+   A mecânica é a do checkbox do Ali-Tahmazi99 e é ela que faz o gesto: as duas
+   de fora giram 45° em torno do canto de cima à esquerda, o que as manda cair
+   de um vértice ao outro em vez de pivotar no meio, e a do meio sai deslizando
+   pro lado em vez de sumir no lugar. Três barras cruzando no centro seriam um
+   X que aparece; assim é um X que se forma.
+
+   O que muda são os números e a cor. Lá as barras têm 7px numa caixa de 50 e
+   são quase brancas; aqui a tecla tem 40px como as outras da coluna, a barra
+   tem 2px, e a cor é a da tecla — ardósia parada, menta sob o ponteiro. Barra
+   branca de 7px nesta página seria a coisa mais clara da tela, num controle
+   cujo trabalho é recuar durante a corrida.
+
+   O brilho da barra de baixo aberta vem do original, onde é um cinza. Aqui é
+   esmeralda: o X é o estado aberto, e aberto neste site acende. */
+.dock-bars-box {
+  position: relative;
+  display: block;
+  width: 1rem;
+  height: 0.875rem;
+}
+
+.dock-bar {
+  position: absolute;
+  left: 0;
+  width: 1rem;
+  height: 2px;
+  border-radius: 100px;
+  background: currentColor;
+  transition: transform 300ms var(--ease-snap), opacity 300ms var(--ease-snap);
+}
+
+.dock-bar-top {
+  top: 0;
+}
+
+.dock-bar-middle {
+  top: 6px;
+}
+
+.dock-bar-bottom {
+  bottom: 0;
+}
+
+.dock-bars[data-open="true"] .dock-bar-top {
+  transform: rotate(45deg);
+  transform-origin: top left;
+  width: 1.125rem;
+  left: 1px;
+}
+
+.dock-bars[data-open="true"] .dock-bar-bottom {
+  transform: rotate(-45deg);
+  transform-origin: top left;
+  width: 1.125rem;
+  left: 1px;
+  box-shadow: 0 0 10px color-mix(in oklab, var(--color-emerald) 55%, transparent);
+}
+
+.dock-bars[data-open="true"] .dock-bar-middle {
+  transform: translateX(-0.875rem);
+  opacity: 0;
+}
+
+/* Recolhida, a coluna sai do layout em vez de ficar transparente ocupando
+   lugar: transparente, a cabeça ficaria no topo de uma coluna invisível e
+   subiria pra longe do centro da tela. Abrir reaproveita a entrada da barra de
+   início, que já desliza de onde foi empurrada e já tem o ramo da chave de
+   movimento. Fechar é instantâneo, como toda saída aqui. */
+.dock-body[data-open="false"] {
+  display: none;
+}
+
 /* Em cima abre uma gaveta desta página; embaixo você sai dela. Duas coisas
    diferentes na mesma coluna precisam de um fio no meio. */
 .dock-rule {
