@@ -350,21 +350,44 @@ function Ring({
               className="absolute inset-0"
               style={{
                 transform: `rotateY(${slot * STEP}deg) translateZ(${RADIUS}px)`,
-                // Sem isto, as faces do outro lado do anel aparecem através das
-                // da frente, espelhadas — o nome da patente lido ao contrário,
-                // por cima do emblema que está de frente. Escondê-las é o que
-                // faz o anel ler como um objeto sólido em vez de dez cartões
-                // transparentes empilhados.
-                backfaceVisibility: "hidden",
+                transformStyle: "preserve-3d",
               }}
             >
-              <FaceButton
-                face={face}
-                state={stateOf(face)}
-                mine={isMine(face)}
-                active={slot === index}
-                onSelect={() => select(slot)}
-              />
+              {/* A face, escondida quando é vista de costas. Sozinha isso
+                  esvaziaria o fundo do anel — e é justamente o anel inteiro,
+                  visto através das fichas da frente, que dá a ele profundidade
+                  de objeto em vez de fileira. */}
+              <div
+                className="absolute inset-0"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                <FaceButton
+                  face={face}
+                  state={stateOf(face)}
+                  mine={isMine(face)}
+                  active={slot === index}
+                  onSelect={() => select(slot)}
+                />
+              </div>
+
+              {/* O verso: o mesmo emblema, já girado, para quem o vê do outro
+                  lado enxergar a estrela e não o texto ao contrário. Sem ficha,
+                  sem legenda e sem alcance do ponteiro — é profundidade, não
+                  conteúdo, e ler "60 PPM" espelhado no fundo era ruído que se
+                  parecia com informação. */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 opacity-45"
+                style={{
+                  transform: "rotateY(180deg)",
+                  backfaceVisibility: "hidden",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="flex h-full w-full items-center justify-center">
+                  <PatenteMark tier={face.tier} size={104} />
+                </div>
+              </div>
             </div>
           ))}
         </div>
