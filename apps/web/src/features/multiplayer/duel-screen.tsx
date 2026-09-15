@@ -8,6 +8,7 @@ import { generate } from "@perseus/corpus";
 import { isFinished, type Session } from "@perseus/engine";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIdentity } from "@/features/identity/use-identity";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { TypingArea } from "@/features/typing/typing-area";
@@ -78,6 +79,7 @@ export function DuelScreen({
   onMatch,
   onLeave,
 }: Props) {
+  const { passport } = useIdentity();
   const isCode = match.config.kind === "code";
   const text = useMemo(() => generate(match.config), [match.config]);
   const { session, input, backspace } = useTypingSession(text, {
@@ -183,6 +185,10 @@ export function DuelScreen({
         at: Math.round(at),
         index,
       })),
+      // Vai junto quando existe, e o duelo não muda em nada quando não existe.
+      // O mesmo replay já pontuava esta corrida; o que faltava era dizer de
+      // quem ela era, e é só isso que a faz contar no ranking também.
+      passport,
     )
       .then((settled) => {
         setSubmission("sent");
@@ -192,7 +198,7 @@ export function DuelScreen({
         setSubmission("failed");
         setRefusal(explainRefusal(error));
       });
-  }, [session, match.id, token, onMatch]);
+  }, [session, match.id, token, passport, onMatch]);
 
   const swallow = useCallback(() => undefined, []);
 

@@ -1,11 +1,13 @@
 import {
   HistoryResponseSchema,
+  IdentitySchema,
+  PlayerCredentialsSchema,
   LeaderboardResponseSchema,
   MatchCredentialsSchema,
   MatchSchema,
   MatchSummariesResponseSchema,
   RunTicketSchema,
-  TypingResultSchema,
+  SubmitResponseSchema,
   type CreateMatch,
   type HistoryQuery,
   type HistoryResponse,
@@ -15,10 +17,12 @@ import {
   type Match,
   type MatchCredentials,
   type MatchSummariesResponse,
+  type Identity,
+  type PlayerCredentials,
   type RunTicket,
   type SubmitMatchRun,
+  type SubmitResponse,
   type SubmitResult,
-  type TypingResult,
 } from "@perseus/contracts";
 import { z } from "zod";
 
@@ -33,14 +37,13 @@ function base(): string {
 /**
  * A API que pontua.
  *
- * Resultado não vai daqui pro Supabase. Vai pela API, que regera o texto,
+ * O browser nunca escreve no banco. Tudo passa pela API, que regera o texto,
  * reproduz a timeline e deriva os números sozinha — um browser que escrevesse o
- * próprio ppm direto na tabela transformaria o ranking numa lista de quem abriu
- * o console primeiro.
+ * próprio ppm direto numa tabela transformaria o ranking numa lista de quem
+ * abriu o console primeiro.
  *
- * Leitura é outra história e vai pelo mesmo caminho só por consistência: o
- * ranking é uma função do banco, e passar por um lugar só mantém o formato de
- * um ranking definido uma vez.
+ * Leitura vai pelo mesmo caminho, e aí é por consistência: um lugar só mantém o
+ * formato de um ranking definido uma vez.
  */
 export class ApiError extends Error {
   constructor(
@@ -117,14 +120,52 @@ export async function health() {
   return request("/health", HealthSchema);
 }
 
+/** O cabeçalho em que um passaporte viaja. Vazio quando não há um. */
+function withPassport(passport: string | null): HeadersInit {
+  return passport ? { "x-perseus-passport": passport } : {};
+}
+
+/**
+ * Manda a corrida pra ser pontuada.
+ *
+ * O passaporte é opcional, e essa é a decisão do produto: sem ele a corrida é
+ * pontuada e devolvida do mesmo jeito, com os mesmos números e as mesmas
+ * recusas — ela só não classifica ninguém. O treinador nunca precisou de conta,
+ * e o ranking não é motivo pra passar a precisar.
+ */
 export async function submitResult(
   payload: SubmitResult,
-  accessToken: string,
-): Promise<TypingResult> {
-  return request("/results", TypingResultSchema, {
+  passport: string | null,
+): Promise<SubmitResponse> {
+  return request("/results", SubmitResponseSchema, {
     method: "POST",
-    headers: { authorization: `Bearer ${accessToken}` },
+    headers: withPassport(passport),
     body: JSON.stringify(payload),
+  });
+}
+
+/** Cria uma identidade. O código de recuperação volta uma vez e só aqui. */
+export async function createPlayer(
+  username: string,
+): Promise<PlayerCredentials> {
+  return request("/players", PlayerCredentialsSchema, {
+    method: "POST",
+    body: JSON.stringify({ username }),
+  });
+}
+
+/** Troca as seis palavras por um passaporte novo, nesta máquina. */
+export async function recoverPlayer(code: string): Promise<PlayerCredentials> {
+  return request("/players/recover", PlayerCredentialsSchema, {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+/** O cartão de identidade: o nome, as patentes, o total de corridas. */
+export async function readIdentity(passport: string): Promise<Identity> {
+  return request("/players/me", IdentitySchema, {
+    headers: withPassport(passport),
   });
 }
 
@@ -147,16 +188,19 @@ export async function readLeaderboard(
  * vezes e dá à duração um relógio pra ser conferida — ver o serviço de bilhete
  * do lado da API pra o que ele faz e, mais útil, o que ele não alega provar.
  */
-export async function startRun(accessToken: string): Promise<RunTicket> {
-  return request("/runs", RunTicketSchema, {
-    method: "POST",
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
+/**
+ * Abre uma corrida.
+ *
+ * Sem identidade: o bilhete não diz de quem é a corrida, diz que o servidor a
+ * viu começar e quando. De quem ela é só é decidido no envio.
+ */
+export async function startRun(): Promise<RunTicket> {
+  return request("/runs", RunTicketSchema, { method: "POST" });
 }
 
 /** Suas corridas passadas, da mais nova, com as melhores ao lado. */
 export async function readHistory(
-  accessToken: string,
+  passport: string,
   query: Partial<HistoryQuery> = {},
 ): Promise<HistoryResponse> {
   const params = new URLSearchParams();
@@ -164,7 +208,7 @@ export async function readHistory(
     if (value !== null && value !== undefined) params.set(key, String(value));
   }
   return request(`/results/mine?${params}`, HistoryResponseSchema, {
-    headers: { authorization: `Bearer ${accessToken}` },
+    headers: withPassport(passport),
   });
 }
 
@@ -245,10 +289,14 @@ export async function finishMatch(
   id: string,
   token: string,
   keystrokes: SubmitMatchRun["keystrokes"],
+  passport: string | null,
 ): Promise<Match> {
   return request(`/matches/${id}/finish`, MatchSchema, {
     method: "POST",
-    headers: { authorization: `Bearer ${token}` },
+    // O token diz de que lado da sala você está; o passaporte diz quem você é
+    // no ranking. Duas perguntas diferentes, e o duelo só precisa da primeira
+    // pra ser jogado — a segunda é o que faz a corrida também contar.
+    headers: { authorization: `Bearer ${token}`, ...withPassport(passport) },
     body: JSON.stringify({ keystrokes } satisfies SubmitMatchRun),
   });
 }

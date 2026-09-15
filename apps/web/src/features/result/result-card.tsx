@@ -5,16 +5,21 @@ import { keyStats, metrics, type Session } from '@perseus/engine';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
-import type { SyncState } from '@/features/sync/use-result-sync';
+import { TIERS } from '@perseus/contracts';
+import { PatenteMark } from '@/features/identity/patente-mark';
+import type { SyncResult } from '@/features/sync/use-result-sync';
 import type { FrameReport } from '@/features/settings/use-frame-rate';
-import { TIERS, type PerformanceTier } from '@/features/settings/performance-tiers';
+import {
+  TIERS as PERFORMANCE_TIERS,
+  type PerformanceTier,
+} from '@/features/settings/performance-tiers';
 
 type Props = {
   session: Session;
   /** Só serve pra dizer o que os números querem dizer — código e prosa não se comparam. */
   kind: TextKind;
-  /** Se esta corrida entrou no ranking, e honestamente quando não entrou. */
-  sync: SyncState;
+  /** Se esta corrida entrou no ranking, e onde ela deixou quem digitou. */
+  sync: SyncResult;
   /** O que a máquina de fato conseguiu durante a corrida. Null se não medido. */
   frames: FrameReport | null;
   tier: PerformanceTier;
@@ -40,6 +45,7 @@ export function ResultCard({
   onRestart,
   onNewText,
 }: Props) {
+  const { state: syncState, standing } = sync;
   const isCode = kind === 'code';
   const stats = useMemo(() => metrics(session), [session]);
   const weak = useMemo(
@@ -212,30 +218,71 @@ export function ResultCard({
         </div>
       </Block>
 
+      {/* Onde esta corrida deixou você.
+          Vem na mesma resposta do envio de propósito: uma segunda requisição
+          faria a posição chegar depois da tela que ela deveria explicar. */}
+      {standing ? (
+        <Block delay={120}>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <p className="flex items-baseline gap-2">
+              <span className="display text-3xl tabular-nums text-bone">
+                {standing.position}º
+              </span>
+              <span className="label">de {standing.total}</span>
+            </p>
+
+            {standing.personalBest ? (
+              <p className="text-sm text-mint">Seu melhor neste modo.</p>
+            ) : null}
+
+            {standing.patente ? (
+              <p className="flex items-center gap-3">
+                <PatenteMark
+                  tier={standing.patente.tier}
+                  size={34}
+                  state="earned"
+                />
+                <span className="flex flex-col leading-tight">
+                  <span className="text-sm text-bone">
+                    {TIERS[standing.patente.tier].star}
+                  </span>
+                  <span className="font-mono text-xs text-ash">
+                    {standing.previousTier &&
+                    standing.previousTier !== standing.patente.tier
+                      ? `de ${TIERS[standing.previousTier].star}`
+                      : `média de ${Math.round(standing.patente.wpm)} ppm`}
+                  </span>
+                </span>
+              </p>
+            ) : null}
+          </div>
+        </Block>
+      ) : null}
+
       {/* Said plainly. A run that failed to sync is still a real run, and
           pretending it was saved would be the one lie this screen could tell. */}
-      {sync === 'idle' || sync === 'off' ? null : (
+      {syncState === 'idle' || syncState === 'off' ? null : (
         <Block delay={140}>
           <p className="text-sm text-ash">
-            {sync === 'sending' ? 'Enviando para o ranking…' : null}
-            {sync === 'sent' ? 'Resultado registrado no ranking.' : null}
+            {syncState === 'sending' ? 'Enviando para o ranking…' : null}
+            {syncState === 'sent' ? 'Resultado registrado no ranking.' : null}
             {/* A queued run is not a lost run, and saying "falhou" about one
                 that is sitting safely in fila would be the screen lying in the
                 pessimistic direction. */}
-            {sync === 'queued' ? (
+            {syncState === 'queued' ? (
               <span>
                 Sem conexão com o ranking agora. A corrida ficou guardada e sobe
                 sozinha na próxima vez que você abrir o treinador.
               </span>
             ) : null}
-            {sync === 'stale' ? (
+            {syncState === 'stale' ? (
               <span>
                 Esta aba está uma versão atrás do servidor, que por isso não
                 consegue conferir a corrida. Recarregue a página — as próximas
                 entram normalmente.
               </span>
             ) : null}
-            {sync === 'failed' ? (
+            {syncState === 'failed' ? (
               <span className="text-rust">
                 Não entrou no ranking desta vez. O resultado acima continua
                 valendo — ele foi medido aqui.
@@ -282,7 +329,7 @@ export function ResultCard({
             </p>
             <div>
               <Button variant="quiet" size="sm" onClick={onEase}>
-                Passar para {TIERS[nextTier].label.toLowerCase()}
+                Passar para {PERFORMANCE_TIERS[nextTier].label.toLowerCase()}
               </Button>
             </div>
           </div>

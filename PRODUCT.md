@@ -97,9 +97,17 @@ are mineral, not neon, and that distinction is load-bearing.
 ## Current state
 
 Phase 1 complete. Keyboard layout (ABNT2 / US / US-International) reaches the
-corpus at `CORPUS_VERSION` 4. Account and ranking are built and tested but not
-yet pointed at a database. The trainer runs fully offline without Supabase
-credentials.
+corpus at `CORPUS_VERSION` 4. The trainer runs fully offline with no database
+credentials at all.
+
+Ranking runs on the same plain Postgres the duel writes to, and there are no
+accounts in it: a person is a name, a signed passport the browser keeps, and a
+six-word recovery code they keep. Runs are ranked per mode. A patente — five
+steps per family, named after the stars of Perseus in order of temperature —
+is the average of the last five valid runs, and appears from the fifth. Seven
+days without a run leaves it dormant: nothing is lost, and one run relights it.
+A duel run counts in the same table as a solo one, because the same replay
+already scored both.
 
 The 1v1 duel is built and runs end to end with no database at all: a private
 room behind an invite code, both players generating the same text from the same

@@ -1,9 +1,18 @@
 "use client";
 
-import type { Language, LeaderboardEntry, SyntaxChoice, TextKind } from "@perseus/contracts";
+import {
+  TIERS,
+  type Language,
+  type LeaderboardEntry,
+  type SyntaxChoice,
+  type TextKind,
+} from "@perseus/contracts";
 import { useEffect, useState } from "react";
 import { FallLoader } from "@/components/ui/fall-loader";
-import { useAuth } from "@/features/auth/use-auth";
+import { Modal } from "@/components/ui/modal";
+import { PatenteMark } from "@/features/identity/patente-mark";
+import { PatenteRing } from "@/features/identity/patente-ring";
+import { useIdentity } from "@/features/identity/use-identity";
 import { syntaxLabel } from "@/features/settings/syntax-options";
 import { readLeaderboard } from "@/lib/api";
 
@@ -16,8 +25,22 @@ type Props = {
 type Board =
   | { status: "loading" }
   | { status: "off" }
-  | { status: "error" }
   | { status: "ready"; entries: LeaderboardEntry[] };
+
+/**
+ * Os recortes de tempo do board.
+ *
+ * Existe porque board eterno é board onde ninguém novo aparece: depois de um
+ * ano, as dez primeiras posições pertencem a quem estava lá no começo, e a
+ * lista deixa de responder a pergunta que alguém abre a gaveta pra fazer. Os
+ * três juntos deixam a mesma tela responder "quem está rápido agora" e "quem já
+ * foi o mais rápido".
+ */
+const WINDOWS = [
+  { value: null, label: "Sempre" },
+  { value: 7, label: "7 dias" },
+  { value: 1, label: "Hoje" },
+] as const;
 
 /**
  * O ranking do que a pessoa estiver configurada agora.
@@ -28,7 +51,10 @@ type Board =
  * ser reconfigurado antes de poder ser lido.
  */
 export function RankingPanel({ kind, language, syntax }: Props) {
-  const { configured, session } = useAuth();
+  const { identity } = useIdentity();
+  const [windowDays, setWindowDays] = useState<number | null>(null);
+  const [showing, setShowing] = useState(false);
+
   /**
    * As respostas são guardadas junto da pergunta que respondem.
    *
@@ -38,46 +64,46 @@ export function RankingPanel({ kind, language, syntax }: Props) {
    * ser coisa que o render enxerga sozinho: um ranking cuja chave não bate mais
    * simplesmente não é resposta pra pergunta que está na tela.
    */
-  const queryKey = `${kind}|${language}|${kind === "code" ? syntax : ""}`;
-  const [answer, setAnswer] = useState<{ key: string; board: Board } | null>(null);
+  const queryKey = `${kind}|${language}|${kind === "code" ? syntax : ""}|${windowDays}`;
+  const [answer, setAnswer] = useState<{ key: string; board: Board } | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (!configured) return;
     let alive = true;
 
     readLeaderboard({
       kind,
       language,
       syntax: kind === "code" ? syntax : null,
+      windowDays,
       limit: 20,
     })
       .then((response) => {
         if (!alive) return;
-        // O servidor agora diz se está respondendo com um ranking ou com uma
-        // queda. Lista vazia significava as duas coisas, e "seja o primeiro a
+        // O servidor diz se está respondendo com um ranking ou com uma queda.
+        // Lista vazia significava as duas coisas, e "seja o primeiro a
         // ranquear" é coisa estranha de dizer pra quem está com o banco fora.
         setAnswer({
           key: queryKey,
           board:
             response.status === "ok"
               ? { status: "ready", entries: response.entries }
-              : { status: "error" },
+              : { status: "off" },
         });
       })
       .catch(() => {
-        if (alive) setAnswer({ key: queryKey, board: { status: "error" } });
+        if (alive) setAnswer({ key: queryKey, board: { status: "off" } });
       });
 
     return () => {
       alive = false;
     };
-  }, [configured, queryKey, kind, language, syntax]);
+  }, [queryKey, kind, language, syntax, windowDays]);
 
-  const board: Board = !configured
-    ? { status: "off" }
-    : answer?.key === queryKey
-      ? answer.board
-      : { status: "loading" };
+  const board: Board =
+    answer?.key === queryKey ? answer.board : { status: "loading" };
+  const mine = identity?.player.username ?? null;
 
   return (
     <>
@@ -85,14 +111,37 @@ export function RankingPanel({ kind, language, syntax }: Props) {
         {kind === "code"
           ? `Código · ${syntaxLabel(syntax)}`
           : `${LABELS[kind]} · ${language === "pt-BR" ? "português" : "inglês"}`}
-        {" · precisão mínima de 90%"}
+        {" · precisão mínima de 75%"}
       </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {WINDOWS.map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            onClick={() => setWindowDays(option.value)}
+            data-on={windowDays === option.value}
+            className="rounded-full border border-slate px-3 py-1 text-xs text-ash transition-colors data-[on=true]:border-jade data-[on=true]:text-bone"
+          >
+            {option.label}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setShowing(true)}
+          className="ml-auto text-xs text-ash underline decoration-slate underline-offset-4 hover:text-bone"
+        >
+          Mostrar patentes
+        </button>
+      </div>
+
       <div className="rule" />
 
       {board.status === "off" ? (
         <p className="text-sm leading-relaxed text-ash">
-          O ranking online ainda não está ligado neste ambiente. O treino
-          funciona normalmente sem ele.
+          Não deu para ler o ranking agora. O treino funciona normalmente sem
+          ele, e seus resultados não se perdem por isso.
         </p>
       ) : null}
 
@@ -107,17 +156,10 @@ export function RankingPanel({ kind, language, syntax }: Props) {
         </div>
       ) : null}
 
-      {board.status === "error" ? (
-        <p className="text-sm leading-relaxed text-rust">
-          Não deu para ler o ranking agora. Seus resultados não se perdem por
-          isso.
-        </p>
-      ) : null}
-
       {board.status === "ready" && board.entries.length === 0 ? (
         <p className="text-sm leading-relaxed text-ash">
-          Ninguém pontuou neste modo ainda.{" "}
-          {session ? "O primeiro lugar está aberto." : "Entre para disputar."}
+          Ninguém pontuou neste modo{windowDays === null ? "" : " nesta janela"}{" "}
+          ainda. {mine ? "O primeiro lugar está aberto." : "Crie um nome para disputar."}
         </p>
       ) : null}
 
@@ -126,12 +168,25 @@ export function RankingPanel({ kind, language, syntax }: Props) {
           {board.entries.map((entry) => (
             <li
               key={`${entry.rank}-${entry.username}`}
-              className="flex items-baseline justify-between gap-3"
+              data-mine={entry.username === mine}
+              className="flex items-center justify-between gap-3 data-[mine=true]:text-mint"
             >
-              <span className="flex min-w-0 items-baseline gap-2">
+              <span className="flex min-w-0 items-center gap-2">
                 <span className="w-6 shrink-0 text-right font-mono text-xs text-slate">
                   {entry.rank}
                 </span>
+                {/* Emblema apagado é informação sobre quem anda sumido — e é
+                    por isso que a linha fica no board mesmo assim: a
+                    velocidade é fato, a patente é afirmação sobre hoje. */}
+                {entry.tier ? (
+                  <PatenteMark
+                    tier={entry.tier}
+                    size={20}
+                    state={entry.dormant ? "dormant" : "earned"}
+                  />
+                ) : (
+                  <span className="w-5 shrink-0" />
+                )}
                 <span className="truncate text-bone">{entry.username}</span>
               </span>
               <span className="flex shrink-0 items-baseline gap-2">
@@ -146,6 +201,30 @@ export function RankingPanel({ kind, language, syntax }: Props) {
           ))}
         </ol>
       ) : null}
+
+      <Modal
+        open={showing}
+        onClose={() => setShowing(false)}
+        title="Patentes"
+        heading="hero"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm leading-relaxed text-ash">
+            Cinco degraus em prosa e cinco em código, nomeados pelas estrelas de
+            Perseu na ordem em que elas esquentam — da vermelha Gorgonea Tertia
+            à azul Atik. A sua é a que está acesa; as outras mostram em quantos
+            ppm começam.
+          </p>
+
+          <PatenteRing patentes={identity?.patentes ?? []} />
+
+          <p className="text-xs leading-relaxed text-slate">
+            A patente sai da média das suas cinco corridas válidas mais
+            recentes, e aparece a partir da quinta. Sete dias sem corrida a
+            deixam dormente — nada é perdido, e uma corrida a reacende.
+          </p>
+        </div>
+      </Modal>
     </>
   );
 }
@@ -157,3 +236,6 @@ const LABELS: Record<TextKind, string> = {
   numbers: "Números",
   code: "Código",
 };
+
+/** Reexportado pra quem quiser o nome de uma patente sem importar o contrato. */
+export { TIERS };

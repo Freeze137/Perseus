@@ -1217,3 +1217,24 @@ code {
     opacity: 1;
   }
 }
+
+/*
+ * Algol escurece de verdade.
+ *
+ * É uma binária eclipsante: a companheira passa na frente e ela perde mais de
+ * um terço do brilho por algumas horas, a cada 2,87 dias. O emblema daquela
+ * patente pisca nesse período — comprimido, senão ninguém veria — e a razão de
+ * ele existir é a estrela ser real, não o enfeite ficar bonito.
+ *
+ * Só é aplicado quando o nível de movimento permite; ver `patente-mark.tsx`.
+ */
+@keyframes algol {
+  0%,
+  88%,
+  100% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 0.62;
+  }
+}

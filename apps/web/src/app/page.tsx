@@ -19,7 +19,8 @@ import { Modal } from "@/components/ui/modal";
 import { NewDuelPanel } from "@/features/multiplayer/new-duel-panel";
 import { LiveStatsPanel } from "@/features/panels/live-stats-panel";
 import { RankingPanel } from "@/features/panels/ranking-panel";
-import { AccountPanel } from "@/features/auth/account-panel";
+import { IdentityPanel } from "@/features/identity/identity-panel";
+import { useIdentityHydration } from "@/features/identity/use-identity";
 import { ResultCard } from "@/features/result/result-card";
 import { useResultSync } from "@/features/sync/use-result-sync";
 import {
@@ -51,6 +52,7 @@ type Drawers = "ranking" | "stats" | null;
 export default function Home() {
   useSettingsHydration();
   useBagHydration();
+  useIdentityHydration();
 
   const {
     language,
@@ -337,7 +339,7 @@ export default function Home() {
         title="Configurações"
       >
         <div className="flex flex-col gap-4">
-          <AccountPanel />
+          <IdentityPanel />
 
           <div className="rule" />
 
@@ -360,7 +362,7 @@ export default function Home() {
               that is missing. */}
           <p className="text-sm leading-relaxed text-ash">
             O mapa estelar do teclado e os testes por tempo chegam nas próximas
-            fases. Ranking online e partidas com amigos vêm com elas.
+            fases.
           </p>
 
           <div className="rule" />

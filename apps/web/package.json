@@ -15,7 +15,6 @@
     "@perseus/contracts": "workspace:*",
     "@perseus/corpus": "workspace:*",
     "@perseus/engine": "workspace:*",
-    "@supabase/supabase-js": "^2.112.3",
     "motion": "^13.1.0",
     "next": "16.3.1",
     "react": "19.2.8",

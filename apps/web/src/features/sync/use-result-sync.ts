@@ -7,10 +7,11 @@ import {
   type SessionConfig,
   type SubmitResult,
 } from "@perseus/contracts";
+import type { Standing } from "@perseus/contracts";
 import type { Session } from "@perseus/engine";
 import { isFinished } from "@perseus/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "@/features/auth/use-auth";
+import { useIdentity } from "@/features/identity/use-identity";
 import { ApiError, startRun, submitResult } from "@/lib/api";
 
 export type SyncState =
@@ -45,9 +46,22 @@ const QUEUE_MAX = 10;
  * armazenamento local e é oferecida de novo na próxima visita, porque a
  * alternativa é perder o recorde pessoal de alguém pra uma conexão que caiu.
  */
-export function useResultSync(session: Session, config: SessionConfig): SyncState {
-  const { session: auth, configured } = useAuth();
-  const [state, setState] = useState<SyncState>(configured ? "idle" : "off");
+/**
+ * O que o envio produziu: em que pé ele está, e onde a corrida deixou a pessoa.
+ *
+ * `standing` é null enquanto não voltou, e continua null pra quem não tem
+ * identidade — a corrida foi pontuada pelo servidor do mesmo jeito, ela só não
+ * classificou ninguém.
+ */
+export type SyncResult = { state: SyncState; standing: Standing | null };
+
+export function useResultSync(
+  session: Session,
+  config: SessionConfig,
+): SyncResult {
+  const { passport } = useIdentity();
+  const [state, setState] = useState<SyncState>("idle");
+  const [standing, setStanding] = useState<Standing | null>(null);
   const sent = useRef<Session | null>(null);
   /**
    * O bilhete da corrida em andamento, guardado como a promise e não como o
@@ -59,7 +73,7 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     startedAt: number;
     pending: Promise<RunTicket | null>;
   } | null>(null);
-  const token = auth?.access_token ?? null;
+
 
   /**
    * Tira o bilhete na primeira tecla.
@@ -69,7 +83,6 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
    * teria começado antes de qualquer digitação.
    */
   useEffect(() => {
-    if (!configured || !token) return;
     const startedAt = session.startedAt;
     if (startedAt === null) {
       // Um reset limpa: a próxima corrida é outra corrida e não pode ser
@@ -79,20 +92,20 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     }
     if (ticket.current?.startedAt === startedAt) return;
 
-    const pending = startRun(token).catch((error: unknown) => {
+    const pending = startRun().catch((error: unknown) => {
       // Nada a mostrar ainda — a corrida ainda está sendo digitada. O envio
       // abaixo é onde a falta de bilhete fica visível.
       console.warn(`could not open the run: ${describe(error)}`);
       return null;
     });
     ticket.current = { startedAt, pending };
-  }, [configured, token, session.startedAt]);
+  }, [session.startedAt]);
 
   const deliver = useCallback(
     async (payload: SubmitResult): Promise<SyncState> => {
-      if (!token) return "queued";
       try {
-        await submitResult(payload, token);
+        const response = await submitResult(payload, passport);
+        setStanding(response.standing);
         return "sent";
       } catch (error: unknown) {
         if (!(error instanceof ApiError)) throw error;
@@ -108,14 +121,13 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
         return "failed";
       }
     },
-    [token],
+    [passport],
   );
 
   // O que sobrou de uma visita anterior sobe antes de qualquer coisa nova, pra
   // um recorde pessoal na fila não ser ultrapassado no ranking pela corrida que
   // veio depois dele.
   useEffect(() => {
-    if (!configured || !token) return;
     let alive = true;
 
     void (async () => {
@@ -132,7 +144,7 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     return () => {
       alive = false;
     };
-  }, [configured, token, deliver]);
+  }, [deliver]);
 
   /**
    * Guardado pela identidade da sessão e não por um booleano: um re-render, um
@@ -140,7 +152,6 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
    * corrida duas vezes.
    */
   useEffect(() => {
-    if (!configured || !token) return;
     if (!isFinished(session)) return;
     if (sent.current === session) return;
     sent.current = session;
@@ -148,6 +159,10 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     const pending = ticket.current?.pending;
     let alive = true;
     setState("sending");
+    // Limpa a posição da corrida anterior antes de pedir a nova: uma carta de
+    // resultado mostrando o lugar da corrida passada por meio segundo é pior
+    // que uma que ainda não mostra lugar nenhum.
+    setStanding(null);
 
     void (async () => {
       const run = pending ? await pending : null;
@@ -182,9 +197,9 @@ export function useResultSync(session: Session, config: SessionConfig): SyncStat
     return () => {
       alive = false;
     };
-  }, [session, config, configured, token, deliver]);
+  }, [session, config, deliver]);
 
-  return state;
+  return { state, standing };
 }
 
 /** Põe uma corrida de lado pra próxima visita, a mais nova por último, a mais velha despejada. */
