@@ -438,7 +438,7 @@ code {
      estado; não é enfeite, porque algum glifo tem que estar ali. */
   .select-native option::checkmark {
     content: "✦";
-    color: var(--color-emerald);
+    color: var(--color-mint);
     font-size: 0.6875rem;
     line-height: 1;
   }

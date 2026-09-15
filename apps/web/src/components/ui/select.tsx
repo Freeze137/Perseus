@@ -52,7 +52,7 @@ export function Select<T extends string>({
           as duas marcas não podem divergir de forma. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute left-2.5 text-[0.6875rem] leading-none text-emerald"
+        className="pointer-events-none absolute left-2.5 text-[0.6875rem] leading-none text-mint"
       >
         ✦
       </span>
@@ -60,7 +60,14 @@ export function Select<T extends string>({
         aria-label={label}
         value={value}
         onChange={(event) => onValueChange(event.target.value as T)}
-        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-7 pr-7 text-sm font-medium text-ash transition-colors hover:text-bone focus-visible:text-bone"
+        /* `leading-8` é o que centra o valor escolhido na altura do controle.
+           Com `appearance: base-select` o valor passa a morar numa caixa que
+           estica pelos 32px inteiros e escreve o texto no topo dela, então a
+           baseline caía 6px acima da estrela, do chevron e do "Novo texto" —
+           três marcas concordando entre si e o rótulo fora. Amarrar a entrelinha
+           à altura da caixa recoloca o texto no meio sem depender de como cada
+           navegador alinha o conteúdo interno do select. */
+        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-7 pr-7 text-sm font-medium leading-8 text-ash transition-colors hover:text-bone focus-visible:text-bone"
         {...props}
       >
         {options.map((option) => (
