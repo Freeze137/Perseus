@@ -45,10 +45,17 @@ export function StartBar({ onNewText, dimmed }: Props) {
       {/* Hidden in code: the prose language does not pick the syntax, and a
           control that changes nothing is worse than no control. Its slot is
           taken by the syntax picker below, so the bar stays one row either
-          way — one "which language" control, whichever axis is in play. */}
+          way — one "which language" control, whichever axis is in play.
+
+          The star belongs to this slot and to no other. On every control it
+          marked nothing — a mark repeated on each of them is texture, not a
+          mark — so it stays where the first question is asked: which language
+          am I typing. It follows the slot rather than the prose picker, so in
+          code the syntax picker inherits it and the bar keeps exactly one. */}
       {isCode ? null : (
         <span className="control-enter flex items-center gap-1.5">
           <Select
+            star
             label="Idioma"
             value={language}
             options={LANGUAGES}
@@ -65,6 +72,7 @@ export function StartBar({ onNewText, dimmed }: Props) {
       {isCode ? (
         <span className="control-enter flex items-center gap-1.5">
           <Select
+            star
             label="Linguagem de programação"
             value={syntax}
             options={SYNTAX_OPTIONS}

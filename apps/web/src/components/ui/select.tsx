@@ -13,6 +13,14 @@ type Props<T extends string> = Omit<
   options: readonly Option<T>[];
   onValueChange: (value: T) => void;
   label: string;
+  /**
+   * Marca o controle fechado com a estrela da escolha.
+   *
+   * Desligada por padrão: três estrelas na mesma barra deixam de marcar coisa
+   * alguma e viram textura. Ligada num eixo só, ela diz qual é o eixo que
+   * abre o conjunto.
+   */
+  star?: boolean;
 };
 
 /**
@@ -33,6 +41,7 @@ export function Select<T extends string>({
   options,
   onValueChange,
   label,
+  star = false,
   className = "",
   ...props
 }: Props<T>) {
@@ -50,12 +59,14 @@ export function Select<T extends string>({
           Texto e não SVG de propósito: é literalmente o mesmo caractere na
           mesma família e no mesmo tamanho que `option::checkmark` usa, então
           as duas marcas não podem divergir de forma. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute left-2.5 text-[0.6875rem] leading-none text-mint"
-      >
-        ✦
-      </span>
+      {star ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-2.5 text-[0.6875rem] leading-none text-mint"
+        >
+          ✦
+        </span>
+      ) : null}
       <select
         aria-label={label}
         value={value}
@@ -67,7 +78,9 @@ export function Select<T extends string>({
            três marcas concordando entre si e o rótulo fora. Amarrar a entrelinha
            à altura da caixa recoloca o texto no meio sem depender de como cada
            navegador alinha o conteúdo interno do select. */
-        className="select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pl-7 pr-7 text-sm font-medium leading-8 text-ash transition-colors hover:text-bone focus-visible:text-bone"
+        className={`select-native h-8 cursor-pointer rounded-full bg-transparent py-0 pr-7 text-sm font-medium leading-8 text-ash transition-colors hover:text-bone focus-visible:text-bone ${
+          star ? "pl-7" : "pl-3"
+        }`}
         {...props}
       >
         {options.map((option) => (
