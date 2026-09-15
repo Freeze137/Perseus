@@ -64,7 +64,7 @@ export function PanelDock({
     <nav
       aria-label="Painéis e links do autor"
       data-dimmed={dimmed}
-      className="fixed left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-25 hover:opacity-100"
+      className="panel-dock fixed left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-25 hover:opacity-100"
     >
       <ul className="flex flex-col gap-2">
         {entries.map((entry) => (
@@ -88,7 +88,7 @@ export function PanelDock({
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="dock-key"
+              className="dock-key dock-link"
             >
               <LinkMark id={link.id} />
               <span className="dock-label">{link.label}</span>

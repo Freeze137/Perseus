@@ -675,6 +675,72 @@ code {
   }
 }
 
+/* O aro dos links é um gradiente que gira.
+
+   Girar é o que faz um verde parecer vivo em vez de pintado: a mesma volta de
+   jade a menta passando devagar diz que aquilo é um lugar pra onde se vai, e
+   separa os três links das quatro teclas de painel sem precisar de mais
+   nenhum rótulo.
+
+   O ângulo é uma propriedade registrada porque `conic-gradient` não interpola
+   sozinho — sem `@property` o navegador trata o ângulo como palavra e a
+   animação não acontece, silenciosamente.
+
+   A borda é transparente e o gradiente entra por `border-box` debaixo da
+   placa em `padding-box`: dois planos de fundo no mesmo elemento, sem
+   pseudo-elemento, porque os dois desta tecla já são os anéis do hover. */
+@property --dock-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.dock-link {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(
+        color-mix(in oklab, var(--color-obsidian) 88%, transparent),
+        color-mix(in oklab, var(--color-obsidian) 88%, transparent)
+      )
+      padding-box,
+    conic-gradient(
+        from var(--dock-angle),
+        var(--color-jade),
+        var(--color-emerald),
+        var(--color-mint),
+        var(--color-emerald),
+        var(--color-jade)
+      )
+      border-box;
+  /* O fio de ardósia da tecla comum sairia por cima do gradiente. O que
+     ilumina a placa daqui pra frente é o aro, e um halo curto atrás dele. */
+  box-shadow: 0 0 10px -2px color-mix(in oklab, var(--color-emerald) 45%, transparent);
+  animation: dock-spin 6s linear infinite;
+}
+
+.dock-link:hover,
+.dock-link:focus-visible {
+  box-shadow: 0 0 14px -1px color-mix(in oklab, var(--color-mint) 55%, transparent);
+}
+
+@keyframes dock-spin {
+  to {
+    --dock-angle: 360deg;
+  }
+}
+
+/* Durante a corrida o dock recua pra um quarto de opacidade, e três aros
+   girando atrás do texto continuariam custando quadro por quadro numa tela
+   onde o quadro é o produto. Pausado, e não removido: ele volta do ângulo
+   onde parou quando a corrida acaba. */
+.panel-dock[data-dimmed="true"] .dock-link {
+  animation-play-state: paused;
+}
+
+/* Com movimento reduzido a varredura global zera a duração e o aro para num
+   ângulo só. Isso é a alternativa certa aqui: o gradiente inteiro continua
+   na borda, brilhando parado — o que a chave recusa é a volta, não o verde. */
+
 /* ---------------------------------------------------------------------------
    Star loader
 
