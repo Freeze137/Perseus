@@ -323,6 +323,7 @@ export default function Home() {
           takeFocusBack();
         }}
         title="Duelo"
+        heading="hero"
       >
         <NewDuelPanel />
       </Modal>

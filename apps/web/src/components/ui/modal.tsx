@@ -11,6 +11,18 @@ type Props = {
   open: boolean;
   onClose: () => void;
   title: string;
+  /**
+   * Como o título se apresenta.
+   *
+   * `label` é o padrão: rótulo pequeno de ardósia no alto, que nomeia o painel
+   * e sai da frente do conteúdo — é o certo pras configurações, onde o assunto
+   * são os controles e não o cabeçalho.
+   *
+   * `hero` é pro painel que é um convite e não uma gaveta. O duelo não é uma
+   * preferência que se ajusta: é um lugar onde se entra, e o nome dele merece
+   * ser a primeira coisa que a pessoa lê.
+   */
+  heading?: "label" | "hero";
   children: ReactNode;
 };
 
@@ -47,7 +59,13 @@ const LEAVE = { duration: 0.14, ease: [0.4, 0, 1, 1] } as const;
  * alcança e que só deixa de existir no `close()` — ou seja, depois de o painel
  * já ter ido, deixando uma tela escura e vazia atrás.
  */
-export function Modal({ open, onClose, title, children }: Props) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  heading = "label",
+  children,
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const level = useMotionLevel();
   const still = level === "none";
@@ -112,27 +130,33 @@ export function Modal({ open, onClose, title, children }: Props) {
           onAnimationComplete={() => {
             if (!open) ref.current?.close();
           }}
-          className="glow-edge relative pointer-events-auto flex max-h-full w-[min(30rem,100%)] flex-col rounded-md"
+          className="glow-edge scroll-silent pointer-events-auto max-h-full w-[min(30rem,100%)] overflow-y-auto rounded-md p-6"
         >
-          {/* A rolagem desceu um nível. O aro é um pseudo-elemento da moldura,
-              e enquanto a moldura era também o container que rola ele aparecia
-              cortado na altura visível e subia junto com o texto — uma borda
-              que rola com o conteúdo é uma borda que não é borda. Agora a
-              moldura fica parada segurando o aro, e o miolo rola dentro dela. */}
-          <div className="scroll-silent min-h-0 overflow-y-auto rounded-md p-6">
-            <header className="mb-4 flex items-center justify-between">
+          {/* O fechar sai do fluxo quando o título é herói: centrado de
+              verdade é centrado na caixa, e não no espaço que sobra ao lado de
+              um botão. Com o título em rótulo ele volta pra linha, onde os
+              dois dividem a largura como sempre dividiram. */}
+          <header
+            data-heading={heading}
+            className="group relative mb-4 flex items-center justify-between data-[heading=hero]:mb-6 data-[heading=hero]:justify-center"
+          >
+            {heading === "hero" ? (
+              <h2 className="display text-3xl uppercase tracking-[0.22em] text-bone">
+                {title}
+              </h2>
+            ) : (
               <h2 className="label">{title}</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Fechar"
-                className="grid h-8 w-8 place-items-center rounded-sm text-ash transition-colors hover:bg-slate hover:text-bone"
-              >
-                ✕
-              </button>
-            </header>
-            {children}
-          </div>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fechar"
+              className="grid h-8 w-8 place-items-center rounded-sm text-ash transition-colors hover:bg-slate hover:text-bone group-data-[heading=hero]:absolute group-data-[heading=hero]:right-0 group-data-[heading=hero]:top-0"
+            >
+              ✕
+            </button>
+          </header>
+          {children}
         </motion.div>
       </div>
     </dialog>

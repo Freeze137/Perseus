@@ -884,53 +884,41 @@ code {
   initial-value: 0deg;
 }
 
-/* Sem `position` aqui: a gaveta é `fixed` por utilitária, e um `relative` nesta
-   classe venceria — mesma especificidade, nossa folha depois — e arrancaria o
-   painel da borda da tela. Quem posiciona continua sendo a marcação; esta
-   classe só exige que ela posicione. */
+/* O aro entra por dois planos de fundo no mesmo elemento: a placa em
+   `padding-box` por cima do cometa em `border-box`. Uma borda transparente
+   abre o espaço, e o que aparece nela é o gradiente.
+
+   Era um pseudo-elemento com máscara, e isso custou o scroll das
+   configurações: `::before` pertence ao conteúdo, então num painel que rola
+   ele rolava junto e obrigava a rolagem a descer um nível, pra dentro de uma
+   moldura de flex que a travou. Fundo não rola com o conteúdo — é pintado no
+   elemento, não na área rolada — então o aro volta a ser da borda e o painel
+   volta a ser o que rola, sem moldura nenhuma no meio. */
 .glow-edge {
-  background: var(--color-obsidian);
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--color-obsidian), var(--color-obsidian)) padding-box,
+    conic-gradient(
+        from var(--edge-angle) at 50% 50%,
+        var(--color-mint) 0deg,
+        color-mix(in oklab, var(--color-emerald) 72%, transparent) 21deg,
+        color-mix(in oklab, var(--color-slate) 70%, transparent) 43deg,
+        color-mix(in oklab, var(--color-slate) 70%, transparent) 109deg,
+        color-mix(in oklab, var(--color-emerald) 72%, transparent) 155deg,
+        var(--color-mint) 180deg,
+        color-mix(in oklab, var(--color-emerald) 72%, transparent) 201deg,
+        color-mix(in oklab, var(--color-slate) 70%, transparent) 223deg,
+        color-mix(in oklab, var(--color-slate) 70%, transparent) 289deg,
+        color-mix(in oklab, var(--color-emerald) 72%, transparent) 335deg,
+        var(--color-mint) 360deg
+      )
+      border-box;
   /* Sombra de verdade, com deslocamento e desfoque, mais um floreio curto de
      esmeralda. Halo sozinho não é profundidade: ele não diz de onde vem a luz,
      e um painel que flutua sem sombra sobre preto puro não flutua. */
   box-shadow:
     0 18px 40px -28px var(--color-void),
     0 0 18px -10px color-mix(in oklab, var(--color-emerald) 50%, transparent);
-}
-
-/* O anel é um pseudo-elemento com preenchimento e duas máscaras que se
-   excluem: a de fora cobre a caixa inteira, a de dentro cobre o miolo, e o que
-   sobra é exatamente a moldura da espessura do preenchimento. É assim que uma
-   borda recebe gradiente sem deixar de ser uma borda. */
-.glow-edge::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--edge-angle) at 50% 50%,
-    var(--color-mint) 0deg,
-    color-mix(in oklab, var(--color-emerald) 72%, transparent) 21deg,
-    color-mix(in oklab, var(--color-slate) 70%, transparent) 43deg,
-    color-mix(in oklab, var(--color-slate) 70%, transparent) 109deg,
-    color-mix(in oklab, var(--color-emerald) 72%, transparent) 155deg,
-    var(--color-mint) 180deg,
-    color-mix(in oklab, var(--color-emerald) 72%, transparent) 201deg,
-    color-mix(in oklab, var(--color-slate) 70%, transparent) 223deg,
-    color-mix(in oklab, var(--color-slate) 70%, transparent) 289deg,
-    color-mix(in oklab, var(--color-emerald) 72%, transparent) 335deg,
-    var(--color-mint) 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
   animation: edge-orbit 9s linear infinite;
 }
 
@@ -950,25 +938,34 @@ code {
    iria a zero e o aro congelaria num quadro do cometa, ou seja, num lado claro
    e três apagados. */
 @media (prefers-reduced-motion: reduce) {
-  .glow-edge::before {
-    background: linear-gradient(
-      135deg,
-      color-mix(in oklab, var(--color-emerald) 70%, transparent),
-      var(--color-mint),
-      color-mix(in oklab, var(--color-emerald) 70%, transparent)
-    );
+  .glow-edge {
+    background:
+      linear-gradient(var(--color-obsidian), var(--color-obsidian)) padding-box,
+      linear-gradient(
+          135deg,
+          color-mix(in oklab, var(--color-emerald) 70%, transparent),
+          var(--color-mint),
+          color-mix(in oklab, var(--color-emerald) 70%, transparent)
+        )
+        border-box;
     animation: edge-breathe 5s ease-in-out infinite !important;
     animation-duration: 5s !important;
     animation-iteration-count: infinite !important;
   }
 }
 
+/* Respirar no brilho, e não na opacidade: a opacidade do elemento inteiro
+   levaria o texto do painel com ela. */
 @keyframes edge-breathe {
   0%,
   100% {
-    opacity: 0.5;
+    box-shadow:
+      0 18px 40px -28px var(--color-void),
+      0 0 14px -10px color-mix(in oklab, var(--color-emerald) 40%, transparent);
   }
   50% {
-    opacity: 1;
+    box-shadow:
+      0 18px 40px -28px var(--color-void),
+      0 0 22px -8px color-mix(in oklab, var(--color-mint) 45%, transparent);
   }
 }
