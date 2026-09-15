@@ -1,3 +1,4 @@
+import { PERSONAL_LINKS } from "@/lib/links";
 import { SITE_NAME } from "@/lib/site";
 
 /**
@@ -7,18 +8,11 @@ import { SITE_NAME } from "@/lib/site";
  * exigência da licença CC-BY, não gentileza — grudado na assinatura ele
  * parece gentileza e para de cumprir a licença.
  *
- * Fica nas configurações porque não existe rodapé. A tela é pra digitar.
+ * Fica nas configurações porque a tela é pra digitar. Os três links do autor
+ * também estão na coluna da borda, e a repetição é de propósito: lá eles são
+ * um atalho, aqui eles são a assinatura de quem escreveu isto. O que não se
+ * repete é o Tatoeba — atribuição de licença tem um lugar, e é este.
  */
-
-/** Onde a pessoa está. Portfólio primeiro: é o que ele mesmo escolheu mostrar. */
-const LINKS = [
-  { label: "Portfólio", href: "https://portfolio-delta-ten-covuf9ebim.vercel.app/" },
-  { label: "GitHub", href: "https://github.com/Freeze137" },
-  {
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/rafael-souza-71481b2b5",
-  },
-] as const;
 
 /** Sublinhado dos links. Estava copiado três vezes. */
 const LINK =
@@ -37,7 +31,7 @@ export function CreditsPanel() {
         {/* Os três links numa linha só, separados por ponto. Três âncoras
             dentro da frase acima picotavam a leitura. */}
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ash">
-          {LINKS.map((link, i) => (
+          {PERSONAL_LINKS.map((link, i) => (
             <span key={link.href} className="flex items-center gap-x-2">
               {i > 0 ? <span aria-hidden="true">·</span> : null}
               <a

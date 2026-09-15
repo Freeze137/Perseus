@@ -1,5 +1,8 @@
 "use client";
 
+import { LinkMark } from "@/components/shell/link-marks";
+import { PERSONAL_LINKS } from "@/lib/links";
+
 type Props = {
   onOpenRanking: () => void;
   onOpenDuel: () => void;
@@ -27,6 +30,16 @@ type Entry = {
  * fora. O rótulo é absoluto de propósito — se ele ocupasse espaço na coluna,
  * a largura do dock mudaria no hover e as outras teclas andariam de lado.
  *
+ * Embaixo da régua, os três lugares onde o autor está. Eles já viviam nos
+ * créditos, atrás de duas aberturas — configurações, e então rolar até o pé
+ * do painel. Não havia rodapé pra pôr um link, e a coluna é o rodapé que
+ * faltava. A régua existe porque as duas metades não fazem a mesma coisa:
+ * em cima, algo desta página abre; embaixo, você sai dela.
+ *
+ * O crédito do Tatoeba não vem junto e fica onde está, em prosa: CC-BY pede
+ * atribuição legível, e um ícone que só diz o nome quando o ponteiro chega
+ * não é atribuição — é uma pista.
+ *
  * O rótulo continua no DOM com `opacity: 0`, e não `sr-only` nem
  * `visibility: hidden`: transparente ele ainda é o nome acessível do botão,
  * então a mesma marcação serve o olho e o leitor de tela.
@@ -49,9 +62,9 @@ export function PanelDock({
 
   return (
     <nav
-      aria-label="Painéis"
+      aria-label="Painéis e links do autor"
       data-dimmed={dimmed}
-      className="fixed left-4 top-1/2 -translate-y-1/2 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-25 hover:opacity-100"
+      className="fixed left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-25 hover:opacity-100"
     >
       <ul className="flex flex-col gap-2">
         {entries.map((entry) => (
@@ -62,6 +75,24 @@ export function PanelDock({
               </span>
               <span className="dock-label">{entry.label}</span>
             </button>
+          </li>
+        ))}
+      </ul>
+
+      <span aria-hidden="true" className="dock-rule" />
+
+      <ul className="flex flex-col gap-2">
+        {PERSONAL_LINKS.map((link) => (
+          <li key={link.id}>
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              className="dock-key"
+            >
+              <LinkMark id={link.id} />
+              <span className="dock-label">{link.label}</span>
+            </a>
           </li>
         ))}
       </ul>
