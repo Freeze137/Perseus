@@ -742,13 +742,13 @@ code {
    na borda, brilhando parado — o que a chave recusa é a volta, não o verde. */
 
 /* ---------------------------------------------------------------------------
-   Star loader
+   Fall loader
 
    A cascata é curta de propósito: nove casas, um ciclo de 1.8s e nenhuma casa
    maior que uma letra. Uma espera que ocupa mais tela que o que se espera é
    uma espera que se faz notar duas vezes.
 --------------------------------------------------------------------------- */
-.star-loader {
+.fall-loader {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
@@ -756,28 +756,36 @@ code {
   place-items: center;
 }
 
-.star-loader-cell {
+/* Em código o caractere é zero e um, e zero e um pedem a mono: é a família em
+   que eles têm a mesma largura, que é o que faz nove casas lerem como grid e
+   não como texto tremido. */
+.fall-loader[data-glyphs="bits"] .fall-loader-cell {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.fall-loader-cell {
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--color-mint);
   opacity: 0;
-  animation: star-fall 1.8s var(--ease-snap) infinite;
+  animation: fall-cascade 1.8s var(--ease-snap) infinite;
 }
 
 /* O atraso por casa é o que faz nove estrelas parecerem uma chuva e não um
    pisca-pisca. Lidas na ordem do DOM, que é esquerda pra direita e de cima
    pra baixo — a cascata desce junto com a leitura. */
-.star-loader-cell:nth-child(1) { animation-delay: 0ms; }
-.star-loader-cell:nth-child(2) { animation-delay: 90ms; }
-.star-loader-cell:nth-child(3) { animation-delay: 180ms; }
-.star-loader-cell:nth-child(4) { animation-delay: 270ms; }
-.star-loader-cell:nth-child(5) { animation-delay: 360ms; }
-.star-loader-cell:nth-child(6) { animation-delay: 450ms; }
-.star-loader-cell:nth-child(7) { animation-delay: 540ms; }
-.star-loader-cell:nth-child(8) { animation-delay: 630ms; }
-.star-loader-cell:nth-child(9) { animation-delay: 720ms; }
+.fall-loader-cell:nth-child(1) { animation-delay: 0ms; }
+.fall-loader-cell:nth-child(2) { animation-delay: 90ms; }
+.fall-loader-cell:nth-child(3) { animation-delay: 180ms; }
+.fall-loader-cell:nth-child(4) { animation-delay: 270ms; }
+.fall-loader-cell:nth-child(5) { animation-delay: 360ms; }
+.fall-loader-cell:nth-child(6) { animation-delay: 450ms; }
+.fall-loader-cell:nth-child(7) { animation-delay: 540ms; }
+.fall-loader-cell:nth-child(8) { animation-delay: 630ms; }
+.fall-loader-cell:nth-child(9) { animation-delay: 720ms; }
 
-@keyframes star-fall {
+@keyframes fall-cascade {
   0% {
     opacity: 0;
     transform: translateY(-45%);
@@ -804,15 +812,15 @@ code {
    Mais lenta e menos funda que a cascata, porque piscar rápido é o que a
    chave pede pra não fazer. */
 @media (prefers-reduced-motion: reduce) {
-  .star-loader-cell {
-    animation: star-breathe 2.4s ease-in-out infinite !important;
+  .fall-loader-cell {
+    animation: fall-breathe 2.4s ease-in-out infinite !important;
     animation-duration: 2.4s !important;
     animation-iteration-count: infinite !important;
     transform: none !important;
   }
 }
 
-@keyframes star-breathe {
+@keyframes fall-breathe {
   0%,
   100% {
     opacity: 0.2;

@@ -3,7 +3,7 @@
 import type { Match, MatchCredentials } from "@perseus/contracts";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { StarLoader } from "@/components/ui/star-loader";
+import { FallLoader } from "@/components/ui/fall-loader";
 import { joinMatch, previewMatch } from "@/lib/api";
 import { describeConfig, explainRefusal } from "./duel-copy";
 
@@ -86,7 +86,10 @@ export function DuelJoin({ code, onJoined }: Props) {
              vindo. Sem ele, uma espera longa é indistinguível de uma tela que
              travou na primeira linha. */
           <div className="flex justify-center">
-            <StarLoader label="Carregando a sala do duelo" />
+            {/* Estrelas e não bits: o que está sendo carregado é justamente
+                a configuração da sala, então aqui ninguém sabe ainda se o
+                duelo é de código. */}
+            <FallLoader label="Carregando a sala do duelo" />
           </div>
         )}
       </header>

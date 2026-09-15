@@ -2,7 +2,7 @@
 
 import type { Language, LeaderboardEntry, SyntaxChoice, TextKind } from "@perseus/contracts";
 import { useEffect, useState } from "react";
-import { StarLoader } from "@/components/ui/star-loader";
+import { FallLoader } from "@/components/ui/fall-loader";
 import { useAuth } from "@/features/auth/use-auth";
 import { syntaxLabel } from "@/features/settings/syntax-options";
 import { readLeaderboard } from "@/lib/api";
@@ -98,7 +98,12 @@ export function RankingPanel({ kind, language, syntax }: Props) {
 
       {board.status === "loading" ? (
         <div className="flex justify-center py-2">
-          <StarLoader label="Carregando o ranking" />
+          {/* O ranking de código espera em zero e um; o de prosa, em
+              estrelas. É o mesmo grid falando a língua do modo. */}
+          <FallLoader
+            label="Carregando o ranking"
+            glyphs={kind === "code" ? "bits" : "stars"}
+          />
         </div>
       ) : null}
 
