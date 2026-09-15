@@ -4,35 +4,126 @@ import { ALGOL_PERIOD_DAYS, TIERS, type TierId } from "@perseus/contracts";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
 /**
- * Como cada patente é desenhada.
+ * A geometria de cada patente.
  *
- * As cores são as das estrelas de verdade, pela classe espectral: M4 é
- * vermelha, K3 laranja, F5 branco-amarelada, B8 branco-azulada, B1 azul. É essa
- * sequência — a OBAFGKM, a escada de temperatura — que dá ao conjunto uma
- * progressão que o olho lê sem legenda, e é também por que a escada não é de
- * magnitude: as magnitudes aparentes de Perseu não acompanham a cor.
+ * Um corpo estelar visto sempre pelo mesmo instrumento: disco, halo, cruz de
+ * difração e arco de posição idênticos em construção. O que muda de degrau para
+ * degrau é a temperatura da cor e a energia da luz — frio é um disco grande e
+ * mole com halo curto e cruz mínima; quente é um ponto pequeno e duro com halo
+ * amplo e cruz atravessando o quadrado.
  *
- * `halo` cresce com a temperatura porque estrela quente é mais luminosa, e é o
- * único lugar em que o emblema exagera: numa tela de preto verdadeiro, o halo é
- * o que separa cinco discos pequenos uns dos outros a dois metros de distância.
+ * As cores são as das estrelas reais, pela classe espectral, e a ordem é a de
+ * temperatura (OBAFGKM) e não a de brilho: as magnitudes aparentes de Perseu
+ * não acompanham a cor, então uma escada por magnitude daria cinco emblemas sem
+ * progressão nenhuma para o olho.
+ *
+ * `arc` é o canal que não é cor, e por isso ele existe. Na lista do ranking o
+ * emblema aparece sozinho ao lado de um nome, sem o nome da patente escrito em
+ * lugar nenhum — quem não distingue vermelho de laranja perderia a escada
+ * inteira se a cor fosse o único sinal. Cinco traços separados somem em 28px
+ * (o vão entre eles fica abaixo de um pixel), então a posição é o *comprimento*
+ * de um arco único que começa sempre no mesmo ponto.
  */
-const LOOK: Record<
-  TierId,
-  { core: string; glow: string; halo: number; spike: number }
-> = {
-  gorgonea: { core: "#f4b9a6", glow: "#c8503f", halo: 0.62, spike: 0.9 },
-  miram: { core: "#f7d3a4", glow: "#d98b45", halo: 0.72, spike: 1.05 },
-  mirfak: { core: "#fdf6e0", glow: "#e8d7a4", halo: 0.86, spike: 1.25 },
-  algol: { core: "#ffffff", glow: "#cfe3f5", halo: 0.96, spike: 1.45 },
-  atik: { core: "#ffffff", glow: "#8fb4ee", halo: 1.08, spike: 1.7 },
+type Look = {
+  /** O núcleo, e a cor que o halo e o arco herdam. */
+  readonly core: string;
+  readonly glow: string;
+  /** Raio do halo e sua opacidade no centro. */
+  readonly haloR: number;
+  readonly haloAlpha: number;
+  /** O brilho intermediário entre núcleo e halo. */
+  readonly bloomR: number;
+  readonly coreR: number;
+  /** Meio-comprimento e meia-espessura da cruz de difração. */
+  readonly spikeReach: number;
+  readonly spikeWidth: number;
+  readonly spikeAlpha: number;
+  /** O arco preenchido: um quinto, dois quintos, até a volta inteira. */
+  readonly arc: string;
 };
+
+/** O trilho completo, atrás do arco de todos os degraus. */
+const ARC_TRACK = "M 12.09 52.65 A 38 38 0 0 0 78.68 74.93";
+
+const LOOK: Record<TierId, Look> = {
+  gorgonea: {
+    core: "#f4b9a6",
+    glow: "#c8503f",
+    haloR: 36,
+    haloAlpha: 0.391,
+    bloomR: 26,
+    coreR: 10,
+    spikeReach: 16,
+    spikeWidth: 2.6,
+    spikeAlpha: 0.4,
+    arc: "M 12.09 52.65 A 38 38 0 0 0 17.43 69.57",
+  },
+  miram: {
+    core: "#f7d3a4",
+    glow: "#d98b45",
+    haloR: 39,
+    haloAlpha: 0.425,
+    bloomR: 22.88,
+    coreR: 8.8,
+    spikeReach: 26,
+    spikeWidth: 2.3,
+    spikeAlpha: 0.52,
+    arc: "M 12.09 52.65 A 38 38 0 0 0 29.86 82.23",
+  },
+  mirfak: {
+    core: "#fdf6e0",
+    glow: "#e8d7a4",
+    haloR: 42,
+    haloAlpha: 0.459,
+    bloomR: 19.76,
+    coreR: 7.6,
+    spikeReach: 34,
+    spikeWidth: 2,
+    spikeAlpha: 0.66,
+    arc: "M 12.09 52.65 A 38 38 0 0 0 46.69 87.85",
+  },
+  algol: {
+    core: "#ffffff",
+    glow: "#cfe3f5",
+    haloR: 45,
+    haloAlpha: 0.493,
+    bloomR: 18.2,
+    coreR: 7,
+    spikeReach: 40,
+    spikeWidth: 1.8,
+    spikeAlpha: 0.82,
+    arc: "M 12.09 52.65 A 38 38 0 0 0 64.24 85.23",
+  },
+  atik: {
+    core: "#ffffff",
+    glow: "#8fb4ee",
+    haloR: 48,
+    haloAlpha: 0.527,
+    bloomR: 16.12,
+    coreR: 6.2,
+    spikeReach: 46,
+    spikeWidth: 1.6,
+    spikeAlpha: 0.95,
+    arc: ARC_TRACK,
+  },
+};
+
+/**
+ * A queda do halo, em duas paradas intermediárias.
+ *
+ * Proporcionais ao pico em vez de escritas uma a uma: a curva é a mesma nos
+ * cinco, e três números soltos por degrau seriam quinze chances de um deles
+ * divergir sem ninguém notar. O último ponto é alfa zero antes da borda — é o
+ * que impede o halo de virar uma placa cinza contra o preto puro da página.
+ */
+const HALO_FALLOFF = [0.353, 0.105] as const;
 
 export type MarkState =
   /** Conquistada e recente. A estrela acesa. */
   | "earned"
   /** Conquistada e velha: sete dias sem corrida. Mesma forma, sem luz. */
   | "dormant"
-  /** Ainda não alcançada. O contorno de onde ela vai estar. */
+  /** Ainda não alcançada. O arco diz qual degrau é; a luz não está lá. */
   | "locked";
 
 type Props = {
@@ -47,14 +138,19 @@ type Props = {
  *
  * SVG e não imagem: o emblema precisa existir em 28 pixels ao lado de um nome
  * no ranking e em 240 dentro da vitrine, e um PNG que sirva aos dois é um PNG
- * grande demais pro primeiro. Também é o mesmo objeto que a carta estelar do
- * teclado vai querer quando existir — um disco espectral com brilho variável é
- * exatamente o que aquela tela promete desenhar por tecla.
+ * grande demais para o primeiro. Desenhado em componente e não importado como
+ * arquivo porque os três estados saem todos daqui — apagar um PNG seria um
+ * filtro de opacidade por cima, e o que se quer é a luz baixando enquanto a
+ * silhueta fica.
  *
  * Três estados, e a diferença entre dois deles carrega uma regra do produto:
  * `locked` é "ainda não deu pra medir" e `dormant` é "a medida envelheceu".
- * Nada foi perdido num nem no outro, e a forma é a mesma nos três — o que muda
- * é a luz.
+ * Nada foi perdido em nenhum dos dois.
+ *
+ * O halo usa `radialGradient` e nunca `feGaussianBlur`. Dez destes aparecem ao
+ * mesmo tempo dentro da vitrine, com transformação 3D por cima, e dez filtros
+ * de desfoque compondo a cada quadro é caro exatamente na máquina para a qual o
+ * nível de desempenho mais baixo existe.
  */
 export function PatenteMark({
   tier,
@@ -66,12 +162,14 @@ export function PatenteMark({
   const look = LOOK[tier];
   const info = TIERS[tier];
   const lit = state === "earned";
+  const dim = state === "dormant";
 
   // Algol some por horas a cada 2,87 dias porque a companheira passa na frente
-  // dela. O emblema pisca nesse período real, e não num ritmo escolhido a dedo
-  // — é a única animação do conjunto, e ela existe porque a estrela é real.
+  // dela. O pulso fica só no halo: a oclusão já está desenhada na silhueta, e
+  // animar o emblema inteiro faria a estrela escurecer duas vezes pelo mesmo
+  // motivo — e a segunda vez seria indistinguível do estado dormente.
   const eclipses = tier === "algol" && lit && motion !== "none";
-  const id = `patente-${tier}-${state}`;
+  const id = `pat-${tier}-${state}`;
 
   return (
     <svg
@@ -81,72 +179,134 @@ export function PatenteMark({
       role="img"
       aria-label={`${info.star}, ${info.designation}`}
       className={className}
-      style={eclipses ? { animation: `algol ${ALGOL_PERIOD_DAYS * 8}s ease-in-out infinite` } : undefined}
     >
       <defs>
+        <radialGradient id={`${id}-halo`}>
+          <stop offset="0%" stopColor={look.glow} stopOpacity={look.haloAlpha} />
+          <stop
+            offset="22%"
+            stopColor={look.glow}
+            stopOpacity={look.haloAlpha * HALO_FALLOFF[0]}
+          />
+          <stop
+            offset="52%"
+            stopColor={look.glow}
+            stopOpacity={look.haloAlpha * HALO_FALLOFF[1]}
+          />
+          <stop offset="100%" stopColor={look.glow} stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id={`${id}-bloom`}>
+          <stop offset="0%" stopColor={look.core} stopOpacity={0.85} />
+          <stop offset="40%" stopColor={look.glow} stopOpacity={0.45} />
+          <stop offset="100%" stopColor={look.glow} stopOpacity={0} />
+        </radialGradient>
         <radialGradient id={`${id}-core`}>
           <stop offset="0%" stopColor={look.core} />
-          <stop offset="45%" stopColor={look.glow} />
-          <stop offset="100%" stopColor={look.glow} stopOpacity="0" />
+          <stop offset="58%" stopColor={look.core} />
+          <stop offset="100%" stopColor={look.glow} />
         </radialGradient>
+        <linearGradient id={`${id}-spikeH`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={look.glow} stopOpacity={0} />
+          <stop offset="50%" stopColor={look.core} stopOpacity={look.spikeAlpha} />
+          <stop offset="100%" stopColor={look.glow} stopOpacity={0} />
+        </linearGradient>
+        <linearGradient id={`${id}-spikeV`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={look.glow} stopOpacity={0} />
+          <stop offset="50%" stopColor={look.core} stopOpacity={look.spikeAlpha} />
+          <stop offset="100%" stopColor={look.glow} stopOpacity={0} />
+        </linearGradient>
       </defs>
 
-      {/* A órbita. Fecha a composição num círculo e dá ao emblema uma borda
-          própria, que é o que faz cinco deles lado a lado lerem como um
-          conjunto em vez de cinco manchas. */}
-      <circle
-        cx="50"
-        cy="50"
-        r="44"
+      {/* A luz. Some inteira no estado bloqueado e baixa no dormente — a
+          silhueta é a mesma nos três, e é ela que diz qual patente é. */}
+      {state !== "locked" ? (
+        <g opacity={dim ? 0.28 : 1}>
+          <circle
+            cx="50"
+            cy="50"
+            r={look.haloR}
+            fill={`url(#${id}-halo)`}
+            style={
+              eclipses
+                ? {
+                    animation: `algol ${ALGOL_PERIOD_DAYS * 8}s ease-in-out infinite`,
+                  }
+                : undefined
+            }
+          />
+          <circle cx="50" cy="50" r={look.bloomR} fill={`url(#${id}-bloom)`} />
+          <polygon
+            points={`${50 - look.spikeReach},50 50,${50 - look.spikeWidth} ${50 + look.spikeReach},50 50,${50 + look.spikeWidth}`}
+            fill={`url(#${id}-spikeH)`}
+          />
+          <polygon
+            points={`50,${50 - look.spikeReach} ${50 + look.spikeWidth},50 50,${50 + look.spikeReach} ${50 - look.spikeWidth},50`}
+            fill={`url(#${id}-spikeV)`}
+          />
+          <circle cx="50" cy="50" r={look.coreR} fill={`url(#${id}-core)`} />
+
+          {tier === "algol" ? <Companion glow={look.glow} /> : null}
+        </g>
+      ) : null}
+
+      {/* O arco de posição, por último e fora do grupo da luz: ele é o canal
+          que sobrevive ao emblema apagado e ao bloqueado, e é por isso que
+          continua legível quando tudo o mais some. */}
+      <path
+        d={ARC_TRACK}
         fill="none"
-        stroke={lit ? look.glow : "var(--color-slate)"}
-        strokeOpacity={lit ? 0.45 : 1}
-        strokeWidth="1"
+        stroke={lit || dim ? look.glow : "var(--color-slate)"}
+        strokeOpacity={lit || dim ? 0.13 : 1}
+        strokeWidth="2.8"
+      />
+      <path
+        d={look.arc}
+        fill="none"
+        stroke={lit ? look.glow : dim ? look.glow : "var(--color-ash)"}
+        strokeOpacity={lit ? 0.92 : dim ? 0.4 : 0.55}
+        strokeWidth="2.8"
       />
 
       {state === "locked" ? (
-        // Nada aceso: o contorno de onde a estrela vai estar, e o ponto que
-        // marca o lugar. Uma vitrine que escondesse o que falta esconderia
-        // justamente o que se abre a vitrine pra ver.
-        <circle cx="50" cy="50" r="4" fill="var(--color-slate)" />
-      ) : (
-        <>
-          {/* O halo, primeiro, pra tudo o mais cair por cima dele. */}
-          <circle
-            cx="50"
-            cy="50"
-            r={34 * look.halo}
-            fill={`url(#${id}-core)`}
-            opacity={lit ? 0.9 : 0.18}
-          />
-
-          {/* As quatro hastes de difração. Quatro porque é o que uma aranha de
-              telescópio faz com a luz de uma estrela — não é enfeite, é o
-              motivo pelo qual estrelas em fotografia têm pontas. */}
-          <g
-            stroke={lit ? look.core : "var(--color-ash)"}
-            strokeOpacity={lit ? 0.75 : 0.35}
-            strokeWidth="1"
-            strokeLinecap="round"
-          >
-            <line x1={50 - 30 * look.spike} y1="50" x2={50 + 30 * look.spike} y2="50" />
-            <line x1="50" y1={50 - 30 * look.spike} x2="50" y2={50 + 30 * look.spike} />
-          </g>
-
-          <circle
-            cx="50"
-            cy="50"
-            r={7}
-            fill={lit ? look.core : "var(--color-ash)"}
-            opacity={lit ? 1 : 0.5}
-          />
-        </>
-      )}
+        // O lugar onde a estrela vai estar. Uma vitrine que escondesse o que
+        // falta esconderia justamente o que se abre a vitrine para ver.
+        <circle cx="50" cy="50" r="2.4" fill="var(--color-slate)" />
+      ) : null}
     </svg>
   );
 }
 
-/** O nome da patente e a estrela por trás dele, pra legenda de qualquer tamanho. */
+/**
+ * A companheira de Algol.
+ *
+ * Algol é binária eclipsante: a companheira passa na frente e a primária perde
+ * mais de um terço do brilho por algumas horas, a cada 2,87 dias. É por isso
+ * que os árabes a chamaram de estrela demônio.
+ *
+ * É um corpo, não uma falta — disco opaco com limbo próprio e a borda iluminada
+ * pela primária. A distinção importa porque a interface já usa escurecimento
+ * como significado: emblema apagado quer dizer patente dormente. O que muda
+ * aqui é a silhueta, que vira dupla, e o estado dormente nunca produz essa
+ * forma.
+ */
+function Companion({ glow }: { glow: string }) {
+  return (
+    <>
+      <circle cx="54.2" cy="45.8" r="4.8" fill="#000000" />
+      <circle
+        cx="54.2"
+        cy="45.8"
+        r="4.8"
+        fill="none"
+        stroke={glow}
+        strokeOpacity={0.8}
+        strokeWidth="0.8"
+      />
+    </>
+  );
+}
+
+/** O nome da patente, para legenda de qualquer tamanho. */
 export function patenteLabel(tier: TierId): string {
   return TIERS[tier].star;
 }
