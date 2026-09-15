@@ -126,35 +126,59 @@ export function PatenteRing({ patentes }: Props) {
   const flat = tier === "minimal";
   const spinning = !reduced || spin;
 
-  const earned = new Map(patentes.map((p) => [p.family, p]));
+  const held = new Map(patentes.map((p) => [p.family, p]));
+
+  /**
+   * Toda face acende, tenha você a patente ou não.
+   *
+   * A vitrine é a escada, não o seu inventário: quem a abre está perguntando
+   * para onde ela leva, e emblema apagado por não ter sido alcançado esconde
+   * exatamente essa resposta. O escuro teria ainda um segundo problema — ele já
+   * quer dizer outra coisa na lista do ranking, onde emblema apagado é patente
+   * dormente, e o mesmo pixel com dois significados não é um sinal.
+   *
+   * Quem diz o que é seu é a legenda, embaixo do emblema, onde não há como
+   * confundir com falta de luz.
+   */
   const stateOf = (face: Face): MarkState => {
-    const mine = earned.get(face.family);
-    if (!mine) return "locked";
-    const reached =
-      TIER_ORDER.indexOf(face.tier) <= TIER_ORDER.indexOf(mine.tier);
-    if (!reached) return "locked";
-    // Só a atual acende. As anteriores foram alcançadas e não são mais o que
-    // você é — mostrá-las acesas faria a vitrine dizer que você tem cinco.
-    if (face.tier !== mine.tier) return "dormant";
+    const mine = held.get(face.family);
+    if (!mine || mine.tier !== face.tier) return "earned";
     return mine.dormant ? "dormant" : "earned";
   };
+
+  /** Se esta face é a patente que a pessoa tem agora naquela família. */
+  const isMine = (face: Face): boolean =>
+    held.get(face.family)?.tier === face.tier;
 
   const current = FACES[index]!;
 
   if (flat) {
     return (
-      <Grid faces={FACES} stateOf={stateOf} selected={index} onSelect={setIndex} />
+      <Grid
+        faces={FACES}
+        stateOf={stateOf}
+        isMine={isMine}
+        selected={index}
+        onSelect={setIndex}
+      />
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-4">
       {reduced && !spin ? (
-        <Stack faces={FACES} stateOf={stateOf} index={index} onSelect={setIndex} />
+        <Stack
+          faces={FACES}
+          stateOf={stateOf}
+          isMine={isMine}
+          index={index}
+          onSelect={setIndex}
+        />
       ) : (
         <Ring
           faces={FACES}
           stateOf={stateOf}
+          isMine={isMine}
           index={index}
           onSelect={setIndex}
           spinning={spinning}
@@ -198,12 +222,14 @@ export function PatenteRing({ patentes }: Props) {
 function Ring({
   faces,
   stateOf,
+  isMine,
   index,
   onSelect,
   spinning,
 }: {
   faces: readonly Face[];
   stateOf: (face: Face) => MarkState;
+  isMine: (face: Face) => boolean;
   index: number;
   onSelect: (index: number) => void;
   spinning: boolean;
@@ -329,6 +355,7 @@ function Ring({
               <FaceButton
                 face={face}
                 state={stateOf(face)}
+                mine={isMine(face)}
                 active={slot === index}
                 onSelect={() => select(slot)}
               />
@@ -350,11 +377,13 @@ function Ring({
 function Stack({
   faces,
   stateOf,
+  isMine,
   index,
   onSelect,
 }: {
   faces: readonly Face[];
   stateOf: (face: Face) => MarkState;
+  isMine: (face: Face) => boolean;
   index: number;
   onSelect: (index: number) => void;
 }) {
@@ -380,6 +409,7 @@ function Stack({
             <FaceButton
               face={face}
               state={stateOf(face)}
+              mine={isMine(face)}
               active={slot === index}
               onSelect={() => onSelect(slot)}
             />
@@ -400,11 +430,13 @@ function Stack({
 function Grid({
   faces,
   stateOf,
+  isMine,
   selected,
   onSelect,
 }: {
   faces: readonly Face[];
   stateOf: (face: Face) => MarkState;
+  isMine: (face: Face) => boolean;
   selected: number;
   onSelect: (index: number) => void;
 }) {
@@ -415,6 +447,7 @@ function Grid({
           <FaceButton
             face={face}
             state={stateOf(face)}
+            mine={isMine(face)}
             active={slot === selected}
             onSelect={() => onSelect(slot)}
             compact
@@ -428,12 +461,14 @@ function Grid({
 function FaceButton({
   face,
   state,
+  mine,
   active,
   onSelect,
   compact = false,
 }: {
   face: Face;
   state: MarkState;
+  mine: boolean;
   active: boolean;
   onSelect: () => void;
   compact?: boolean;
@@ -446,14 +481,16 @@ function FaceButton({
       type="button"
       onClick={onSelect}
       data-active={active}
-      className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border border-slate bg-obsidian/70 p-3 transition-colors data-[active=true]:border-jade"
+      data-mine={mine}
+      className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border border-slate bg-obsidian/70 p-3 transition-colors data-[active=true]:border-jade data-[mine=true]:border-emerald"
     >
       <PatenteMark tier={face.tier} size={compact ? 48 : 104} state={state} />
       <span className="flex flex-col items-center leading-tight">
         <span className="text-xs text-bone">{info.star}</span>
+        {/* O que é seu está escrito, não aceso: duas patentes acesas lado a
+            lado não diriam qual das duas é a sua, e esta linha diz. */}
         <span className="font-mono text-[10px] uppercase tracking-wider text-ash">
-          {family}
-          {state === "locked" ? ` · ${info.from[face.family]} ppm` : ""}
+          {mine ? `sua · ${family}` : `${family} · ${info.from[face.family]} ppm`}
         </span>
       </span>
     </button>

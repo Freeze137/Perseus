@@ -118,13 +118,20 @@ const LOOK: Record<TierId, Look> = {
  */
 const HALO_FALLOFF = [0.353, 0.105] as const;
 
-export type MarkState =
-  /** Conquistada e recente. A estrela acesa. */
-  | "earned"
-  /** Conquistada e velha: sete dias sem corrida. Mesma forma, sem luz. */
-  | "dormant"
-  /** Ainda não alcançada. O arco diz qual degrau é; a luz não está lá. */
-  | "locked";
+/**
+ * Os dois estados em que uma patente é desenhada.
+ *
+ * Não existe estado "bloqueada", e a ausência é deliberada. A vitrine mostra a
+ * escada inteira acesa, porque o que se vai lá ver é para onde ela leva — um
+ * emblema apagado por não ter sido alcançado esconderia exatamente a
+ * informação que motivou a abrir a tela. O que diz se a patente é sua está
+ * escrito ao lado dela, onde não há como confundir com falta de luz.
+ *
+ * Sobrou um único significado para o escuro, e é isso que o torna legível: na
+ * lista do ranking, emblema apagado quer dizer patente dormente — sete dias sem
+ * corrida. Nada foi perdido; a medida é que envelheceu.
+ */
+export type MarkState = "earned" | "dormant";
 
 type Props = {
   tier: TierId;
@@ -139,13 +146,9 @@ type Props = {
  * SVG e não imagem: o emblema precisa existir em 28 pixels ao lado de um nome
  * no ranking e em 240 dentro da vitrine, e um PNG que sirva aos dois é um PNG
  * grande demais para o primeiro. Desenhado em componente e não importado como
- * arquivo porque os três estados saem todos daqui — apagar um PNG seria um
+ * arquivo porque os dois estados saem do mesmo desenho — apagar um PNG seria um
  * filtro de opacidade por cima, e o que se quer é a luz baixando enquanto a
  * silhueta fica.
- *
- * Três estados, e a diferença entre dois deles carrega uma regra do produto:
- * `locked` é "ainda não deu pra medir" e `dormant` é "a medida envelheceu".
- * Nada foi perdido em nenhum dos dois.
  *
  * O halo usa `radialGradient` e nunca `feGaussianBlur`. Dez destes aparecem ao
  * mesmo tempo dentro da vitrine, com transformação 3D por cima, e dez filtros
@@ -161,14 +164,13 @@ export function PatenteMark({
   const motion = useMotionLevel();
   const look = LOOK[tier];
   const info = TIERS[tier];
-  const lit = state === "earned";
   const dim = state === "dormant";
 
   // Algol some por horas a cada 2,87 dias porque a companheira passa na frente
   // dela. O pulso fica só no halo: a oclusão já está desenhada na silhueta, e
   // animar o emblema inteiro faria a estrela escurecer duas vezes pelo mesmo
   // motivo — e a segunda vez seria indistinguível do estado dormente.
-  const eclipses = tier === "algol" && lit && motion !== "none";
+  const eclipses = tier === "algol" && !dim && motion !== "none";
   const id = `pat-${tier}-${state}`;
 
   return (
@@ -217,10 +219,9 @@ export function PatenteMark({
         </linearGradient>
       </defs>
 
-      {/* A luz. Some inteira no estado bloqueado e baixa no dormente — a
-          silhueta é a mesma nos três, e é ela que diz qual patente é. */}
-      {state !== "locked" ? (
-        <g opacity={dim ? 0.28 : 1}>
+      {/* A luz. Baixa no estado dormente, e a silhueta fica igual — é ela que
+          diz qual patente é, não o brilho. */}
+      <g opacity={dim ? 0.28 : 1}>
           <circle
             cx="50"
             cy="50"
@@ -245,33 +246,26 @@ export function PatenteMark({
           />
           <circle cx="50" cy="50" r={look.coreR} fill={`url(#${id}-core)`} />
 
-          {tier === "algol" ? <Companion glow={look.glow} /> : null}
-        </g>
-      ) : null}
+        {tier === "algol" ? <Companion glow={look.glow} /> : null}
+      </g>
 
-      {/* O arco de posição, por último e fora do grupo da luz: ele é o canal
-          que sobrevive ao emblema apagado e ao bloqueado, e é por isso que
-          continua legível quando tudo o mais some. */}
+      {/* O arco de posição, por último e fora do grupo da luz: é o canal que
+          não é cor, e sobrevive ao emblema apagado — que é o estado em que a
+          cor também fica difícil de ler. */}
       <path
         d={ARC_TRACK}
         fill="none"
-        stroke={lit || dim ? look.glow : "var(--color-slate)"}
-        strokeOpacity={lit || dim ? 0.13 : 1}
+        stroke={look.glow}
+        strokeOpacity={0.13}
         strokeWidth="2.8"
       />
       <path
         d={look.arc}
         fill="none"
-        stroke={lit ? look.glow : dim ? look.glow : "var(--color-ash)"}
-        strokeOpacity={lit ? 0.92 : dim ? 0.4 : 0.55}
+        stroke={look.glow}
+        strokeOpacity={dim ? 0.4 : 0.92}
         strokeWidth="2.8"
       />
-
-      {state === "locked" ? (
-        // O lugar onde a estrela vai estar. Uma vitrine que escondesse o que
-        // falta esconderia justamente o que se abre a vitrine para ver.
-        <circle cx="50" cy="50" r="2.4" fill="var(--color-slate)" />
-      ) : null}
     </svg>
   );
 }

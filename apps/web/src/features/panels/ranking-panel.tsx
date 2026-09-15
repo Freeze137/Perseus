@@ -210,10 +210,10 @@ export function RankingPanel({ kind, language, syntax }: Props) {
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm leading-relaxed text-ash">
-            Cinco degraus em prosa e cinco em código, nomeados pelas estrelas de
-            Perseu na ordem em que elas esquentam — da vermelha Gorgonea Tertia
-            à azul Atik. A sua é a que está acesa; as outras mostram em quantos
-            ppm começam.
+            Cinco degraus em prosa e cinco em código, nomeados pelas estrelas
+            de Perseu na ordem em que elas esquentam — da vermelha Gorgonea
+            Tertia à azul Atik. Todas aparecem, você tendo ou não: embaixo de
+            cada uma está o ppm em que ela começa, e a sua diz que é sua.
           </p>
 
           <PatenteRing patentes={identity?.patentes ?? []} />
