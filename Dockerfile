@@ -39,6 +39,10 @@ RUN pnpm install --frozen-lockfile --filter @perseus/api...
 
 COPY packages packages
 COPY apps/api apps/api
+# As migrações entram na imagem porque é de dentro dela que elas rodam: o banco
+# só é alcançável de uma máquina que tenha o DATABASE_URL, e essa máquina é
+# esta. Ver apps/api/scripts/migrate.mjs.
+COPY supabase/migrations supabase/migrations
 
 # Os pacotes são resolvidos pelo `dist`, que só existe depois de compilado —
 # a mesma pegadinha que quebra o build da Vercel sem o `...` no filtro.
