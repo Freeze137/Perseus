@@ -30,12 +30,11 @@ type Entry = {
  * fora. O rótulo é absoluto de propósito — se ele ocupasse espaço na coluna,
  * a largura do dock mudaria no hover e as outras teclas andariam de lado.
  *
- * Embaixo, na placa acesa, os três lugares onde o autor está. Eles já viviam nos
+ * Embaixo da régua, os três lugares onde o autor está. Eles já viviam nos
  * créditos, atrás de duas aberturas — configurações, e então rolar até o pé
  * do painel. Não havia rodapé pra pôr um link, e a coluna é o rodapé que
- * faltava. As duas metades não fazem a mesma coisa — em cima algo desta
- * página abre, embaixo você sai dela — e é a placa que marca a diferença,
- * com o aro verde que só ela tem.
+ * faltava. A régua existe porque as duas metades não fazem a mesma coisa:
+ * em cima, algo desta página abre; embaixo, você sai dela.
  *
  * O crédito do Tatoeba não vem junto e fica onde está, em prosa: CC-BY pede
  * atribuição legível, e um ícone que só diz o nome quando o ponteiro chega
@@ -80,16 +79,16 @@ export function PanelDock({
         ))}
       </ul>
 
-      {/* Placa, e não mais três teclas soltas atrás de uma régua: o que diz
-          que os três são um conjunto é a coisa que os segura. */}
-      <ul className="dock-card">
+      <span aria-hidden="true" className="dock-rule" />
+
+      <ul className="flex flex-col gap-2">
         {PERSONAL_LINKS.map((link) => (
           <li key={link.id}>
             <a
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="dock-key"
+              className="dock-key dock-link"
             >
               <LinkMark id={link.id} />
               <span className="dock-label">{link.label}</span>
