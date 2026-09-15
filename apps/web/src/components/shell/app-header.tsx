@@ -1,15 +1,10 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
 import { PerseusMark3D } from "@/components/shell/perseus-mark-3d";
 import { SITE_NAME } from "@/lib/site";
 
 type Props = {
-  onOpenRanking: () => void;
-  onOpenDuel: () => void;
-  onOpenStats: () => void;
-  onOpenSettings: () => void;
   /** O cabeçalho recua durante a corrida, como tudo que não é o texto. */
   dimmed: boolean;
 };
@@ -50,32 +45,14 @@ function usePlacement(): Placement {
   return PINNED ?? week;
 }
 
-export function AppHeader({
-  onOpenRanking,
-  onOpenDuel,
-  onOpenStats,
-  onOpenSettings,
-  dimmed,
-}: Props) {
+export function AppHeader({ dimmed }: Props) {
   const placement = usePlacement();
 
   return (
     <header
       data-dimmed={dimmed}
-      className="relative flex h-18 shrink-0 items-center justify-between px-6 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-40 hover:opacity-100"
+      className="relative flex h-18 shrink-0 items-center justify-center px-6 opacity-100 transition-opacity duration-300 data-[dimmed=true]:opacity-40 hover:opacity-100"
     >
-      <div className="flex items-center gap-2">
-        <Button variant="quiet" size="sm" onClick={onOpenRanking}>
-          ◆ Ranking
-        </Button>
-        {/* Next to the ranking rather than in the settings: both are the same
-            question — how do I do against somebody else — and one of them
-            happens live. */}
-        <Button variant="quiet" size="sm" onClick={onOpenDuel}>
-          ⚔ Duelo
-        </Button>
-      </div>
-
       {/* Centred against the viewport, not against what is left over between
           the two button groups — those are never the same width, and letting
           flex distribute the slack parked the wordmark a visible ~28px right
@@ -125,20 +102,6 @@ export function AppHeader({
           className="absolute top-1/2 z-10 -translate-y-1/2 right-full group-data-[placement=after]:left-full group-data-[placement=after]:right-auto"
         />
       </span>
-
-      <div className="flex items-center gap-2">
-        <Button variant="quiet" size="sm" onClick={onOpenStats}>
-          Sessão ▸
-        </Button>
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Configurações"
-          className="grid h-10 w-10 place-items-center rounded-sm text-2xl leading-none text-ash transition-colors hover:bg-obsidian hover:text-mint"
-        >
-          ⚙
-        </button>
-      </div>
     </header>
   );
 }

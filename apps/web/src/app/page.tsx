@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { AppHeader } from "@/components/shell/app-header";
+import { PanelDock } from "@/components/shell/panel-dock";
 import { Drawer } from "@/components/shell/drawer";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -210,7 +211,11 @@ export default function Home() {
 
   return (
     <div className="relative z-10 flex h-dvh flex-col">
-      <AppHeader
+      <AppHeader dimmed={running} />
+
+      {/* Os quatro painéis vivem na borda, e não no cabeçalho: juntos eles
+          leem como um conjunto, e o nome fica sozinho no topo. */}
+      <PanelDock
         dimmed={running}
         onOpenRanking={() => setDrawer("ranking")}
         onOpenDuel={() => setDuelOpen(true)}
