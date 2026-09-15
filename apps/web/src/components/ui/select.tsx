@@ -89,13 +89,24 @@ export function Select<T extends string>({
           </option>
         ))}
       </select>
-      <svg
+      {/* Três barras, e não uma seta.
+
+          A seta dizia "isto abre" e mais nada: aberta ou fechada, ela era a
+          mesma seta virada. As barras dizem a mesma coisa fechadas e mostram o
+          fechar quando a lista está aberta — as duas de fora caem num X e a do
+          meio sai pelo lado. O gesto é o mesmo em todos os eixos da barra,
+          então o que a pessoa aprende num seletor vale nos outros.
+
+          `pointer-events-none` porque quem recebe o clique é o `select` atrás
+          disto. A marca conta o estado; ela não é o controle. */}
+      <span
         aria-hidden="true"
-        viewBox="0 0 10 6"
-        className="pointer-events-none absolute right-2.5 h-2 w-3 fill-none stroke-current stroke-[1.5] text-ash"
+        className="select-bars pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
       >
-        <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+        <span className="select-bar select-bar-top" />
+        <span className="select-bar select-bar-middle" />
+        <span className="select-bar select-bar-bottom" />
+      </span>
     </span>
   );
 }

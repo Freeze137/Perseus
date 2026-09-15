@@ -394,26 +394,83 @@ code {
   border-radius: 9999px;
 }
 
-/* O chapéu vira pra cima enquanto a lista está aberta.
+/* As três barras do seletor, e o X que elas formam com a lista aberta.
 
-   Girar é o que ele podia ganhar sem trocar de sinal: duas pernas apontando
-   pra baixo dizem "isto abre", e apontando pra cima dizem "isto fecha" — a
-   mesma seta contando o estado em que o controle está, em vez de um glifo novo
-   dizendo outra coisa.
+   A mecânica é a do checkbox do Ali-Tahmazi99: as duas de fora giram 45° em
+   torno do canto de cima à esquerda, o que as manda cair de um vértice ao
+   outro em vez de pivotar no meio, e a do meio sai deslizando pro lado em vez
+   de sumir no lugar. Três barras cruzando no centro seriam um X que aparece;
+   assim é um X que se forma.
 
-   Fora do `@supports` pelo mesmo motivo do foco: quem gira é a nossa seta, que
-   é a mesma nos dois caminhos. Onde `:open` não existe a regra não casa e a
-   seta fica parada, que é exatamente o que ela já fazia.
+   Os números são outros. Lá a barra tem 7px numa caixa de 50 e é quase branca;
+   aqui a caixa é a marca de um controle de 32px de altura, a barra tem 1.5px e
+   a cor é a do rótulo ao lado — ardósia parada, osso sob o ponteiro. Barra
+   branca de 7px numa barra de início seria a coisa mais clara da tela, num
+   controle cujo trabalho é recuar quando a corrida começa.
 
-   Com movimento reduzido a varredura global zera a transição e a volta passa a
-   ser instantânea. Correto: o que a chave recusa é a viagem, não o estado, e o
-   estado continua dito. */
-.select-native + svg {
-  transition: transform 300ms var(--ease-snap);
+   Fora do `@supports` pelo mesmo motivo do foco: a marca é nossa nos dois
+   caminhos. Onde `:open` não existe as barras ficam paradas, que é o que a
+   seta que estava aqui também fazia.
+
+   Com movimento reduzido a varredura global zera a transição e o X passa a
+   trocar de uma vez. Correto: o que a chave recusa é a viagem, não o estado. */
+.select-bars {
+  display: block;
+  position: absolute;
+  width: 0.75rem;
+  height: 0.625rem;
+  color: var(--color-ash);
+  transition: color 200ms var(--ease-snap);
 }
 
-.select-native:open + svg {
-  transform: rotate(180deg);
+.select-native:hover + .select-bars,
+.select-native:focus-visible + .select-bars,
+.select-native:open + .select-bars {
+  color: var(--color-bone);
+}
+
+.select-bar {
+  position: absolute;
+  left: 0;
+  width: 0.75rem;
+  height: 1.5px;
+  border-radius: 100px;
+  background: currentColor;
+  transition:
+    transform 300ms var(--ease-snap),
+    opacity 300ms var(--ease-snap);
+}
+
+.select-bar-top {
+  top: 0;
+}
+
+.select-bar-middle {
+  top: 4.25px;
+}
+
+.select-bar-bottom {
+  bottom: 0;
+}
+
+.select-native:open + .select-bars .select-bar-top {
+  transform: rotate(45deg);
+  transform-origin: top left;
+  width: 0.8125rem;
+  left: 1px;
+}
+
+.select-native:open + .select-bars .select-bar-bottom {
+  transform: rotate(-45deg);
+  transform-origin: top left;
+  width: 0.8125rem;
+  left: 1px;
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-emerald) 50%, transparent);
+}
+
+.select-native:open + .select-bars .select-bar-middle {
+  transform: translateX(-0.75rem);
+  opacity: 0;
 }
 
 @supports (appearance: base-select) {
@@ -614,69 +671,17 @@ code {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-emerald) 45%, transparent);
 }
 
-/* As três barras que viram X, na cabeça da coluna.
-
-   A mecânica é a do checkbox do Ali-Tahmazi99 e é ela que faz o gesto: as duas
-   de fora giram 45° em torno do canto de cima à esquerda, o que as manda cair
-   de um vértice ao outro em vez de pivotar no meio, e a do meio sai deslizando
-   pro lado em vez de sumir no lugar. Três barras cruzando no centro seriam um
-   X que aparece; assim é um X que se forma.
-
-   O que muda são os números e a cor. Lá as barras têm 7px numa caixa de 50 e
-   são quase brancas; aqui a tecla tem 40px como as outras da coluna, a barra
-   tem 2px, e a cor é a da tecla — ardósia parada, menta sob o ponteiro. Barra
-   branca de 7px nesta página seria a coisa mais clara da tela, num controle
-   cujo trabalho é recuar durante a corrida.
-
-   O brilho da barra de baixo aberta vem do original, onde é um cinza. Aqui é
-   esmeralda: o X é o estado aberto, e aberto neste site acende. */
-.dock-bars-box {
-  position: relative;
-  display: block;
-  width: 1rem;
-  height: 0.875rem;
+/* A seta da cabeça aponta pra onde a coluna vai: pra fora quando ela está
+   recolhida e pode abrir, pra dentro quando está aberta e pode recolher. É a
+   mesma seta que estava no seletor, deitada — e é ela que fica aqui porque as
+   três barras foram pra lá. */
+.dock-head-arrow {
+  transform: rotate(-90deg);
+  transition: transform 300ms var(--ease-snap);
 }
 
-.dock-bar {
-  position: absolute;
-  left: 0;
-  width: 1rem;
-  height: 2px;
-  border-radius: 100px;
-  background: currentColor;
-  transition: transform 300ms var(--ease-snap), opacity 300ms var(--ease-snap);
-}
-
-.dock-bar-top {
-  top: 0;
-}
-
-.dock-bar-middle {
-  top: 6px;
-}
-
-.dock-bar-bottom {
-  bottom: 0;
-}
-
-.dock-bars[data-open="true"] .dock-bar-top {
-  transform: rotate(45deg);
-  transform-origin: top left;
-  width: 1.125rem;
-  left: 1px;
-}
-
-.dock-bars[data-open="true"] .dock-bar-bottom {
-  transform: rotate(-45deg);
-  transform-origin: top left;
-  width: 1.125rem;
-  left: 1px;
-  box-shadow: 0 0 10px color-mix(in oklab, var(--color-emerald) 55%, transparent);
-}
-
-.dock-bars[data-open="true"] .dock-bar-middle {
-  transform: translateX(-0.875rem);
-  opacity: 0;
+.dock-head[data-open="true"] .dock-head-arrow {
+  transform: rotate(90deg);
 }
 
 /* Recolhida, a coluna sai do layout em vez de ficar transparente ocupando

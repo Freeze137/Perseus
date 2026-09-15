@@ -45,11 +45,9 @@ type Entry = {
  * `visibility: hidden`: transparente ele ainda é o nome acessível do botão,
  * então a mesma marcação serve o olho e o leitor de tela.
  *
- * As três barras na cabeça abrem e fecham o conjunto — é o único lugar do site
- * onde um hambúrguer diz a verdade, porque é o único conjunto que existe pra
- * abrir. Aberta por padrão e a escolha fica guardada: atalho que nasce
- * escondido cobra de todo mundo a descoberta dele, e o que isto compra é a tela
- * mais vazia possível pra quem pedir por ela.
+ * A cabeça abre e fecha o conjunto. Aberta por padrão e a escolha fica
+ * guardada: atalho que nasce escondido cobra de todo mundo a descoberta dele,
+ * e o que isto compra é a tela mais vazia possível pra quem pedir por ela.
  *
  * `aria-expanded` no botão e `inert` no corpo, então quem navega por teclado ou
  * leitor de tela recebe o mesmo estado que o olho recebe — e não tabula por
@@ -86,13 +84,20 @@ export function PanelDock({
         aria-expanded={open}
         aria-controls="panel-dock-body"
         onClick={() => setOpen(!open)}
-        className="dock-key dock-bars"
+        className="dock-key dock-head"
       >
-        <span aria-hidden="true" className="dock-bars-box">
-          <span className="dock-bar dock-bar-top" />
-          <span className="dock-bar dock-bar-middle" />
-          <span className="dock-bar dock-bar-bottom" />
-        </span>
+        {/* Seta lateral, e não as três barras: elas foram pro seletor, onde a
+            pessoa pediu por elas, e a mesma marca em dois lugares diferentes
+            marcaria duas coisas diferentes. A seta aponta pra onde a coluna
+            vai — pra fora quando está pra abrir, pra dentro quando está pra
+            recolher. */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 10 6"
+          className="dock-head-arrow h-2 w-3 fill-none stroke-current stroke-[1.5]"
+        >
+          <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
         {/* Nome parado. Quem conta o estado é `aria-expanded`, e rótulo que
             troca de palavra faz o leitor de tela anunciar um controle novo
             onde só houve uma mudança de estado. */}
