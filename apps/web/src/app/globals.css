@@ -394,6 +394,28 @@ code {
   border-radius: 9999px;
 }
 
+/* O chapéu vira pra cima enquanto a lista está aberta.
+
+   Girar é o que ele podia ganhar sem trocar de sinal: duas pernas apontando
+   pra baixo dizem "isto abre", e apontando pra cima dizem "isto fecha" — a
+   mesma seta contando o estado em que o controle está, em vez de um glifo novo
+   dizendo outra coisa.
+
+   Fora do `@supports` pelo mesmo motivo do foco: quem gira é a nossa seta, que
+   é a mesma nos dois caminhos. Onde `:open` não existe a regra não casa e a
+   seta fica parada, que é exatamente o que ela já fazia.
+
+   Com movimento reduzido a varredura global zera a transição e a volta passa a
+   ser instantânea. Correto: o que a chave recusa é a viagem, não o estado, e o
+   estado continua dito. */
+.select-native + svg {
+  transition: transform 300ms var(--ease-snap);
+}
+
+.select-native:open + svg {
+  transform: rotate(180deg);
+}
+
 @supports (appearance: base-select) {
   .select-native,
   .select-native::picker(select) {
