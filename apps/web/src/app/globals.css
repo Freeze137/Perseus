@@ -592,14 +592,6 @@ code {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-emerald) 45%, transparent);
 }
 
-/* Em cima abre uma gaveta desta página; embaixo você sai dela. Duas coisas
-   diferentes na mesma coluna precisam de um fio no meio. */
-.dock-rule {
-  width: 1.25rem;
-  height: 1px;
-  background: var(--color-slate);
-}
-
 .dock-glyph {
   font-size: 1.125rem;
   line-height: 1;
@@ -675,32 +667,39 @@ code {
   }
 }
 
-/* O aro dos links é um gradiente que gira.
+/* A placa dos links, e o verde em volta dela.
 
-   Girar é o que faz um verde parecer vivo em vez de pintado: a mesma volta de
-   jade a menta passando devagar diz que aquilo é um lugar pra onde se vai, e
-   separa os três links das quatro teclas de painel sem precisar de mais
-   nenhum rótulo.
+   Os três não são teclas soltas como as de cima: são um conjunto, e o que diz
+   isso é a placa que os segura. O original de onde a forma vem acende essa
+   placa com branco translúcido por dentro e por fora — branco sobre preto puro
+   dá cinza, então aqui o mesmo aceso é verde.
 
-   O ângulo é uma propriedade registrada porque `conic-gradient` não interpola
-   sozinho — sem `@property` o navegador trata o ângulo como palavra e a
-   animação não acontece, silenciosamente.
+   O aro é um gradiente que gira. Girar é o que faz um verde parecer vivo em
+   vez de pintado: a volta de jade a menta passando devagar diz que aquilo é um
+   lugar pra onde se vai. O ângulo é uma propriedade registrada porque
+   `conic-gradient` não interpola sozinho — sem `@property` o navegador lê o
+   ângulo como palavra e a animação não acontece, calada.
 
-   A borda é transparente e o gradiente entra por `border-box` debaixo da
+   A borda fica transparente e o gradiente entra por `border-box` debaixo da
    placa em `padding-box`: dois planos de fundo no mesmo elemento, sem
-   pseudo-elemento, porque os dois desta tecla já são os anéis do hover. */
+   pseudo-elemento nenhum. */
 @property --dock-angle {
   syntax: "<angle>";
   inherits: false;
   initial-value: 0deg;
 }
 
-.dock-link {
+.dock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
   border: 1.5px solid transparent;
+  border-radius: 1.125rem;
   background:
     linear-gradient(
-        color-mix(in oklab, var(--color-obsidian) 88%, transparent),
-        color-mix(in oklab, var(--color-obsidian) 88%, transparent)
+        color-mix(in oklab, var(--color-obsidian) 92%, transparent),
+        color-mix(in oklab, var(--color-obsidian) 92%, transparent)
       )
       padding-box,
     conic-gradient(
@@ -712,15 +711,54 @@ code {
         var(--color-jade)
       )
       border-box;
-  /* O fio de ardósia da tecla comum sairia por cima do gradiente. O que
-     ilumina a placa daqui pra frente é o aro, e um halo curto atrás dele. */
-  box-shadow: 0 0 10px -2px color-mix(in oklab, var(--color-emerald) 45%, transparent);
+  /* Por dentro e por fora, como no original — só que verde. O halo de fora é
+     o que o preto puro da página deixa aparecer; o de dentro é o que tira a
+     placa do plano do fundo sem clarear o preto. */
+  box-shadow:
+    inset 0 0 18px -4px color-mix(in oklab, var(--color-emerald) 30%, transparent),
+    inset 0 0 5px color-mix(in oklab, var(--color-mint) 10%, transparent),
+    0 0 16px -3px color-mix(in oklab, var(--color-emerald) 45%, transparent);
   animation: dock-spin 6s linear infinite;
 }
 
-.dock-link:hover,
-.dock-link:focus-visible {
-  box-shadow: 0 0 14px -1px color-mix(in oklab, var(--color-mint) 55%, transparent);
+.dock-card:hover {
+  box-shadow:
+    inset 0 0 18px -4px color-mix(in oklab, var(--color-emerald) 38%, transparent),
+    inset 0 0 5px color-mix(in oklab, var(--color-mint) 14%, transparent),
+    0 0 22px -2px color-mix(in oklab, var(--color-mint) 50%, transparent);
+}
+
+/* Dentro da placa a tecla é um poço, e não outra placa: o fio de ardósia de
+   fora repetido aqui seria uma borda dentro de uma borda a dois pixels de
+   distância. O que marca o redondo é o próprio poço, mais claro no meio. */
+.dock-card .dock-key {
+  background: radial-gradient(
+    circle at 50% 42%,
+    color-mix(in oklab, var(--color-slate) 85%, transparent),
+    color-mix(in oklab, var(--color-slate) 35%, transparent) 72%
+  );
+  box-shadow: none;
+}
+
+.dock-card .dock-key:hover,
+.dock-card .dock-key:focus-visible {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-mint) 35%, transparent);
+}
+
+/* Os anéis que florescem nas teclas de painel não entram na placa: a uma
+   escala e meia eles passam da borda dela, e um anel cortando o aro por dentro
+   e por fora é sujeira, não resposta. Aqui quem responde ao ponteiro é o poço
+   e o aro da placa inteira. */
+.dock-card .dock-key::before,
+.dock-card .dock-key::after {
+  content: none;
+}
+
+/* O rótulo sai da tecla, mas tem que sair da placa: meia caixa a mais é
+   exatamente o acolchoado que ele precisa atravessar pra não nascer grudado
+   no aro. */
+.dock-card .dock-label {
+  left: calc(100% + 1rem);
 }
 
 @keyframes dock-spin {
@@ -729,17 +767,15 @@ code {
   }
 }
 
-/* Durante a corrida o dock recua pra um quarto de opacidade, e três aros
-   girando atrás do texto continuariam custando quadro por quadro numa tela
-   onde o quadro é o produto. Pausado, e não removido: ele volta do ângulo
-   onde parou quando a corrida acaba. */
-.panel-dock[data-dimmed="true"] .dock-link {
+/* Durante a corrida o aro pausa. Um gradiente girando atrás do texto custa
+   quadro por quadro numa tela onde o quadro é o produto, e o dock já está a um
+   quarto de opacidade ali. Pausado e não removido: volta do ângulo onde parou.
+
+   Com movimento reduzido a varredura global para a volta e o gradiente fica
+   inteiro na borda, aceso e parado — a chave recusa o movimento, não o verde. */
+.panel-dock[data-dimmed="true"] .dock-card {
   animation-play-state: paused;
 }
-
-/* Com movimento reduzido a varredura global zera a duração e o aro para num
-   ângulo só. Isso é a alternativa certa aqui: o gradiente inteiro continua
-   na borda, brilhando parado — o que a chave recusa é a volta, não o verde. */
 
 /* ---------------------------------------------------------------------------
    Star loader
