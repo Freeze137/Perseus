@@ -89,16 +89,22 @@ export class RateLimitGuard implements CanActivate {
 /**
  * Quem está sendo contado.
  *
- * O guard roda depois do AuthGuard nas rotas que têm um, então chamador
- * autenticado é contado como ele mesmo — dividir o endereço do escritório não
- * pode significar dividir o orçamento.
+ * Quem apresentou passaporte é contado como ele mesmo: dividir o endereço do
+ * escritório não pode significar dividir o orçamento. Quem não apresentou é
+ * contado pelo endereço, que é tudo que há.
+ *
+ * Só as rotas com `PassportGuard` chegam aqui já identificadas. O envio de
+ * resultado lê o passaporte depois, dentro do handler, então corrida anônima e
+ * corrida identificada dividem o teto por endereço — que é o comportamento
+ * certo, porque aquele teto existe contra volume vindo de uma máquina e não
+ * contra uma pessoa.
  *
  * Exportada porque o teto de salas por criador conta a mesma pessoa, e duas
  * definições de "quem é o chamador" seriam duas respostas diferentes pra
  * mesma pergunta no dia em que uma delas mudasse.
  */
 export function callerKey(request: Request): string {
-  if (request.caller) return `user:${request.caller.userId}`;
+  if (request.playerId) return `player:${request.playerId}`;
   // `ip` respeita o trust-proxy configurado no boot; sem aquilo um deploy atrás
   // de proxy contaria todo chamador como o proxy.
   return `ip:${request.ip ?? 'unknown'}`;
