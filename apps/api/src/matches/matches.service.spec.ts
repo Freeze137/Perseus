@@ -28,10 +28,11 @@ import { MatchesService } from './matches.service';
 import type { MatchStoreService } from './match-store.service';
 import { ResultsService } from '../results/results.service';
 import { RunTicketService } from '../runs/run-ticket.service';
-import type { SupabaseService } from '../supabase/supabase.service';
+import { RankingService } from '../ranking/ranking.service';
 
 /** A pontuação é pura; no banco só se escreve. */
-const offline = { enabled: false } as unknown as SupabaseService;
+/** Ranking desligado: o duelo é jogado e pontuado sem banco nenhum. */
+const offline = { enabled: false } as unknown as RankingService;
 
 /**
  * Quem abre as salas destes testes.
@@ -119,7 +120,8 @@ function build() {
     registry,
     new MatchTokenService(),
     store,
-    new ResultsService(offline, new RunTicketService()),
+    new ResultsService(new RunTicketService(), offline),
+    offline,
   );
   return { registry, save, service };
 }

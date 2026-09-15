@@ -5,7 +5,11 @@ import type {
   MatchScore,
   MatchState,
   SessionConfig,
+  TypingResult,
 } from '@perseus/contracts';
+
+/** Uma corrida pontuada, antes de ter linha no banco pra ter id. */
+export type ScoredRun = Omit<TypingResult, 'id'>;
 
 /** Um jogador, como a sala o segura enquanto o duelo é jogado. */
 export type RoomPlayer = {
@@ -17,6 +21,25 @@ export type RoomPlayer = {
   finishedAt: number | null;
   score: MatchScore | null;
   outcome: MatchOutcome | null;
+  /**
+   * O passaporte de quem está neste lugar, quando há um.
+   *
+   * Preenchido no envio da corrida e não na entrada da sala, porque é ali que
+   * o browser tem motivo pra mandá-lo — e porque um duelo continua não pedindo
+   * identidade pra ser jogado. Null é o caso normal de quem duela sem nunca ter
+   * criado um nome no ranking, e a corrida dele é pontuada igual; ela só não
+   * classifica ninguém.
+   */
+  playerId: string | null;
+  /**
+   * O resultado completo que o servidor derivou dessa timeline.
+   *
+   * `score` é o recorte que a tela do duelo desenha; isto é tudo que o replay
+   * apurou. Guardar os dois evita que a corrida entre no ranking com campos
+   * inventados na hora de arquivar — o duelo mede tudo que uma corrida solo
+   * mede, e jogar fora a diferença só pra recriá-la depois seria inventar.
+   */
+  scoredRun: ScoredRun | null;
   /** Pediu outra rodada. Limpo quando uma começa. */
   rematch: boolean;
 };

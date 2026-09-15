@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Observable } from 'rxjs';
+import { readPassport } from '../players/passport.guard';
+import { PassportService } from '../players/passport.service';
 import {
   CreateMatchSchema,
   InviteCodeSchema,
@@ -42,7 +44,10 @@ const PING_MS = 20_000;
 
 @Controller('matches')
 export class MatchesController {
-  constructor(private readonly matches: MatchesService) {}
+  constructor(
+    private readonly matches: MatchesService,
+    private readonly passports: PassportService,
+  ) {}
 
   /**
    * Abre uma sala. Barato de chamar e fácil de scriptar, daí o orçamento
@@ -244,11 +249,16 @@ export class MatchesController {
     @Param('id') id: string,
     @Headers('authorization') authorization: string | undefined,
     @Body() body: unknown,
+    @Req() request: Request,
   ): Match {
     return this.matches.finish(
       id,
       bearer(authorization),
       parse(SubmitMatchRunSchema, body),
+      // Opcional, e continua sendo: duelo é jogado sem identidade nenhuma. Quem
+      // manda um passaporte junto está pedindo que a corrida também conte no
+      // ranking, e é só isso que ele muda aqui.
+      readPassport(request, this.passports),
     );
   }
 }

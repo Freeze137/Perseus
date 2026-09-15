@@ -27,7 +27,6 @@
     "@perseus/contracts": "workspace:*",
     "@perseus/corpus": "workspace:*",
     "@perseus/engine": "workspace:*",
-    "@supabase/supabase-js": "^2.112.3",
     "express": "^5.2.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",

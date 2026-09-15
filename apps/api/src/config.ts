@@ -3,37 +3,34 @@ import { z } from 'zod';
 /**
  * Ambiente, lido uma vez no boot.
  *
- * A chave de service role passa por cima do row-level security, que é
- * exatamente por que a API a segura e o browser nunca: o browser recebe a chave
- * anon e vive dentro das políticas. Se este arquivo um dia acabar importado de
- * código de cliente, o bug é esse.
- *
- * Sync é opcional. Sem Supabase configurado o app roda igual — o treinador
- * funciona offline e sempre funcionou — então chave faltando degrada o ranking
- * em vez de derrubar o processo.
+ * Tudo que fala com o mundo é opcional aqui, e é uma decisão e não um descuido:
+ * sem banco e sem segredo de assinatura o processo sobe, serve `/health` e
+ * pontua corrida do mesmo jeito. O treinador funciona offline e sempre
+ * funcionou, então credencial faltando degrada o ranking em vez de derrubar o
+ * processo.
  */
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
-  SUPABASE_URL: z.url().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   /** Origens que podem chamar esta API. Separadas por vírgula. */
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
   /**
-   * Assina os bilhetes de corrida. Opcional pra trabalho local não precisar de
-   * setup; sem ela o processo assina com um segredo que inventa no boot, o que
-   * faz um restart invalidar toda corrida que alguém tinha aberta. Configure em
-   * qualquer lugar com mais de uma instância ou mais de um deploy por dia.
+   * Assina os bilhetes de corrida, os tokens de duelo e os passaportes.
+   *
+   * Opcional pra trabalho local não precisar de setup, mas com uma consequência
+   * que mudou de tamanho: sem ela o processo assina com um segredo que inventa
+   * no boot, e um passaporte assinado assim é revogado pelo próximo deploy, em
+   * silêncio, pra todo mundo. Por isso a identidade se declara indisponível
+   * quando ela falta, em vez de funcionar até a próxima vez que o código subir.
    */
   RUN_TICKET_SECRET: z.string().min(32).optional(),
   /**
-   * Postgres, pro duelo. Opcional como tudo aqui que fala com banco: sem ela o
+   * Postgres: o duelo, o ranking e a identidade, todos. Opcional: sem ela o
    * duelo roda de ponta a ponta do mesmo jeito — a sala vive na memória deste
-   * processo — e só o histórico sobrevive à sala.
+   * processo — e o que falta é tudo que sobrevive à sala.
    *
-   * É conexão separada do Supabase de propósito, não o pooler do mesmo projeto.
-   * Duelo não precisa de conta nem de row-level security, então não precisa de
-   * nada do que o cliente de service role serve, e apontar pra um Postgres
-   * comum é mudança de uma linha em vez de migração.
+   * Uma conexão só, e comum. Nada aqui precisa de row-level security, porque
+   * nada além desta API fala com este banco: a cerca é não haver segunda porta,
+   * e não uma política escrita pra uma chave pública que não existe.
    */
   DATABASE_URL: z.string().min(12).optional(),
   /**
@@ -60,6 +57,7 @@ const EnvSchema = z.object({
 });
 
 export type Env = z.infer<typeof EnvSchema> & {
+  /** Se corrida terminada é guardada, classificada e lembrada. */
   syncEnabled: boolean;
   /** Se duelo terminado é anotado em vez de só jogado. */
   matchHistoryEnabled: boolean;
@@ -74,7 +72,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const env = parsed.data;
   return {
     ...env,
-    syncEnabled: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY),
+    syncEnabled: Boolean(env.DATABASE_URL && env.RUN_TICKET_SECRET),
     matchHistoryEnabled: Boolean(env.DATABASE_URL),
   };
 }

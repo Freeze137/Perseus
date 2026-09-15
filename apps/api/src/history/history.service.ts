@@ -4,103 +4,98 @@ import type {
   HistoryResponse,
   StoredResult,
 } from '@perseus/contracts';
-import { z } from 'zod';
-import { SupabaseService } from '../supabase/supabase.service';
+import { LEADERBOARD_MIN_ACCURACY } from '@perseus/contracts';
+import { PostgresService } from '../db/postgres.service';
 
-/**
- * A linha como a tabela guarda, lida em vez de suposta.
- *
- * Coluna numérica volta como string do PostgREST — `numeric` tem mais precisão
- * do que um número JSON promete — então é convertida aqui em vez de virar
- * calada um `"91.20"` três componentes depois.
- */
-const RowSchema = z.object({
-  id: z.uuid(),
-  kind: z.enum(['words', 'quote', 'punctuation', 'numbers', 'code']),
-  language: z.enum(['pt-BR', 'en']),
-  syntax: z.string().nullable(),
-  wpm: z.coerce.number(),
-  cpm: z.coerce.number(),
-  accuracy: z.coerce.number(),
-  consistency: z.coerce.number(),
-  duration_ms: z.coerce.number().int(),
-  completed_at: z.string(),
-});
+/** As colunas como o Postgres devolve. `numeric` chega como string. */
+type RunRow = {
+  id: string;
+  kind: string;
+  language: string;
+  syntax: string | null;
+  wpm: string;
+  cpm: string;
+  accuracy: string;
+  consistency: string;
+  duration_ms: number;
+  completed_at: Date;
+};
 
 /**
  * Lê pra pessoa as corridas dela.
  *
- * Pelo token de quem chamou, nunca pela chave de serviço: a política de linha
- * que diz "suas linhas e de mais ninguém" já está escrita e já é testada pelo
- * banco, e reimplementá-la aqui como um `where user_id = ...` faria o dia em
- * que alguém esquecer essa cláusula ser o dia em que o endpoint entrega o
- * histórico de todo mundo. A política é a checagem; isto só pergunta.
+ * O escopo é o passaporte, e é um limite real que vale dizer em voz alta: quem
+ * tem o passaporte lê o histórico daquela identidade. O que antes era garantido
+ * por uma política de linha no banco agora é garantido por esta cláusula — e é
+ * por isso que o `player_id` vem do cabeçalho conferido, nunca do corpo ou da
+ * query. O dia em que alguém aceitar um id vindo do cliente aqui é o dia em que
+ * o endpoint entrega o histórico de todo mundo.
+ *
+ * Toda corrida aparece, inclusive a que não classificou. O histórico é o
+ * registro do que a pessoa fez, e esconder a corrida ruim faria a única coisa
+ * que o produto se proibiu: bajular.
  */
 @Injectable()
 export class HistoryService {
   private readonly logger = new Logger(HistoryService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly db: PostgresService) {}
 
   async read(
-    accessToken: string,
+    playerId: string,
     query: HistoryQuery,
   ): Promise<HistoryResponse> {
-    if (!this.supabase.enabled) return { entries: [], best: null };
+    if (!this.db.enabled) return { entries: [], best: null };
 
-    let request = this.supabase
-      .asCaller(accessToken)
-      .from('results')
-      .select(
-        'id, kind, language, syntax, wpm, cpm, accuracy, consistency, duration_ms, completed_at',
-      )
-      .order('completed_at', { ascending: false })
-      .limit(query.limit);
+    try {
+      const rows = await this.db.query<RunRow>(
+        `select id, kind, language, syntax, wpm, cpm, accuracy, consistency,
+                duration_ms, completed_at
+         from public.runs
+         where player_id = $1 and ($2::text is null or kind = $2)
+         order by completed_at desc
+         limit $3`,
+        [playerId, query.kind ?? null, query.limit],
+      );
 
-    if (query.kind) request = request.eq('kind', query.kind);
+      // O melhor sai de uma consulta própria e não do topo da lista: a lista é
+      // recente-primeiro e limitada, então o recorde de alguém que digita todo
+      // dia estaria fora dela na maioria das vezes.
+      const best = await this.db.query<{ wpm: string; accuracy: string }>(
+        `select wpm, accuracy from public.runs
+         where player_id = $1 and ($2::text is null or kind = $2)
+           and accuracy >= $3
+         order by wpm desc, completed_at asc
+         limit 1`,
+        [playerId, query.kind ?? null, LEADERBOARD_MIN_ACCURACY],
+      );
 
-    const { data, error } = await request;
-    if (error) {
-      this.logger.error(`history read failed: ${error.message}`);
-      return { entries: [], best: null };
-    }
-
-    const rows = z.array(RowSchema).safeParse(data ?? []);
-    if (!rows.success) {
+      return {
+        entries: rows.map(toStored),
+        best: best[0]
+          ? { wpm: Number(best[0].wpm), accuracy: Number(best[0].accuracy) }
+          : null,
+      };
+    } catch (error) {
       this.logger.error(
-        `history shape changed: ${z.prettifyError(rows.error)}`,
+        `history read failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       return { entries: [], best: null };
     }
-
-    const entries: StoredResult[] = rows.data.map((row) => ({
-      id: row.id,
-      kind: row.kind,
-      language: row.language,
-      syntax: row.syntax as StoredResult['syntax'],
-      wpm: row.wpm,
-      cpm: row.cpm,
-      accuracy: row.accuracy,
-      consistency: row.consistency,
-      durationMs: row.duration_ms,
-      completedAt: new Date(row.completed_at).toISOString(),
-    }));
-
-    return { entries, best: bestOf(entries) };
   }
 }
 
-/**
- * A melhor corrida da janela, por velocidade.
- *
- * Derivada das linhas que já foram buscadas em vez de pedida à parte: uma
- * segunda query por um número é uma segunda ida e volta, e "melhor do que você
- * está olhando" é o que alguém lendo um histórico quer dizer com melhor.
- */
-function bestOf(entries: readonly StoredResult[]): HistoryResponse['best'] {
-  const top = entries.reduce<StoredResult | null>(
-    (best, entry) => (best === null || entry.wpm > best.wpm ? entry : best),
-    null,
-  );
-  return top === null ? null : { wpm: top.wpm, accuracy: top.accuracy };
+function toStored(row: RunRow): StoredResult {
+  return {
+    id: row.id,
+    kind: row.kind as StoredResult['kind'],
+    language: row.language as StoredResult['language'],
+    syntax: row.syntax as StoredResult['syntax'],
+    wpm: Number(row.wpm),
+    cpm: Number(row.cpm),
+    accuracy: Number(row.accuracy),
+    consistency: Number(row.consistency),
+    durationMs: row.duration_ms,
+    completedAt: row.completed_at.toISOString(),
+  };
 }

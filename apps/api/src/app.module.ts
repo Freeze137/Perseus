@@ -17,14 +17,18 @@ import { ResultsController } from './results/results.controller';
 import { ResultsService } from './results/results.service';
 import { RunTicketService } from './runs/run-ticket.service';
 import { RunsController } from './runs/runs.controller';
-import { SupabaseModule } from './supabase/supabase.module';
+import { PassportService } from './players/passport.service';
+import { PlayersController } from './players/players.controller';
+import { PlayersService } from './players/players.service';
+import { RankingService } from './ranking/ranking.service';
 
 @Module({
-  imports: [SupabaseModule, PostgresModule],
+  imports: [PostgresModule],
   controllers: [
     AppController,
     HealthController,
     MatchesController,
+    PlayersController,
     ResultsController,
     RunsController,
   ],
@@ -33,6 +37,9 @@ import { SupabaseModule } from './supabase/supabase.module';
     ResultsService,
     LeaderboardService,
     HistoryService,
+    PassportService,
+    PlayersService,
+    RankingService,
     RunTicketService,
     MatchesService,
     MatchRegistryService,

@@ -9,10 +9,10 @@ import { generate } from '@perseus/corpus';
 import { applyInput, createSession } from '@perseus/engine';
 import { ResultsService } from './results.service';
 import { RunTicketService } from '../runs/run-ticket.service';
-import type { SupabaseService } from '../supabase/supabase.service';
+import { RankingService } from '../ranking/ranking.service';
 
-/** O serviço só precisa do Supabase pra escrever; a pontuação é pura. */
-const offline = { enabled: false } as unknown as SupabaseService;
+/** Ranking desligado: `score` é pura e não fala com banco nenhum. */
+const offline = { enabled: false } as unknown as RankingService;
 const tickets = new RunTicketService();
 
 function config(overrides: Partial<SessionConfig> = {}): SessionConfig {
@@ -62,7 +62,7 @@ function honestRun(cfg: SessionConfig, gap = 120): SubmitResult {
 }
 
 describe('ResultsService.score', () => {
-  const service = new ResultsService(offline, tickets);
+  const service = new ResultsService(tickets, offline);
 
   it('scores an honest run', () => {
     const scored = service.score(honestRun(config()));

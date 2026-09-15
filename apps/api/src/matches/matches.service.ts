@@ -31,6 +31,7 @@ import {
   type SubmitMatchRun,
 } from '@perseus/contracts';
 import { generate, randomSeed } from '@perseus/corpus';
+import { RankingService } from '../ranking/ranking.service';
 import { ResultsService } from '../results/results.service';
 import {
   MAX_ROOMS,
@@ -81,6 +82,7 @@ export class MatchesService {
     private readonly tokens: MatchTokenService,
     private readonly store: MatchStoreService,
     private readonly results: ResultsService,
+    private readonly ranking: RankingService,
   ) {}
 
   /**
@@ -411,6 +413,7 @@ export class MatchesService {
     id: string,
     token: string | undefined,
     payload: SubmitMatchRun,
+    playerId: string | null = null,
   ): Match {
     const { room, player: me } = this.authorise(id, token);
 
@@ -445,6 +448,11 @@ export class MatchesService {
     );
 
     me.finishedAt = now;
+    // Guardado agora pra ser lido quando a sala for arquivada: é lá que a
+    // corrida pode entrar no ranking, porque é lá que a partida passa a
+    // existir como linha pra ela apontar.
+    me.playerId = playerId;
+    me.scoredRun = scored;
     me.score = {
       wpm: scored.wpm,
       cpm: scored.cpm,
@@ -538,12 +546,55 @@ export class MatchesService {
       ...room,
       players: room.players.map((one) => ({ ...one })),
     };
-    void this.store.save(finishedRound).catch((error: unknown) => {
-      this.logger.error(
-        `match ${finishedRound.roundId} not stored: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+    void this.store
+      .save(finishedRound)
+      // Só depois de a partida estar gravada. A corrida de duelo aponta pra
+      // linha dela, então classificar antes seria uma chave estrangeira contra
+      // uma partida que ainda não existe.
+      .then(() => this.classify(finishedRound))
+      .catch((error: unknown) => {
+        this.logger.error(
+          `match ${finishedRound.roundId} not stored: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
     this.reap(room, KEEP_AFTER_DONE_MS);
+  }
+
+  /**
+   * Leva as corridas de um duelo terminado pro ranking.
+   *
+   * É isto que faz o duelo contar. Os dois lados já eram pontuados pelo mesmo
+   * `score()` de uma corrida solo — mesmo replay, mesmo julgamento de ritmo,
+   * mesmo relógio de servidor — e o que faltava era existir onde anotar. Sem
+   * isso, quem acabasse de duelar teria que refazer sozinho o texto que acabou
+   * de digitar pra aquilo valer alguma coisa.
+   *
+   * Só entra quem mandou passaporte, e a falha é engolida: o duelo acabou, os
+   * dois têm o placar na tela, e uma linha de ranking que não foi escrita não
+   * é motivo pra transformar isso em erro pra quem chegou em segundo.
+   */
+  private async classify(room: Room): Promise<void> {
+    if (!this.ranking.enabled) return;
+
+    for (const one of room.players) {
+      if (!one.playerId || !one.scoredRun) continue;
+      await this.ranking
+        .record(one.playerId, one.scoredRun, {
+          source: 'duel',
+          // Duelo não tem bilhete: a sala é o que lhe dá identidade e relógio,
+          // e um lugar só envia uma vez — `already_finished` faz aqui o papel
+          // que o bilhete faz no solo.
+          runId: null,
+          timelineHash: null,
+          matchId: room.roundId,
+        })
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `duel run not ranked: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          return null;
+        });
+    }
   }
 
   /**
@@ -731,5 +782,7 @@ function player(slot: number, displayName: string, at: number): RoomPlayer {
     score: null,
     outcome: null,
     rematch: false,
+    playerId: null,
+    scoredRun: null,
   };
 }

@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import { createHash } from 'node:crypto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   CORPUS_VERSION,
   LEADERBOARD_MIN_ACCURACY,
   TIMELINE_LIMITS,
   type SubmitErrorCode,
+  type SubmitResponse,
   type SubmitResult,
   type TypingResult,
 } from '@perseus/contracts';
@@ -21,11 +17,8 @@ import {
   replay,
   ReplayError,
 } from '@perseus/engine';
-import { SupabaseService } from '../supabase/supabase.service';
+import { RankingService } from '../ranking/ranking.service';
 import { RunTicketService } from '../runs/run-ticket.service';
-
-/** Código de violação de unicidade do Postgres. É como chega um envio repetido. */
-const UNIQUE_VIOLATION = '23505';
 
 /**
  * O que o servidor sabe sobre quando a corrida aconteceu de verdade.
@@ -69,65 +62,49 @@ export type Scoreable = Pick<
  */
 @Injectable()
 export class ResultsService {
-  private readonly logger = new Logger(ResultsService.name);
-
   constructor(
-    private readonly supabase: SupabaseService,
     private readonly tickets: RunTicketService,
+    private readonly ranking: RankingService,
   ) {}
 
-  async submit(userId: string, payload: SubmitResult): Promise<TypingResult> {
+  /**
+   * Pontua um envio e, se houver passaporte, o classifica.
+   *
+   * O passaporte é opcional e essa é a decisão: quem não tem identidade recebe
+   * a corrida pontuada pelo servidor do mesmo jeito, com os mesmos números e as
+   * mesmas recusas. O treinador nunca precisou de conta pra funcionar, e ligar
+   * o ranking não é motivo pra passar a precisar.
+   *
+   * `standing` vem junto, na mesma ida e volta, porque a carta de resultado
+   * precisa do resultado e da posição ao mesmo tempo — uma segunda requisição
+   * faria a posição chegar depois da tela que ela deveria explicar.
+   */
+  async submit(
+    playerId: string | null,
+    payload: SubmitResult,
+  ): Promise<SubmitResponse> {
     const now = Date.now();
     const ticket = this.tickets.verify(payload.run, now);
     if (!ticket.ok) throw refuse('run_ticket', ticket.reason);
 
     const scored = this.score(payload, { issuedAt: ticket.issuedAt, now });
 
-    const { data, error } = await this.supabase
-      .admin()
-      .from('results')
-      .insert({
-        user_id: userId,
-        run_id: payload.run.id,
-        // Duas corridas do mesmo texto na mesma velocidade são possíveis; a
-        // mesma timeline no milissegundo é uma gravação sendo arquivada duas vezes.
-        timeline_hash: timelineHash(userId, payload),
-        config: payload.config,
-        corpus_version: payload.corpusVersion,
-        kind: payload.config.kind,
-        language: payload.config.language,
-        syntax:
-          payload.config.kind === 'code'
-            ? (payload.config.syntax ?? 'mix')
-            : null,
-        wpm: scored.wpm,
-        cpm: scored.cpm,
-        raw_wpm: scored.rawWpm,
-        accuracy: scored.accuracy,
-        consistency: scored.consistency,
-        correct: scored.correct,
-        incorrect: scored.incorrect,
-        duration_ms: scored.durationMs,
-        completed_at: scored.completedAt,
-      })
-      .select('id')
-      .single();
+    const standing = playerId
+      ? await this.ranking.record(playerId, scored, {
+          source: 'solo',
+          runId: payload.run.id,
+          timelineHash: timelineHash(playerId, payload),
+          matchId: null,
+        })
+      : null;
 
-    if (error) {
-      if (error.code === UNIQUE_VIOLATION) {
-        // Não é erro causado por quem digitou: uma retentativa depois de
-        // resposta perdida cai aqui, e uma segunda aba terminando a mesma
-        // corrida também.
-        throw new ConflictException({
-          code: 'duplicate' satisfies SubmitErrorCode,
-          message: 'this run was already stored',
-        });
-      }
-      this.logger.error(`insert failed: ${error.message}`);
-      throw new BadRequestException('could not store the result');
-    }
-
-    return { id: data.id as string, ...scored };
+    return {
+      // Sem banco por trás, o id nomeia esta resposta e mais nada — não há
+      // linha pra ele apontar. É o mesmo formato com e sem ranking, e é o que
+      // deixa a interface não ter dois caminhos pra desenhar uma corrida.
+      result: { id: randomUUID(), ...scored },
+      standing,
+    };
   }
 
   /**
@@ -232,16 +209,16 @@ function refuse(code: SubmitErrorCode, message: string): BadRequestException {
 /**
  * A impressão digital da corrida em si, no escopo do dono.
  *
- * O id do usuário está dentro do hash pra duas pessoas que por acaso produzam a
+ * O id de quem digitou está dentro do hash pra duas pessoas que por acaso produzam a
  * mesma timeline — texto curto, ritmo idêntico — não se bloquearem, enquanto
  * uma pessoa reenviando a própria gravação colide com ela mesma.
  */
-function timelineHash(userId: string, payload: SubmitResult): string {
+function timelineHash(playerId: string, payload: SubmitResult): string {
   const timeline = payload.keystrokes
     .map((k) => `${k.index}:${k.at}:${k.char}`)
     .join('|');
   return createHash('sha256')
-    .update(`${userId}|${JSON.stringify(payload.config)}|${timeline}`)
+    .update(`${playerId}|${JSON.stringify(payload.config)}|${timeline}`)
     .digest('hex');
 }
 
