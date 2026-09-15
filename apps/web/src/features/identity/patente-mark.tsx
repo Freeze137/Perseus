@@ -1,6 +1,7 @@
 "use client";
 
 import { ALGOL_PERIOD_DAYS, TIERS, type TierId } from "@perseus/contracts";
+import { useId } from "react";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 
 /**
@@ -171,7 +172,19 @@ export function PatenteMark({
   // animar o emblema inteiro faria a estrela escurecer duas vezes pelo mesmo
   // motivo — e a segunda vez seria indistinguível do estado dormente.
   const eclipses = tier === "algol" && !dim && motion !== "none";
-  const id = `pat-${tier}-${state}`;
+  /**
+   * Um conjunto de gradientes por instância, e não por patente.
+   *
+   * Os `id` precisam ser únicos no documento inteiro, não dentro deste SVG: a
+   * vitrine desenha dez emblemas ao mesmo tempo e as duas famílias repetem os
+   * mesmos cinco degraus, então um id derivado só do degrau apareceria duas
+   * vezes. `url(#id)` resolve para a primeira definição, e no instante em que
+   * ela sai do DOM — trocar de aba, fechar o painel — todo mundo que apontava
+   * para ela fica sem preenchimento nenhum. O sintoma é exato: some tudo que é
+   * gradiente e sobra o arco, que é traço de cor chapada.
+   */
+  const uid = useId();
+  const id = `pat-${tier}-${uid}`;
 
   return (
     <svg

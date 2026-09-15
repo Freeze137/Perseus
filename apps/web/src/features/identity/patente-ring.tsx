@@ -350,6 +350,12 @@ function Ring({
               className="absolute inset-0"
               style={{
                 transform: `rotateY(${slot * STEP}deg) translateZ(${RADIUS}px)`,
+                // Sem isto, as faces do outro lado do anel aparecem através das
+                // da frente, espelhadas — o nome da patente lido ao contrário,
+                // por cima do emblema que está de frente. Escondê-las é o que
+                // faz o anel ler como um objeto sólido em vez de dez cartões
+                // transparentes empilhados.
+                backfaceVisibility: "hidden",
               }}
             >
               <FaceButton
