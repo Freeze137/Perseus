@@ -829,3 +829,93 @@ code {
     opacity: 1;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Glow edge
+
+   O aro verde que pulsa nos painéis: as duas gavetas e os dois diálogos. Ele
+   faz num painel o que o aro dos links faz na coluna — diz que aquilo é uma
+   camada acesa por cima da página, e não um pedaço mais claro dela.
+
+   Pulsar e não girar. Girar é bom num alvo de 40px que a pessoa mira; num
+   painel de 480px a volta viraria um carrossel na borda do texto que ela está
+   lendo. O que pulsa é o brilho, que fica parado no lugar.
+
+   O halo mora em `box-shadow` do próprio elemento, e não num pseudo-elemento:
+   o painel do diálogo é o container que rola, e um brilho em `::before`
+   apareceria cortado e rolaria junto com o conteúdo.
+--------------------------------------------------------------------------- */
+.glow-box {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--color-obsidian), var(--color-obsidian)) padding-box,
+    linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--color-emerald) 70%, transparent),
+        var(--color-mint),
+        color-mix(in oklab, var(--color-emerald) 70%, transparent)
+      )
+      border-box;
+  animation: edge-pulse 3.2s ease-in-out infinite;
+}
+
+/* Na gaveta o fio é de um lado só — o de dentro, virado pra página. Os outros
+   três estão fora da tela, e um aro inteiro ali seria três quartos de
+   desenho que ninguém vê. */
+.glow-side {
+  animation: edge-pulse 3.2s ease-in-out infinite;
+}
+
+.glow-side::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background: var(--grad-edge);
+  animation: edge-line-pulse 3.2s ease-in-out infinite;
+}
+
+.glow-side[data-side="left"]::after {
+  right: 0;
+}
+
+.glow-side[data-side="right"]::after {
+  left: 0;
+}
+
+@keyframes edge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 14px -6px color-mix(in oklab, var(--color-emerald) 40%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 26px -4px color-mix(in oklab, var(--color-emerald) 62%, transparent),
+      0 0 8px -2px color-mix(in oklab, var(--color-mint) 28%, transparent);
+  }
+}
+
+@keyframes edge-line-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Com movimento reduzido o pulso fica, mais lento. O que a chave recusa é
+   movimento grande atravessando a visão, e um brilho que respira na borda não
+   atravessa nada: ele não anda, não escala e não muda de lugar. A varredura
+   global zeraria a duração e deixaria o aro parado num quadro só, então este
+   é um dos poucos lugares que a contrariam de propósito — como o tremor do
+   caractere errado e a respiração do loader. */
+@media (prefers-reduced-motion: reduce) {
+  .glow-box,
+  .glow-side,
+  .glow-side::after {
+    animation-duration: 5s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

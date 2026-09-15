@@ -112,7 +112,7 @@ export function Modal({ open, onClose, title, children }: Props) {
           onAnimationComplete={() => {
             if (!open) ref.current?.close();
           }}
-          className="scroll-silent pointer-events-auto max-h-full w-[min(30rem,100%)] overflow-y-auto rounded-md border border-slate bg-obsidian p-6"
+          className="glow-box scroll-silent pointer-events-auto max-h-full w-[min(30rem,100%)] overflow-y-auto rounded-md p-6"
         >
           <header className="mb-4 flex items-center justify-between">
             <h2 className="label">{title}</h2>
