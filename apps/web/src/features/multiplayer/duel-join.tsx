@@ -3,6 +3,7 @@
 import type { Match, MatchCredentials } from "@perseus/contracts";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { StarLoader } from "@/components/ui/star-loader";
 import { joinMatch, previewMatch } from "@/lib/api";
 import { describeConfig, explainRefusal } from "./duel-copy";
 
@@ -80,7 +81,14 @@ export function DuelJoin({ code, onJoined }: Props) {
         </p>
         {room ? (
           <p className="text-sm text-ash">{describeConfig(room.config)}</p>
-        ) : null}
+        ) : (
+          /* A frase diz que a sala está vindo; o grid diz que ela ainda está
+             vindo. Sem ele, uma espera longa é indistinguível de uma tela que
+             travou na primeira linha. */
+          <div className="flex justify-center">
+            <StarLoader label="Carregando a sala do duelo" />
+          </div>
+        )}
       </header>
 
       <form onSubmit={submit} className="flex flex-col gap-2">

@@ -666,3 +666,84 @@ code {
     transform: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Star loader
+
+   A cascata é curta de propósito: nove casas, um ciclo de 1.8s e nenhuma casa
+   maior que uma letra. Uma espera que ocupa mais tela que o que se espera é
+   uma espera que se faz notar duas vezes.
+--------------------------------------------------------------------------- */
+.star-loader {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  width: 3.75rem;
+  place-items: center;
+}
+
+.star-loader-cell {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-mint);
+  opacity: 0;
+  animation: star-fall 1.8s var(--ease-snap) infinite;
+}
+
+/* O atraso por casa é o que faz nove estrelas parecerem uma chuva e não um
+   pisca-pisca. Lidas na ordem do DOM, que é esquerda pra direita e de cima
+   pra baixo — a cascata desce junto com a leitura. */
+.star-loader-cell:nth-child(1) { animation-delay: 0ms; }
+.star-loader-cell:nth-child(2) { animation-delay: 90ms; }
+.star-loader-cell:nth-child(3) { animation-delay: 180ms; }
+.star-loader-cell:nth-child(4) { animation-delay: 270ms; }
+.star-loader-cell:nth-child(5) { animation-delay: 360ms; }
+.star-loader-cell:nth-child(6) { animation-delay: 450ms; }
+.star-loader-cell:nth-child(7) { animation-delay: 540ms; }
+.star-loader-cell:nth-child(8) { animation-delay: 630ms; }
+.star-loader-cell:nth-child(9) { animation-delay: 720ms; }
+
+@keyframes star-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-45%);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(45%);
+  }
+}
+
+/* Aqui a varredura global não serve: ela zera a duração e trava a iteração, e
+   o que sobraria é um grid parado em `opacity: 0` — um carregando invisível,
+   que é pior que nenhum. A alternativa é a mesma do resto do site: a espera
+   passa a viver só na opacidade, sem nada atravessando o campo de visão.
+
+   Mais lenta e menos funda que a cascata, porque piscar rápido é o que a
+   chave pede pra não fazer. */
+@media (prefers-reduced-motion: reduce) {
+  .star-loader-cell {
+    animation: star-breathe 2.4s ease-in-out infinite !important;
+    animation-duration: 2.4s !important;
+    animation-iteration-count: infinite !important;
+    transform: none !important;
+  }
+}
+
+@keyframes star-breathe {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
