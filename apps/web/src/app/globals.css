@@ -1048,3 +1048,94 @@ code {
       0 0 22px -8px color-mix(in oklab, var(--color-mint) 45%, transparent);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Hint
+
+   O "?" e o balão que ele abre. Duas animações curtas, e as duas contam a
+   mesma coisa: que aquele glifo de 16px é um controle, e que o balão veio dele
+   e não de fora da tela.
+--------------------------------------------------------------------------- */
+.hint-key {
+  transition:
+    color 180ms var(--ease-snap),
+    border-color 180ms var(--ease-snap),
+    transform 180ms var(--ease-snap);
+}
+
+.hint-key:hover,
+.hint-key:focus-visible {
+  transform: scale(1.12);
+}
+
+/* O anel que floresce, como nas teclas da coluna — a mesma resposta ao
+   ponteiro em todo controle redondo do site. Aqui ele é único e curto: num
+   alvo de 16px, dois anéis viram um borrão. */
+.hint-key::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--color-emerald) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 260ms var(--ease-snap),
+    opacity 260ms var(--ease-snap);
+}
+
+.hint-key:hover::after,
+.hint-key:focus-visible::after {
+  opacity: 0.75;
+  transform: scale(1.18);
+}
+
+/* O balão sobe de onde saiu.
+
+   Quatro pixels e 160ms: o bastante pra ler como vindo do "?" e pouco o
+   bastante pra não fazer esperar quem só quer a frase. A centragem mora no
+   mesmo `transform` da animação de propósito — uma utilitária de translate por
+   fora seria sobrescrita pelo quadro-chave, e o balão saltaria pro lado meio
+   dedo antes de assentar. */
+.hint-balloon {
+  left: 50%;
+  transform: translateX(-50%);
+  animation: hint-in 160ms var(--ease-snap) both;
+}
+
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Com movimento reduzido o balão só aparece, e o anel acende sem crescer. O
+   que a chave recusa é a viagem; o aviso de que algo novo está na tela fica. */
+@media (prefers-reduced-motion: reduce) {
+  .hint-balloon {
+    animation: hint-fade 140ms var(--ease-snap) both !important;
+  }
+
+  .hint-key:hover,
+  .hint-key:focus-visible {
+    transform: none;
+  }
+
+  .hint-key::after {
+    transform: none !important;
+  }
+}
+
+@keyframes hint-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

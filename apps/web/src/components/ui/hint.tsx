@@ -59,7 +59,7 @@ export function Hint({ term, children }: Props) {
         // O clique é pra tela de toque, onde não existe hover. No teclado o
         // foco já abriu, e o Enter aqui não faz nada que já não esteja feito.
         onClick={() => setOpen((was) => !was)}
-        className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-slate text-[0.625rem] font-semibold leading-none tracking-normal text-ash transition-colors hover:border-emerald hover:text-mint focus-visible:text-mint"
+        className="hint-key relative grid h-4 w-4 shrink-0 place-items-center rounded-full border border-slate text-[0.625rem] font-semibold leading-none tracking-normal text-ash hover:border-emerald hover:text-mint focus-visible:text-mint"
       >
         <span aria-hidden="true">?</span>
       </button>
@@ -67,7 +67,7 @@ export function Hint({ term, children }: Props) {
         <span
           id={id}
           role="tooltip"
-          className="absolute bottom-full left-1/2 z-20 mb-2 w-[min(22rem,70vw)] -translate-x-1/2 rounded-xl border border-slate bg-obsidian p-3 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-ash"
+          className="hint-balloon absolute bottom-full z-20 mb-2 w-[min(22rem,70vw)] rounded-xl border border-slate bg-obsidian p-3 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-ash"
         >
           {children}
         </span>
