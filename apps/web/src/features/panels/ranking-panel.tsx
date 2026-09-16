@@ -187,7 +187,23 @@ export function RankingPanel({ kind, language, syntax }: Props) {
                 ) : (
                   <span className="w-5 shrink-0" />
                 )}
-                <span className="truncate text-bone">{entry.username}</span>
+                {/* O nome da patente embaixo do nome da pessoa.
+
+                    O emblema sozinho diz que existe uma escada e não diz qual
+                    degrau — e o arco, que é o canal que não é cor, responde
+                    isso pra quem já conhece a escada e não pra quem abriu o
+                    board pela primeira vez. Escrito, responde pros dois. Vai
+                    numa segunda linha porque "Gorgonea Tertia" não cabe ao
+                    lado de um nome numa gaveta de 320px. */}
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-bone">{entry.username}</span>
+                  {entry.tier ? (
+                    <span className="truncate font-mono text-xs text-ash">
+                      {TIERS[entry.tier].star}
+                      {entry.dormant ? " · dormente" : ""}
+                    </span>
+                  ) : null}
+                </span>
               </span>
               <span className="flex shrink-0 items-baseline gap-2">
                 <span className="display text-lg tabular-nums text-mint">
