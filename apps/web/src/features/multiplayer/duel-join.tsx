@@ -109,7 +109,7 @@ export function DuelJoin({ code, onJoined }: Props) {
             autoFocus
             placeholder="Como quer aparecer"
             disabled={!room || joining}
-            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-slate"
+            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-ash"
           />
           <Button
             type="submit"

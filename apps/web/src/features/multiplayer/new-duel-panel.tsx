@@ -83,7 +83,7 @@ export function NewDuelPanel() {
             maxLength={20}
             autoComplete="off"
             placeholder="Seu nome nesta partida"
-            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-slate"
+            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 text-sm text-bone placeholder:text-ash"
           />
           <Button
             type="submit"
@@ -123,7 +123,7 @@ export function NewDuelPanel() {
             autoComplete="off"
             spellCheck={false}
             placeholder="ABC234"
-            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 font-mono text-sm tracking-[0.3em] text-bone placeholder:text-slate placeholder:tracking-normal"
+            className="h-9 min-w-0 flex-1 rounded-sm border border-slate bg-void px-3 font-mono text-sm tracking-[0.3em] text-bone placeholder:text-ash placeholder:tracking-normal"
           />
           <Button
             type="submit"

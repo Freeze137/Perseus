@@ -172,7 +172,7 @@ export function RankingPanel({ kind, language, syntax }: Props) {
               className="flex items-center justify-between gap-3 data-[mine=true]:text-mint"
             >
               <span className="flex min-w-0 items-center gap-2">
-                <span className="w-6 shrink-0 text-right font-mono text-xs text-slate">
+                <span className="w-6 shrink-0 text-right font-mono text-xs text-ash">
                   {entry.rank}
                 </span>
                 {/* Emblema apagado é informação sobre quem anda sumido — e é
@@ -218,7 +218,7 @@ export function RankingPanel({ kind, language, syntax }: Props) {
 
           <PatenteRing patentes={identity?.patentes ?? []} />
 
-          <p className="text-xs leading-relaxed text-slate">
+          <p className="text-xs leading-relaxed text-ash">
             A patente sai da média das suas cinco corridas válidas mais
             recentes, e aparece a partir da quinta. Sete dias sem corrida a
             deixam dormente — nada é perdido, e uma corrida a reacende.

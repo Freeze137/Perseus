@@ -77,7 +77,7 @@ export function IdentityPanel() {
           </p>
         ) : null}
 
-        <p className="text-xs leading-relaxed text-slate">
+        <p className="text-xs leading-relaxed text-ash">
           Esquecer aqui apaga só a chave deste navegador. As corridas e a
           patente continuam no servidor, e o código de recuperação traz tudo de
           volta.
@@ -120,7 +120,7 @@ export function IdentityPanel() {
           placeholder={
             mode === "new" ? "três a vinte caracteres" : "seis palavras"
           }
-          className="min-w-0 flex-1 rounded-md border border-slate bg-obsidian px-3 py-2 text-sm text-bone placeholder:text-slate"
+          className="min-w-0 flex-1 rounded-md border border-slate bg-obsidian px-3 py-2 text-sm text-bone placeholder:text-ash"
         />
         <Button type="submit" size="sm" disabled={status === "working"}>
           {mode === "new" ? "Criar" : "Voltar"}
