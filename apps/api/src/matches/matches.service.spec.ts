@@ -71,6 +71,29 @@ const REQUEST: CreateMatch = {
  */
 const SLOWEST_GAP = 220;
 
+/**
+ * Uma corrida que nenhuma mão produziu: intervalo fixo e curto demais.
+ *
+ * Existe pra checar o que acontece depois da recusa, e não a recusa em si —
+ * essa é do `checkTimeline`, e tem os testes dela no engine.
+ */
+function robotRun(config: SessionConfig): SubmittedKeystroke[] {
+  const target = generate(config);
+  let session = createSession(target, { autoIndent: config.kind === 'code' });
+  let at = 0;
+
+  while (session.typed.length < session.target.length) {
+    at += 2;
+    session = applyInput(session, session.target[session.typed.length], at);
+  }
+
+  return session.keystrokes.map(({ char, at: t, index }) => ({
+    char,
+    at: Math.round(t),
+    index,
+  }));
+}
+
 function honestRun(config: SessionConfig, gap = 120): SubmittedKeystroke[] {
   const target = generate(config);
 
@@ -308,6 +331,32 @@ describe('MatchesService', () => {
       true,
     );
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('leaves the refusal in the room, where the other screen can read it', () => {
+    const { service } = build();
+    const { host, guest, config } = running(service);
+
+    expect(() =>
+      service.finish(host.match.id, host.token, {
+        keystrokes: robotRun(config),
+      }),
+    ).toThrow(BadRequestException);
+
+    // Quem esperou do outro lado lê por que a corrida nunca chegou, em vez de
+    // ver só "não completou a tempo" quando a sala fechar.
+    const seen = service.forPlayer(host.match.id, guest.token).match;
+    expect(seen.players[0].refusal).toContain('além do que uma mão faz');
+    expect(seen.players[0].finishedAt).toBeNull();
+    expect(seen.players[1].refusal).toBeNull();
+
+    // Mandar de novo, agora digitando, apaga a acusação.
+    service.finish(host.match.id, host.token, {
+      keystrokes: honestRun(config),
+    });
+    expect(
+      service.forPlayer(host.match.id, guest.token).match.players[0].refusal,
+    ).toBeNull();
   });
 
   it('refuses a second submission from the same player', () => {

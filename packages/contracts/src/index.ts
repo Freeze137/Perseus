@@ -890,6 +890,18 @@ export const MatchPlayerSchema = z.object({
    * digitando antes de quem não quis ter lido o placar.
    */
   rematch: z.boolean(),
+  /**
+   * Por que a corrida deste jogador foi recusada, quando foi.
+   *
+   * Fica no retrato da sala, e não numa resposta de erro só, porque a recusa é
+   * do duelo e não da requisição: quem esperou o texto inteiro do outro lado
+   * merece saber por que a corrida dele nunca chegou, em vez de ler "não
+   * completou a tempo" — que é verdade e não é a verdade inteira.
+   *
+   * A frase descreve a gravação, nunca a pessoa. A checagem prova que uma
+   * timeline não saiu de uma mão, e não prova quem a montou nem por quê.
+   */
+  refusal: z.string().nullable(),
 });
 export type MatchPlayer = z.infer<typeof MatchPlayerSchema>;
 

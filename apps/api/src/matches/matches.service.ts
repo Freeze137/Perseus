@@ -39,6 +39,7 @@ import {
   MatchRegistryService,
   type Room,
   type RoomPlayer,
+  type ScoredRun,
 } from './match-registry.service';
 import { MatchStoreService } from './match-store.service';
 import { MatchTokenService } from './match-token.service';
@@ -323,6 +324,9 @@ export class MatchesService {
       one.score = null;
       one.outcome = null;
       one.rematch = false;
+      // A recusa era da rodada que acabou. Carregá-la pra outra faria a sala
+      // acusar uma corrida que ninguém digitou ainda.
+      one.refusal = null;
       // A corrida da rodada anterior sai junto. Ela ja foi classificada sob o
       // `roundId` de la, e quem nao terminar esta veria a de antes ser gravada
       // outra vez, agora apontando pra partida errada — uma corrida contada
@@ -442,16 +446,33 @@ export class MatchesService {
     }
 
     const now = Date.now();
-    const scored = this.results.score(
-      {
-        config: room.config,
-        corpusVersion: room.corpusVersion,
-        keystrokes: payload.keystrokes,
-      },
-      // Não-nulo: `running` só é alcançado pelo timer da regressiva.
-      { issuedAt: room.startsAt!, now },
-    );
+    let scored: ScoredRun;
+    try {
+      scored = this.results.score(
+        {
+          config: room.config,
+          corpusVersion: room.corpusVersion,
+          keystrokes: payload.keystrokes,
+        },
+        // Não-nulo: `running` só é alcançado pelo timer da regressiva.
+        { issuedAt: room.startsAt!, now },
+      );
+    } catch (error) {
+      // A recusa fica na sala antes de voltar pra quem enviou.
+      //
+      // Só quem foi recusado recebia a frase, no corpo de um 400 — e o outro
+      // lado via a corrida simplesmente nunca chegar, e depois lia "não
+      // completou a tempo". A frase que o servidor já tinha escrito descreve o
+      // que de fato aconteceu, e está no retrato da sala porque ela é do duelo
+      // e não da requisição.
+      me.refusal = reasonOf(error);
+      this.publish(room);
+      throw error;
+    }
 
+    // Enviou de novo depois de uma recusa e desta vez passou: a frase antiga
+    // sai, senão a tela ficaria acusando uma corrida que não existe mais.
+    me.refusal = null;
     me.finishedAt = now;
     // Guardado agora pra ser lido quando a sala for arquivada: é lá que a
     // corrida pode entrar no ranking, porque é lá que a partida passa a
@@ -716,6 +737,7 @@ export class MatchesService {
           score: one.score,
           outcome: one.outcome,
           rematch: one.rematch,
+          refusal: one.refusal,
         })),
       serverNow: now,
     };
@@ -777,6 +799,27 @@ export class MatchesService {
   }
 }
 
+/**
+ * A frase de dentro da recusa que o pontuador levantou.
+ *
+ * O `score` recusa com `BadRequestException` e um corpo `{ code, message }`, e
+ * é a `message` que está escrita pra ser lida — o `code` é grosso demais pra
+ * isso: `implausible` cobre seis checagens diferentes. Qualquer outra forma de
+ * erro vira uma frase genérica, porque uma exceção que não foi escrita pra ser
+ * lida por ninguém não passa a ser só porque caiu aqui.
+ */
+function reasonOf(error: unknown): string {
+  if (!(error instanceof BadRequestException)) {
+    return 'a corrida não pôde ser conferida';
+  }
+  const body = error.getResponse();
+  if (typeof body === 'object' && body !== null && 'message' in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return 'a corrida não pôde ser conferida';
+}
+
 function player(slot: number, displayName: string, at: number): RoomPlayer {
   return {
     slot,
@@ -787,6 +830,7 @@ function player(slot: number, displayName: string, at: number): RoomPlayer {
     score: null,
     outcome: null,
     rematch: false,
+    refusal: null,
     playerId: null,
     scoredRun: null,
   };

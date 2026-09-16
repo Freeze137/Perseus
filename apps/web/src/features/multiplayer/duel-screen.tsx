@@ -13,7 +13,7 @@ import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { TypingArea } from "@/features/typing/typing-area";
 import { useTypingSession } from "@/features/typing/use-typing-session";
-import { finishMatch, publishProgress } from "@/lib/api";
+import { ApiError, finishMatch, publishProgress } from "@/lib/api";
 import { explainRefusal } from "./duel-copy";
 import { DuelResult } from "./duel-result";
 import { DuelTrack } from "./duel-track";
@@ -126,6 +126,8 @@ export function DuelScreen({
 
   const me = match.players.find((player) => player.slot === slot);
   const them = match.players.find((player) => player.slot !== slot);
+  /** Quem teve corrida recusada nesta rodada, dos dois lados da sala. */
+  const refused = match.players.filter((player) => player.refusal !== null);
   const done = match.state === "done" || match.state === "abandoned";
 
   const [submission, setSubmission] = useState<Submission>("idle");
@@ -196,7 +198,15 @@ export function DuelScreen({
       })
       .catch((error: unknown) => {
         setSubmission("failed");
-        setRefusal(explainRefusal(error));
+        // Recusa que o servidor escreveu já está anotada na sala, com o nome de
+        // quem a levou. O que fica aqui é o que ele não chegou a dizer: o
+        // pedido que não saiu da máquina, e a resposta que voltou num formato
+        // que este site não reconhece.
+        setRefusal(
+          error instanceof ApiError && error.status === 400
+            ? null
+            : explainRefusal(error),
+        );
       });
   }, [session, match.id, token, passport, onMatch]);
 
@@ -342,6 +352,25 @@ export function DuelScreen({
       {/* Depois do texto, nunca antes: durante a corrida o que importa está
           acima, e uma saída oferecida no topo é uma saída oferecida a quem
           ainda está tentando entrar no ritmo. */}
+      {/* As recusas, com dono.
+       *
+       * Vêm do retrato da sala e não do erro local, e é isso que as coloca nas
+       * duas telas: quem esperou o texto inteiro do outro lado descobre por que
+       * a corrida nunca chegou, em vez de ler depois que o outro "não completou
+       * a tempo". A frase é sobre a gravação — a checagem prova que uma
+       * timeline não saiu de uma mão, e não prova quem a montou. */}
+      {refused.length > 0 ? (
+        <ul className="flex flex-col items-center gap-1">
+          {refused.map((one) => (
+            <li key={one.slot} className="text-center text-sm text-rust">
+              <span className="font-medium">{one.displayName}</span>
+              {one.slot === slot ? " · você" : ""} — a corrida não foi aceita:{" "}
+              {one.refusal}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       <div className="flex justify-center">
         <LeaveButton onLeave={onLeave} />
       </div>
@@ -381,6 +410,9 @@ function status(state: {
   connected: boolean;
   them: string;
 }): string {
+  // Só o que nunca chegou ao servidor. A recusa que ele escreveu é mostrada com
+  // o nome de quem a levou, logo acima, e dizê-la duas vezes na mesma tela faria
+  // parecer que aconteceram duas coisas.
   if (state.refusal) return `A corrida não foi aceita. ${state.refusal}`;
   if (state.submission === "sending") return "Enviando sua corrida…";
 

@@ -198,6 +198,14 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
                       <dt className="label">tempo</dt>
                     </div>
                   </dl>
+                ) : player.refusal ? (
+                  // Recusada não é "não completou": o texto pode ter sido
+                  // digitado inteiro e a gravação dele é que não passou. Dizer
+                  // qual das duas aconteceu é o que evita "não completou a
+                  // tempo" servir de explicação pra coisa nenhuma.
+                  <p className="text-sm leading-relaxed text-rust">
+                    A corrida não foi aceita: {player.refusal}
+                  </p>
                 ) : (
                   <p className="text-sm leading-relaxed text-ash">
                     {player.outcome === "unfinished"

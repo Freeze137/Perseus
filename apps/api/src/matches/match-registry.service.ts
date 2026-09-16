@@ -42,6 +42,13 @@ export type RoomPlayer = {
   scoredRun: ScoredRun | null;
   /** Pediu outra rodada. Limpo quando uma começa. */
   rematch: boolean;
+  /**
+   * A frase da recusa, quando a corrida deste lugar foi recusada.
+   *
+   * Guardada na sala pra sobreviver à resposta de erro: ela vai no retrato, que
+   * é o que a outra tela lê e o que uma aba reconectando recebe.
+   */
+  refusal: string | null;
 };
 
 /** Um duelo em andamento. Epoch em milissegundos aqui dentro; ISO é pra rede. */
