@@ -20,6 +20,7 @@ import { NewDuelPanel } from "@/features/multiplayer/new-duel-panel";
 import { LiveStatsPanel } from "@/features/panels/live-stats-panel";
 import { RankingPanel } from "@/features/panels/ranking-panel";
 import { IdentityPanel } from "@/features/identity/identity-panel";
+import { PatentePopup } from "@/features/identity/patente-popup";
 import { useIdentityHydration } from "@/features/identity/use-identity";
 import { ResultCard } from "@/features/result/result-card";
 import { useResultSync } from "@/features/sync/use-result-sync";
@@ -370,6 +371,11 @@ export default function Home() {
           <CreditsPanel />
         </div>
       </Modal>
+
+      {/* Fora dos painéis de propósito: a patente nasce enquanto a pessoa está
+          digitando, e o anúncio dela não pode depender de nenhuma gaveta estar
+          aberta. */}
+      <PatentePopup />
     </div>
   );
 }

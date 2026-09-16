@@ -8,7 +8,7 @@ import { generate } from "@perseus/corpus";
 import { isFinished, type Session } from "@perseus/engine";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useIdentity } from "@/features/identity/use-identity";
+import { awaitRankedRun, useIdentity } from "@/features/identity/use-identity";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { TypingArea } from "@/features/typing/typing-area";
@@ -199,6 +199,23 @@ export function DuelScreen({
         setRefusal(explainRefusal(error));
       });
   }, [session, match.id, token, passport, onMatch]);
+
+  /**
+   * Relê o cartão quando o duelo acaba, porque o duelo não devolve a patente.
+   *
+   * O envio responde com a sala, não com a classificação: o servidor arquiva a
+   * partida e só então pontua as duas corridas, depois de a resposta já ter
+   * ido. Então é esta tela que pergunta de novo — e é o que faz a quinta
+   * corrida de alguém ser anunciada no lugar onde ela aconteceu, em vez de
+   * esperar a próxima vez que a pessoa abrir uma gaveta.
+   *
+   * Por rodada, e não por montagem: revanche joga outro duelo neste mesmo
+   * componente, e a corrida de cada uma tem que ser esperada.
+   */
+  useEffect(() => {
+    if (!done || !passport) return;
+    void awaitRankedRun(passport);
+  }, [done, passport, match.roundId]);
 
   const swallow = useCallback(() => undefined, []);
 

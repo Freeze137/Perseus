@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useSyncExternalStore } from "react";
+import { PatentePopup } from "@/features/identity/patente-popup";
 import { useIdentityHydration } from "@/features/identity/use-identity";
 import { DuelJoin } from "@/features/multiplayer/duel-join";
 import { DuelLobby } from "@/features/multiplayer/duel-lobby";
@@ -150,6 +151,9 @@ export default function DuelPage({
         )}
       </main>
 
+      {/* A quinta corrida válida pode ser a do duelo que acabou de terminar, e
+          é aqui que a pessoa está quando isso acontece. */}
+      <PatentePopup />
     </div>
   );
 }

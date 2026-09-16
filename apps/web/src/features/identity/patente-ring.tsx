@@ -8,16 +8,11 @@ import {
   type RankFamily,
   type TierId,
 } from "@perseus/contracts";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { useSettings } from "@/features/settings/use-settings";
 import { PatenteMark, type MarkState } from "./patente-mark";
+import { setPatenteSpin, usePatenteSpin } from "./patente-spin";
 
 /** Uma face do anel: uma patente numa família. */
 type Face = { tier: TierId; family: RankFamily };
@@ -42,43 +37,6 @@ const RADIUS = Math.round(150 / Math.tan(Math.PI / FACES.length));
 const IDLE_SPEED = 6;
 /** Quanto tempo o anel fica parado depois de um toque antes de voltar a girar. */
 const SETTLE_MS = 2_000;
-/** Onde a preferência de girar fica guardada. */
-const SPIN_KEY = "perseus:patente-spin";
-
-/**
- * A preferência de girar, como fonte externa em vez de estado do React.
- *
- * O `localStorage` é um sistema de fora, e lê-lo dentro de um efeito pra então
- * escrever estado produz um render a mais em toda montagem. `useSyncExternalStore`
- * é o que existe pra exatamente esta forma — e o instantâneo do servidor é
- * `false`, que é o padrão e é o que o HTML entregue já diz.
- */
-const spinStore = {
-  listeners: new Set<() => void>(),
-  subscribe(listener: () => void) {
-    spinStore.listeners.add(listener);
-    return () => {
-      spinStore.listeners.delete(listener);
-    };
-  },
-  read(): boolean {
-    try {
-      return window.localStorage.getItem(SPIN_KEY) === "on";
-    } catch {
-      // Armazenamento bloqueado é um navegador com as configurações de alguém
-      // dentro, não uma falha. O padrão já é o certo.
-      return false;
-    }
-  },
-  write(value: boolean): void {
-    try {
-      window.localStorage.setItem(SPIN_KEY, value ? "on" : "off");
-    } catch {
-      // A escolha continua valendo nesta sessão.
-    }
-    for (const listener of spinStore.listeners) listener();
-  },
-};
 
 type Props = {
   /** As patentes de quem está olhando. Vazio pra quem ainda não tem nenhuma. */
@@ -115,11 +73,7 @@ type Props = {
 export function PatenteRing({ patentes }: Props) {
   const motion = useMotionLevel();
   const tier = useSettings((state) => state.performance);
-  const spin = useSyncExternalStore(
-    spinStore.subscribe,
-    spinStore.read,
-    () => false,
-  );
+  const spin = usePatenteSpin();
   const [index, setIndex] = useState(0);
 
   const reduced = motion === "none";
@@ -195,7 +149,7 @@ export function PatenteRing({ patentes }: Props) {
           {current.family === "code" ? "código" : "prosa"} ·{" "}
           {TIERS[current.tier].from[current.family]} ppm
         </span>
-        <span className="font-mono text-xs text-slate">
+        <span className="font-mono text-xs text-ash">
           {TIERS[current.tier].designation} · {TIERS[current.tier].spectral}
         </span>
       </p>
@@ -203,7 +157,7 @@ export function PatenteRing({ patentes }: Props) {
       {reduced ? (
         <button
           type="button"
-          onClick={() => spinStore.write(!spin)}
+          onClick={() => setPatenteSpin(!spin)}
           className="text-xs text-ash underline decoration-slate underline-offset-4 hover:text-bone"
         >
           {spin ? "Parar de girar as patentes" : "Girar as patentes"}

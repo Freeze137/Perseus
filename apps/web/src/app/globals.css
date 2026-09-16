@@ -1238,3 +1238,106 @@ code {
     opacity: 0.62;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Anúncio de patente
+
+   A janela que interrompe quando uma patente nasce ou sobe de degrau. Ela é a
+   única do site que ganha borda além do aro: o aro desenha a caixa, e as linhas
+   por dentro dão a volta. Duas coisas diferentes acontecendo na mesma beirada é
+   exatamente o que se quer uma vez por conquista, e o que seria barulho em
+   qualquer painel que abrisse toda hora.
+--------------------------------------------------------------------------- */
+.patente-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* `pathLength` normaliza o perímetro em 100 no próprio SVG, então o traço e o
+   vão são lidos como porcentagem da volta e não mudam com a altura da caixa —
+   que muda, porque o texto embaixo tem uma linha a mais quando é promoção.
+   `non-scaling-stroke` é o par disso: sem ele, o `preserveAspectRatio="none"`
+   que estica o quadrado esticaria a espessura junto, e a linha sairia grossa em
+   cima e fina dos lados. */
+.patente-line {
+  fill: none;
+  stroke: var(--color-mint);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 16 84;
+  opacity: 0.9;
+  animation: patente-run 5.4s linear infinite;
+}
+
+/* A segunda passa do outro lado da volta. Duas e não quatro: com quatro, a
+   borda vira uma corrente contínua e para de ler como algo que dá a volta. */
+.patente-line-tail {
+  opacity: 0.45;
+  animation-delay: -2.7s;
+}
+
+@keyframes patente-run {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* Com movimento reduzido as linhas param de correr e viram moldura: o que a
+   chave recusa é a coisa atravessando o campo de visão, e uma luz que sobe e
+   desce de intensidade é o desvanecer que o resto do site já usa no lugar dela.
+
+   `!important` pelo mesmo motivo do aro: sem ele a varredura global zera a
+   duração e congela o traço num quadro, deixando um lado aceso e três
+   apagados. */
+@media (prefers-reduced-motion: reduce) {
+  .patente-line {
+    stroke-dasharray: none;
+    animation: patente-line-breathe 5s ease-in-out infinite !important;
+    animation-duration: 5s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .patente-line-tail {
+    display: none;
+  }
+}
+
+@keyframes patente-line-breathe {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* O emblema tem profundidade aqui e em nenhum outro lugar do site fora da
+   vitrine — é a mesma placa chata girada em torno do próprio eixo, com a mesma
+   perspectiva, pra que a patente anunciada seja reconhecivelmente o objeto que
+   a vitrine mostra e não um desenho parecido. */
+.patente-stage {
+  perspective: 700px;
+}
+
+.patente-orbit[data-turning="true"] {
+  transform-style: preserve-3d;
+  /* Vai e volta em vez de dar a volta: a face de trás de um emblema não existe,
+     e uma rotação completa a mostraria espelhada meia volta em cada duas. */
+  animation: patente-turn 9s ease-in-out infinite !important;
+  animation-duration: 9s !important;
+  animation-iteration-count: infinite !important;
+}
+
+@keyframes patente-turn {
+  0%,
+  100% {
+    transform: rotateY(-17deg) rotateX(5deg);
+  }
+  50% {
+    transform: rotateY(17deg) rotateX(-5deg);
+  }
+}

@@ -11,7 +11,11 @@ import type { Standing } from "@perseus/contracts";
 import type { Session } from "@perseus/engine";
 import { isFinished } from "@perseus/engine";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useIdentity } from "@/features/identity/use-identity";
+import {
+  announceStanding,
+  refreshIdentity,
+  useIdentity,
+} from "@/features/identity/use-identity";
 import { ApiError, startRun, submitResult } from "@/lib/api";
 
 export type SyncState =
@@ -106,6 +110,14 @@ export function useResultSync(
       try {
         const response = await submitResult(payload, passport);
         setStanding(response.standing);
+        if (response.standing) {
+          // A resposta já traz a patente e o degrau de onde ela veio, então o
+          // anúncio sai daqui sem pedir nada. A releitura do cartão vem atrás e
+          // calada: ela é pro painel de identidade parar de mostrar a contagem
+          // de antes desta corrida, e o que ela descobriria já foi dito.
+          announceStanding(response.standing);
+          if (passport) void refreshIdentity(passport, { announce: false });
+        }
         return "sent";
       } catch (error: unknown) {
         if (!(error instanceof ApiError)) throw error;
