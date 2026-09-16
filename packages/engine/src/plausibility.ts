@@ -16,6 +16,11 @@ export type TimelineLimits = {
 
 export type TimelineVerdict =
   | { readonly ok: true }
+  /**
+   * `reason` é lido por quem digitou, e por isso está em português como o resto
+   * da interface. Uma recusa que a pessoa não entende é indistinguível de um
+   * bug do site — e a acusação implícita continua de pé do mesmo jeito.
+   */
   | { readonly ok: false; readonly reason: string };
 
 /**
@@ -37,7 +42,9 @@ export function checkTimeline(
   keystrokes: readonly Keystroke[],
   limits: TimelineLimits,
 ): TimelineVerdict {
-  if (keystrokes.length === 0) return { ok: false, reason: 'the timeline is empty' };
+  if (keystrokes.length === 0) {
+    return { ok: false, reason: 'a gravação chegou vazia' };
+  }
 
   const gaps: number[] = [];
   for (let i = 1; i < keystrokes.length; i += 1) {
@@ -49,14 +56,14 @@ export function checkTimeline(
     // Relógio andando pra trás não é corrida lenta nem rápida. É timeline
     // montada, não gravada.
     if (gap < 0) {
-      return { ok: false, reason: 'the timeline goes backwards in time' };
+      return { ok: false, reason: 'o relógio da gravação anda para trás' };
     }
     gaps.push(gap);
   }
 
   const first = keystrokes[0];
   const last = keystrokes[keystrokes.length - 1];
-  if (!first || !last) return { ok: false, reason: 'the timeline is empty' };
+  if (!first || !last) return { ok: false, reason: 'a gravação chegou vazia' };
 
   const elapsedMs = last.at - first.at;
   // Uma tecla só não tem duração nem ritmo, então não há o que desconfiar.
@@ -64,14 +71,17 @@ export function checkTimeline(
   if (keystrokes.length < 2) return { ok: true };
 
   if (elapsedMs <= 0) {
-    return { ok: false, reason: 'every keystroke claims the same instant' };
+    return {
+      ok: false,
+      reason: 'todas as teclas dizem o mesmo instante',
+    };
   }
 
   const cpm = (keystrokes.length / elapsedMs) * 60_000;
   if (cpm > limits.maxCpm) {
     return {
       ok: false,
-      reason: `${Math.round(cpm)} characters per minute is beyond what a hand does`,
+      reason: `${Math.round(cpm)} caracteres por minuto está além do que uma mão faz`,
     };
   }
 
@@ -79,7 +89,7 @@ export function checkTimeline(
   if (median < limits.minMedianGapMs) {
     return {
       ok: false,
-      reason: `a median gap of ${median.toFixed(1)}ms between keystrokes is not typing`,
+      reason: `um intervalo mediano de ${median.toFixed(1)}ms entre as teclas não é digitação`,
     };
   }
 
@@ -92,7 +102,7 @@ export function checkTimeline(
     if (variation < limits.minGapVariation) {
       return {
         ok: false,
-        reason: 'the rhythm is too even to be a person',
+        reason: 'o ritmo é uniforme demais para ser de uma pessoa',
       };
     }
   }

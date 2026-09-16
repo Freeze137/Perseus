@@ -39,7 +39,7 @@ describe('checkTimeline', () => {
 
     const verdict = checkTimeline(strokes, LIMITS);
     expect(verdict.ok).toBe(false);
-    expect(verdict).toMatchObject({ reason: expect.stringContaining('backwards') });
+    expect(verdict).toMatchObject({ reason: expect.stringContaining('para trás') });
   });
 
   it('refuses a timeline compressed into no time at all', () => {
@@ -55,7 +55,7 @@ describe('checkTimeline', () => {
     const verdict = checkTimeline(timeline(200, 20, 6), LIMITS);
     expect(verdict.ok).toBe(false);
     expect(verdict).toMatchObject({
-      reason: expect.stringContaining('characters per minute'),
+      reason: expect.stringContaining('caracteres por minuto'),
     });
   });
 
@@ -63,7 +63,7 @@ describe('checkTimeline', () => {
     // Velocidade plausível, variação zero: loop com sleep fixo.
     const verdict = checkTimeline(timeline(200, 150), LIMITS);
     expect(verdict.ok).toBe(false);
-    expect(verdict).toMatchObject({ reason: expect.stringContaining('even') });
+    expect(verdict).toMatchObject({ reason: expect.stringContaining('uniforme') });
   });
 
   it('does not judge the rhythm of a run too short to have one', () => {

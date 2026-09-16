@@ -64,14 +64,17 @@ export class RunTicketService {
     if (given.length !== mine.length || !timingSafeEqual(given, mine)) {
       return {
         ok: false,
-        reason: 'the run ticket is not one this server issued',
+        reason: 'o bilhete da corrida não foi emitido por este servidor',
       };
     }
     if (ticket.issuedAt > now + 60_000) {
-      return { ok: false, reason: 'the run ticket is dated in the future' };
+      return {
+        ok: false,
+        reason: 'o bilhete da corrida está datado no futuro',
+      };
     }
     if (now - ticket.issuedAt > RUN_TICKET_TTL_MS) {
-      return { ok: false, reason: 'the run ticket has expired' };
+      return { ok: false, reason: 'o bilhete da corrida venceu' };
     }
     return { ok: true, issuedAt: ticket.issuedAt };
   }

@@ -231,7 +231,7 @@ export class RankingService {
         // mesma corrida. Não é erro de quem digitou.
         throw new ConflictException({
           code: 'duplicate' satisfies SubmitErrorCode,
-          message: 'this run was already stored',
+          message: 'esta corrida já estava guardada',
         });
       }
       // Guardar é o que pode falhar; pontuar já aconteceu. Quem acabou de

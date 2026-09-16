@@ -33,21 +33,21 @@ export function replay(
   for (const keystroke of keystrokes) {
     const { index, char, at } = keystroke;
     if (!Number.isInteger(index) || index < 0 || index >= base.target.length) {
-      throw new ReplayError(`keystroke points outside the target: ${index}`);
+      throw new ReplayError(`a tecla aponta para fora do texto, na posição ${index}`);
     }
     // Toda posição até esta já tem que existir. Timeline que pula à frente
     // está reivindicando caractere que ninguém digitou.
     if (index > typed.length) {
-      throw new ReplayError(`keystroke at ${index} skips past ${typed.length}`);
+      throw new ReplayError(`a tecla na posição ${index} pula o que ainda não foi digitado`);
     }
     // Tempo anda pra um lado só. Timestamp fora de ordem não é corrida lenta
     // nem rápida: é timeline escrita, não gravada. E as métricas lá na frente
     // leem a primeira e a última entrada como duração.
     if (!Number.isFinite(at)) {
-      throw new ReplayError('keystroke has no usable timestamp');
+      throw new ReplayError('uma tecla chegou sem instante');
     }
     if (previousAt !== null && at < previousAt) {
-      throw new ReplayError(`keystroke at ${index} goes back in time`);
+      throw new ReplayError(`a tecla na posição ${index} volta no tempo`);
     }
     previousAt = at;
 

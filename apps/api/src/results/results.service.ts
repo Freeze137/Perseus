@@ -129,7 +129,7 @@ export class ResultsService {
 
     const target = generate(payload.config);
     if (target.length === 0) {
-      throw refuse('invalid_timeline', 'that config produces no text');
+      throw refuse('invalid_timeline', 'essa configuração não produz texto');
     }
 
     let session;
@@ -149,7 +149,7 @@ export class ResultsService {
     if (!isFinished(session)) {
       throw refuse(
         'invalid_timeline',
-        'the run did not reach the end of the text',
+        'a corrida não chegou ao fim do texto',
       );
     }
 
@@ -161,7 +161,7 @@ export class ResultsService {
 
     const stats = metrics(session, session.finishedAt ?? 0);
     if (!Number.isFinite(stats.wpm) || stats.elapsedMs <= 0) {
-      throw refuse('implausible', 'the timeline has no duration');
+      throw refuse('implausible', 'a gravação não tem duração');
     }
 
     if (anchor) {
@@ -173,7 +173,7 @@ export class ResultsService {
       if (stats.elapsedMs > watched + TIMELINE_LIMITS.clockSlackMs) {
         throw refuse(
           'implausible',
-          'the run claims more time than passed since it started',
+          'a corrida diz ter durado mais que o tempo desde a largada',
         );
       }
     }
