@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useSyncExternalStore } from "react";
+import { useIdentityHydration } from "@/features/identity/use-identity";
 import { DuelJoin } from "@/features/multiplayer/duel-join";
 import { DuelLobby } from "@/features/multiplayer/duel-lobby";
 import { DuelScreen } from "@/features/multiplayer/duel-screen";
@@ -40,6 +41,17 @@ export default function DuelPage({
   const { code: raw } = use(params);
   const code = raw.toUpperCase();
   const router = useRouter();
+
+  /**
+   * O passaporte é lido do disco aqui também, e não só no treino.
+   *
+   * Sem isto, um convite aberto direto — que é como todo convidado chega —
+   * carregava esta página com a loja de identidade ainda por hidratar, então a
+   * corrida ia pro servidor sem dizer de quem era. O duelo acontecia inteiro,
+   * o placar aparecia, e a corrida não classificava ninguém: cinco duelos
+   * depois, nenhuma patente, sem nada na tela que explicasse por quê.
+   */
+  useIdentityHydration();
 
   /**
    * A cadeira sai direto do armazenamento local, que é estado fora do React —
@@ -137,6 +149,7 @@ export default function DuelPage({
           />
         )}
       </main>
+
     </div>
   );
 }
