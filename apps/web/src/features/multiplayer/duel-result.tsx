@@ -1,10 +1,11 @@
 "use client";
 
-import type { Match, MatchOutcome } from "@perseus/contracts";
+import { familyOf, type Match, type MatchOutcome } from "@perseus/contracts";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PatenteProgress } from "@/features/identity/patente-progress";
 import { requestRematch } from "@/lib/api";
 import { explainRefusal } from "./duel-copy";
 import { transitionFor } from "@/features/settings/performance-tiers";
@@ -97,158 +98,175 @@ export function DuelResult({ match, slot, token, onMatch }: Props) {
   }, [match.id, token, onMatch]);
 
   return (
-    <section className="flex flex-col gap-5">
-      <motion.header
-        className="flex flex-col gap-1"
-        initial={
-          still ? { opacity: 0 } : { opacity: 0, y: 10, filter: "blur(6px)" }
-        }
-        animate={
-          still ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)" }
-        }
-        transition={transitionFor(level, SETTLE)}
-      >
-        <h2 className="label">{abandoned ? "Duelo encerrado" : "Resultado"}</h2>
-        <p className="display text-4xl text-bone">{headline(match, slot)}</p>
-        {/* Quem foi deixado na sala precisa saber que acabou e por quê. Sem
-            isso, "ninguém terminou" lê como se a culpa fosse dele. */}
-        {abandoned ? (
-          <p className="text-sm leading-relaxed text-ash">
-            A sala foi encerrada antes de alguém chegar ao fim do texto. Nada
-            foi registrado.
+    <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_15rem] md:gap-10">
+      <section className="flex flex-col gap-5">
+        <motion.header
+          className="flex flex-col gap-1"
+          initial={
+            still ? { opacity: 0 } : { opacity: 0, y: 10, filter: "blur(6px)" }
+          }
+          animate={
+            still ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)" }
+          }
+          transition={transitionFor(level, SETTLE)}
+        >
+          <h2 className="label">{abandoned ? "Duelo encerrado" : "Resultado"}</h2>
+          <p className="display text-4xl text-bone">{headline(match, slot)}</p>
+          {/* Quem foi deixado na sala precisa saber que acabou e por quê. Sem
+              isso, "ninguém terminou" lê como se a culpa fosse dele. */}
+          {abandoned ? (
+            <p className="text-sm leading-relaxed text-ash">
+              A sala foi encerrada antes de alguém chegar ao fim do texto. Nada
+              foi registrado.
+            </p>
+          ) : null}
+        </motion.header>
+
+        {/* A régua se desenha da esquerda para a direita: ela separa o veredito
+            dos números, e vê-la ser traçada é o que diz que os números vêm em
+            seguida. */}
+        <motion.div
+          className="rule origin-left"
+          initial={still ? { opacity: 0 } : { scaleX: 0 }}
+          animate={still ? { opacity: 1 } : { scaleX: 1 }}
+          transition={transitionFor(level, { ...SETTLE, delay: 0.06 })}
+        />
+
+        <ol className="flex flex-col gap-4">
+          {match.players.map((player, index) => {
+            const won = player.outcome === "won";
+            return (
+              <motion.li
+                key={player.slot}
+                className="flex flex-col gap-1.5"
+                initial={
+                  still
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 12, filter: "blur(5px)" }
+                }
+                animate={
+                  still
+                    ? { opacity: 1 }
+                    : { opacity: 1, y: 0, filter: "blur(0px)" }
+                }
+                transition={transitionFor(level, {
+                  ...SETTLE,
+                  delay: 0.12 + index * STEP_MS,
+                })}
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span
+                    data-won={won}
+                    className="truncate text-base text-ash data-[won=true]:text-bone"
+                  >
+                    {player.displayName}
+                    {player.slot === slot ? " · Você" : ""}
+                  </span>
+                  <span
+                    data-won={won}
+                    className="label data-[won=true]:text-mint"
+                  >
+                    {OUTCOME[player.outcome ?? "abandoned"]}
+                  </span>
+                </div>
+
+                {player.score ? (
+                  <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+                    <div className="flex items-baseline gap-2">
+                      <dd
+                        data-won={won}
+                        className="display text-3xl tabular-nums text-ash data-[won=true]:text-mint"
+                      >
+                        {/* Conta até o número real em vez de aparecer com ele.
+                            O que está sendo mostrado é o que o servidor apurou
+                            replayando a corrida — vê-lo subir é a única parte
+                            desta tela que se parece com o esforço que produziu. */}
+                        <Ticker to={Math.round(player.score.wpm)} still={still} />
+                      </dd>
+                      <dt className="label">ppm</dt>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <dd className="font-mono text-sm tabular-nums text-bone">
+                        {player.score.accuracy.toFixed(1)}%
+                      </dd>
+                      <dt className="label">precisão</dt>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <dd className="font-mono text-sm tabular-nums text-bone">
+                        {(player.score.durationMs / 1000).toFixed(1)}s
+                      </dd>
+                      <dt className="label">tempo</dt>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="text-sm leading-relaxed text-ash">
+                    {player.outcome === "unfinished"
+                      ? "Não completou o texto dentro dos 30 segundos."
+                      : "A corrida não chegou ao fim."}
+                  </p>
+                )}
+              </motion.li>
+            );
+          })}
+        </ol>
+
+        <div className="rule" />
+
+        <motion.div
+          className="flex flex-wrap items-center gap-3"
+          initial={still ? { opacity: 0 } : { opacity: 0, y: 8 }}
+          animate={still ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transitionFor(level, { ...SETTLE, delay: 0.34 })}
+        >
+          {canAsk ? (
+            <>
+              <Button
+                variant="edge"
+                size="sm"
+                disabled={asking || iAsked}
+                onClick={askRematch}
+              >
+                {theyAsked ? "Aceitar revanche" : "Revanche"}
+              </Button>
+              <span aria-hidden="true" className="h-4 w-px bg-slate" />
+            </>
+          ) : null}
+
+          <Button variant="quiet" size="sm" onClick={() => router.push("/")}>
+            Voltar ao treino
+          </Button>
+          <span aria-hidden="true" className="h-4 w-px bg-slate" />
+
+          {/* Uma frase por vez, e sempre a que diz de quem é a vez de agir.
+              "Esperando" tem destinatário: sem o nome, quem lê fica sem saber se
+              precisa fazer algo ou se já fez. */}
+          <p aria-live="polite" className="text-sm text-ash">
+            {refusal
+              ? `A revanche não saiu. ${refusal}`
+              : iAsked
+                ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
+                : theyAsked
+                  ? `${them?.displayName ?? "O outro jogador"} quer revanche.`
+                  : "Este duelo fica no seu histórico de partidas."}
           </p>
-        ) : null}
-      </motion.header>
+        </motion.div>
+      </section>
 
-      {/* A régua se desenha da esquerda para a direita: ela separa o veredito
-          dos números, e vê-la ser traçada é o que diz que os números vêm em
-          seguida. */}
-      <motion.div
-        className="rule origin-left"
-        initial={still ? { opacity: 0 } : { scaleX: 0 }}
-        animate={still ? { opacity: 1 } : { scaleX: 1 }}
-        transition={transitionFor(level, { ...SETTLE, delay: 0.06 })}
-      />
+      {/* A escada, ao lado do placar.
 
-      <ol className="flex flex-col gap-4">
-        {match.players.map((player, index) => {
-          const won = player.outcome === "won";
-          return (
-            <motion.li
-              key={player.slot}
-              className="flex flex-col gap-1.5"
-              initial={
-                still
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: 12, filter: "blur(5px)" }
-              }
-              animate={
-                still
-                  ? { opacity: 1 }
-                  : { opacity: 1, y: 0, filter: "blur(0px)" }
-              }
-              transition={transitionFor(level, {
-                ...SETTLE,
-                delay: 0.12 + index * STEP_MS,
-              })}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span
-                  data-won={won}
-                  className="truncate text-base text-ash data-[won=true]:text-bone"
-                >
-                  {player.displayName}
-                  {player.slot === slot ? " · Você" : ""}
-                </span>
-                <span
-                  data-won={won}
-                  className="label data-[won=true]:text-mint"
-                >
-                  {OUTCOME[player.outcome ?? "abandoned"]}
-                </span>
-              </div>
-
-              {player.score ? (
-                <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-                  <div className="flex items-baseline gap-2">
-                    <dd
-                      data-won={won}
-                      className="display text-3xl tabular-nums text-ash data-[won=true]:text-mint"
-                    >
-                      {/* Conta até o número real em vez de aparecer com ele.
-                          O que está sendo mostrado é o que o servidor apurou
-                          replayando a corrida — vê-lo subir é a única parte
-                          desta tela que se parece com o esforço que produziu. */}
-                      <Ticker to={Math.round(player.score.wpm)} still={still} />
-                    </dd>
-                    <dt className="label">ppm</dt>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <dd className="font-mono text-sm tabular-nums text-bone">
-                      {player.score.accuracy.toFixed(1)}%
-                    </dd>
-                    <dt className="label">precisão</dt>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <dd className="font-mono text-sm tabular-nums text-bone">
-                      {(player.score.durationMs / 1000).toFixed(1)}s
-                    </dd>
-                    <dt className="label">tempo</dt>
-                  </div>
-                </dl>
-              ) : (
-                <p className="text-sm leading-relaxed text-ash">
-                  {player.outcome === "unfinished"
-                    ? "Não completou o texto dentro dos 30 segundos."
-                    : "A corrida não chegou ao fim."}
-                </p>
-              )}
-            </motion.li>
-          );
-        })}
-      </ol>
-
-      <div className="rule" />
-
-      <motion.div
-        className="flex flex-wrap items-center gap-3"
-        initial={still ? { opacity: 0 } : { opacity: 0, y: 8 }}
+          O duelo responde "quem foi mais rápido agora"; isto responde "e daí" —
+          onde as cinco últimas corridas deixaram a pessoa, e quanto falta pro
+          próximo degrau. Chega depois de tudo o que é do duelo, porque é sobre
+          a temporada e não sobre a partida. */}
+      <motion.aside
+        className="md:border-l md:border-slate md:pl-8"
+        initial={still ? { opacity: 0 } : { opacity: 0, y: 10 }}
         animate={still ? { opacity: 1 } : { opacity: 1, y: 0 }}
-        transition={transitionFor(level, { ...SETTLE, delay: 0.34 })}
+        transition={transitionFor(level, { ...SETTLE, delay: 0.42 })}
       >
-        {canAsk ? (
-          <>
-            <Button
-              variant="edge"
-              size="sm"
-              disabled={asking || iAsked}
-              onClick={askRematch}
-            >
-              {theyAsked ? "Aceitar revanche" : "Revanche"}
-            </Button>
-            <span aria-hidden="true" className="h-4 w-px bg-slate" />
-          </>
-        ) : null}
-
-        <Button variant="quiet" size="sm" onClick={() => router.push("/")}>
-          Voltar ao treino
-        </Button>
-        <span aria-hidden="true" className="h-4 w-px bg-slate" />
-
-        {/* Uma frase por vez, e sempre a que diz de quem é a vez de agir.
-            "Esperando" tem destinatário: sem o nome, quem lê fica sem saber se
-            precisa fazer algo ou se já fez. */}
-        <p aria-live="polite" className="text-sm text-ash">
-          {refusal
-            ? `A revanche não saiu. ${refusal}`
-            : iAsked
-              ? `Esperando ${them?.displayName ?? "o outro jogador"} aceitar.`
-              : theyAsked
-                ? `${them?.displayName ?? "O outro jogador"} quer revanche.`
-                : "Este duelo fica no seu histórico de partidas."}
-        </p>
-      </motion.div>
-    </section>
+        <PatenteProgress family={familyOf(match.config.kind)} />
+      </motion.aside>
+    </div>
   );
 }
 
