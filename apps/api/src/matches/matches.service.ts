@@ -323,6 +323,11 @@ export class MatchesService {
       one.score = null;
       one.outcome = null;
       one.rematch = false;
+      // A corrida da rodada anterior sai junto. Ela ja foi classificada sob o
+      // `roundId` de la, e quem nao terminar esta veria a de antes ser gravada
+      // outra vez, agora apontando pra partida errada — uma corrida contada
+      // duas vezes na media que decide a patente.
+      one.scoredRun = null;
     }
 
     // A sala estava de saída; em vez disso vai ser jogada de novo.
