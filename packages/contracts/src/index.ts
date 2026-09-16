@@ -618,6 +618,26 @@ export const LeaderboardEntrySchema = z.object({
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
 /**
+ * Um número que chegou numa query string.
+ *
+ * Existe porque query string não tem números: `?limit=20` entrega a string
+ * "20", e um schema que espera `z.int()` recusa a requisição inteira. O ranking
+ * era pedido com `limit` em toda abertura de gaveta, então ele respondia 400
+ * sempre — e a tela dizia "não deu para ler o ranking agora", que é a frase
+ * certa pro banco fora do ar e a errada pra uma vírgula de tipo.
+ *
+ * Converte e devolve ao schema de destino em vez de ser ele: o `pipe` mantém os
+ * limites escritos uma vez só, onde eles já estavam, e o cliente continua
+ * mandando número de verdade sem passar por conversão nenhuma.
+ */
+const QueryIntSchema = z.union([z.number(), z.string()]).transform((value) => {
+  if (typeof value === 'number') return value;
+  const parsed = Number(value);
+  // NaN é recusado pelo schema do outro lado do `pipe`, com a mensagem dele.
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+});
+
+/**
  * O escopo de um ranking.
  *
  * Código e prosa nunca dividem o mesmo: cinco caracteres são uma palavra em
@@ -629,8 +649,10 @@ export const LeaderboardQuerySchema = z.object({
   language: LanguageSchema.default('pt-BR'),
   syntax: SyntaxChoiceSchema.nullable().default(null),
   /** Quantos dias pra trás considerar. Null é desde sempre. */
-  windowDays: z.int().positive().max(365).nullable().default(null),
-  limit: z.int().positive().max(200).default(50),
+  windowDays: QueryIntSchema.pipe(
+    z.int().positive().max(365),
+  ).nullable().default(null),
+  limit: QueryIntSchema.pipe(z.int().positive().max(200)).default(50),
 });
 export type LeaderboardQuery = z.infer<typeof LeaderboardQuerySchema>;
 
@@ -660,7 +682,7 @@ export type StoredResult = z.infer<typeof StoredResultSchema>;
 
 export const HistoryQuerySchema = z.object({
   kind: TextKindSchema.optional(),
-  limit: z.int().positive().max(100).default(20),
+  limit: QueryIntSchema.pipe(z.int().positive().max(100)).default(20),
 });
 export type HistoryQuery = z.infer<typeof HistoryQuerySchema>;
 
