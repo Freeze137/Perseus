@@ -2,6 +2,7 @@ import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import {
   familyOf,
   LEADERBOARD_MIN_ACCURACY,
+  LEADERBOARD_MIN_LENGTH,
   PATENTE_DORMANT_DAYS,
   PATENTE_MIN_RUNS,
   PATENTE_SAMPLE,
@@ -84,11 +85,18 @@ export class RankingService {
       scored.config.kind === 'code' ? (scored.config.syntax ?? 'mix') : null;
     const completedAt = new Date(scored.completedAt);
     const ranks = scored.accuracy >= LEADERBOARD_MIN_ACCURACY;
+    /**
+     * Se esta corrida pode virar recorde. Um texto curto conta como corrida e
+     * entra na média da patente; ele só não disputa o board, que é máximo e por
+     * isso premiaria quem tirasse mais amostras curtas. Ver LEADERBOARD_MIN_LENGTH.
+     */
+    const records = ranks && scored.config.length >= LEADERBOARD_MIN_LENGTH;
 
     let outcome: {
       previousTier: Patente['tier'] | null;
       personalBest: boolean;
-      bestWpm: number;
+      /** O recorde vigente depois desta corrida, ou null se ainda não há um. */
+      bestWpm: number | null;
       bestAt: Date;
       patente: Patente | null;
     } | null;
@@ -138,7 +146,7 @@ export class RankingService {
           return {
             previousTier: null,
             personalBest: false,
-            bestWpm: 0,
+            bestWpm: null,
             bestAt: completedAt,
             patente: null,
           };
@@ -151,55 +159,74 @@ export class RankingService {
           [playerId, scored.config.kind, scored.config.language, syntaxKey],
         );
         const priorWpm = previousBest[0] ? Number(previousBest[0].wpm) : null;
-        const personalBest = priorWpm === null || scored.wpm > priorWpm;
+        const personalBest =
+          records && (priorWpm === null || scored.wpm > priorWpm);
 
         const previousPatente = await run<PatenteRow>(
           `select wpm_avg, runs_total, last_run_at
            from public.player_patentes where player_id = $1 and family = $2`,
           [playerId, family],
         );
-        const previousTier = toPatente(previousPatente[0], family)?.tier ?? null;
+        const previousTier =
+          toPatente(previousPatente[0], family)?.tier ?? null;
 
-        await run(
-          `insert into public.player_bests
-             (player_id, kind, language, syntax_key, wpm, accuracy, run_id, achieved_at)
-           values ($1, $2, $3, $4, $5, $6, $7, $8)
-           on conflict (player_id, kind, language, syntax_key) do update
-             set wpm = excluded.wpm,
-                 accuracy = excluded.accuracy,
-                 run_id = excluded.run_id,
-                 achieved_at = excluded.achieved_at
-           -- Só sobe. Recorde que desce com a corrida seguinte não é recorde,
-           -- e o board passaria a medir a última tentativa de cada um.
-           where excluded.wpm > public.player_bests.wpm`,
-          [
-            playerId,
-            scored.config.kind,
-            scored.config.language,
-            syntaxKey,
-            scored.wpm,
-            scored.accuracy,
-            runRowId,
-            completedAt.toISOString(),
-          ],
-        );
+        // Texto curto não escreve aqui. A corrida existe, aparece no histórico
+        // e entra na patente logo abaixo — ela só não vira a linha que o board
+        // compara, porque vinte segundos de digitação e um minuto inteiro não
+        // são a mesma prova e o board guarda o melhor de todas as tentativas.
+        if (records) {
+          await run(
+            `insert into public.player_bests
+               (player_id, kind, language, syntax_key, wpm, accuracy, run_id, achieved_at)
+             values ($1, $2, $3, $4, $5, $6, $7, $8)
+             on conflict (player_id, kind, language, syntax_key) do update
+               set wpm = excluded.wpm,
+                   accuracy = excluded.accuracy,
+                   run_id = excluded.run_id,
+                   achieved_at = excluded.achieved_at
+             -- Só sobe. Recorde que desce com a corrida seguinte não é recorde,
+             -- e o board passaria a medir a última tentativa de cada um.
+             where excluded.wpm > public.player_bests.wpm`,
+            [
+              playerId,
+              scored.config.kind,
+              scored.config.language,
+              syntaxKey,
+              scored.wpm,
+              scored.accuracy,
+              runRowId,
+              completedAt.toISOString(),
+            ],
+          );
+        }
 
         // A patente inteira é recalculada a cada corrida em vez de ajustada:
         // ela é a média de uma janela deslizante, então a corrida que entra
         // também empurra uma pra fora, e somar a nova sem subtrair a antiga
         // seria uma média que só sobe.
+        //
+        // A média é ponderada pelos caracteres que a pessoa de fato acertou, e
+        // não simples: uma corrida de noventa caracteres é uma amostra quatro
+        // vezes menor que uma de trezentos e sessenta, e contá-las igual fazia
+        // a patente medir a velocidade de rajada de quem escolhia o texto
+        // curto. Pesada, cada corrida vale o tamanho da prova que ela foi.
+        //
+        // `correct` e não `length`: `length` é o orçamento que o gerador tentou
+        // acertar, e o que importa aqui é quanto de digitação aquela corrida
+        // realmente contém.
         const patente = await run<PatenteRow>(
           `with valid as (
-             select wpm, completed_at from public.runs
+             select wpm, correct, completed_at from public.runs
              where player_id = $1 and family = $2 and accuracy >= $3
            ),
            recent as (
-             select wpm from valid order by completed_at desc limit $4
+             select wpm, correct from valid order by completed_at desc limit $4
            )
            insert into public.player_patentes
              (player_id, family, wpm_avg, runs_total, last_run_at)
            select $1, $2,
-                  (select avg(wpm) from recent),
+                  (select sum(wpm * correct) / nullif(sum(correct), 0)
+                     from recent),
                   (select count(*) from valid),
                   (select max(completed_at) from valid)
            where exists (select 1 from valid)
@@ -211,7 +238,13 @@ export class RankingService {
           [playerId, family, LEADERBOARD_MIN_ACCURACY, PATENTE_SAMPLE],
         );
 
-        const bestWpm = Math.max(scored.wpm, priorWpm ?? 0);
+        // Sem recorde novo, o recorde é o que já estava lá — inclusive quando
+        // esta corrida foi curta demais pra disputar. Null é "não há nenhum",
+        // que é diferente de zero e é o que a carta de resultado precisa saber
+        // pra não desenhar uma posição de uma linha que não existe.
+        const bestWpm = records
+          ? Math.max(scored.wpm, priorWpm ?? 0)
+          : priorWpm;
         const bestAt =
           personalBest || !previousBest[0]
             ? completedAt
@@ -244,16 +277,19 @@ export class RankingService {
 
     if (!outcome || !ranks) return null;
 
-    this.boards.invalidate(scored.config);
-    const where = await this.boards.standingOf(
-      scored.config,
-      outcome.bestWpm,
-      outcome.bestAt,
-    );
+    // Só uma corrida que escreveu em `player_bests` pode ter mudado um board.
+    if (outcome.personalBest) this.boards.invalidate(scored.config);
+    const board =
+      outcome.bestWpm === null
+        ? null
+        : await this.boards.standingOf(
+            scored.config,
+            outcome.bestWpm,
+            outcome.bestAt,
+          );
 
     return {
-      position: where.position,
-      total: where.total,
+      board,
       personalBest: outcome.personalBest,
       patente: outcome.patente,
       previousTier: outcome.previousTier,
@@ -273,7 +309,9 @@ function toPatente(
     wpm,
     runs: row.runs_total,
     lastRunAt: row.last_run_at.toISOString(),
-    dormant: Date.now() - row.last_run_at.getTime() > PATENTE_DORMANT_DAYS * MS_PER_DAY,
+    dormant:
+      Date.now() - row.last_run_at.getTime() >
+      PATENTE_DORMANT_DAYS * MS_PER_DAY,
   };
 }
 

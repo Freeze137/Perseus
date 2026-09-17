@@ -6,7 +6,7 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
 import { LiveLines } from '@/components/ui/live-lines';
-import { TIERS } from '@perseus/contracts';
+import { TIERS, TIER_ORDER } from '@perseus/contracts';
 import { PatenteMark } from '@/features/identity/patente-mark';
 import { PassportInvite } from '@/features/identity/passport-invite';
 import { useIdentity } from '@/features/identity/use-identity';
@@ -66,8 +66,30 @@ export function ResultCard({
   const nextTier: PerformanceTier = tier === 'full' ? 'light' : 'minimal';
   const still = useMotionLevel() === 'none';
   const { passport } = useIdentity();
+  /**
+   * A caixa do ranking só existe se tiver o que dizer.
+   *
+   * Um texto curto não disputa recorde — ver LEADERBOARD_MIN_LENGTH —, então
+   * quem ainda não tem recorde nenhum neste modo volta sem posição. Se junto
+   * disso a patente ainda não nasceu, não sobrou notícia: a caixa some inteira
+   * em vez de ficar vazia com uma legenda dentro.
+   */
+  const panel = standing && (standing.board || standing.patente) ? standing : null;
+  /**
+   * Se a patente subiu de degrau agora.
+   *
+   * Descer também troca o degrau, e a média ponderada da patente faz isso
+   * acontecer de verdade depois de uma tarde de textos curtos. Sem esta conta,
+   * a caixa escrevia "de Mirfak" embaixo de Miram — a frase de uma promoção,
+   * com a notícia ao contrário dentro.
+   */
+  const climbed =
+    panel?.patente && panel.previousTier
+      ? TIER_ORDER.indexOf(panel.patente.tier) >
+        TIER_ORDER.indexOf(panel.previousTier)
+      : false;
   /** Com posição na tela, o "registrado" é legenda dela e mora na mesma caixa. */
-  const statusInPanel = standing !== null && syncState === 'sent';
+  const statusInPanel = panel !== null && syncState === 'sent';
   /**
    * Sem passaporte a corrida é pontuada pelo servidor e não classifica ninguém,
    * então "Resultado registrado no ranking" seria a tela mentindo — ela entrou
@@ -243,7 +265,7 @@ export function ResultCard({
           tela que fala do ranking, e solta ela lia como mais uma métrica da
           corrida. As linhas verdes são as mesmas do anúncio de patente — a
           borda acesa é desta tela e da janela de conquista, de mais nenhuma. */}
-      {standing ? (
+      {panel ? (
         <Block delay={120}>
           <div
             className="standing-panel relative overflow-hidden rounded-md px-5 py-4"
@@ -254,37 +276,42 @@ export function ResultCard({
 
             <div className="relative z-10 flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <p className="flex items-baseline gap-2">
-                  <span className="display text-4xl tabular-nums text-bone">
-                    {standing.position}º
-                  </span>
-                  <span className="label">de {standing.total}</span>
-                </p>
+                {/* A posição é a do seu recorde neste modo, e não a desta
+                    corrida — sempre foi. Some quando ainda não há recorde
+                    nenhum, que é o que acontece com quem só correu textos
+                    curtos: eles contam, e não disputam o board. */}
+                {panel.board ? (
+                  <p className="flex items-baseline gap-2">
+                    <span className="display text-4xl tabular-nums text-bone">
+                      {panel.board.position}º
+                    </span>
+                    <span className="label">de {panel.board.total}</span>
+                  </p>
+                ) : null}
 
                 {/* Citrino, que no sistema de cores é a reserva do recorde
                     pessoal e não aparece em mais lugar nenhum. */}
-                {standing.personalBest ? (
+                {panel.personalBest ? (
                   <p className="rounded-sm border border-citrine/40 px-2 py-1 text-xs uppercase tracking-wider text-citrine">
                     Seu melhor neste modo
                   </p>
                 ) : null}
 
-                {standing.patente ? (
+                {panel.patente ? (
                   <p className="flex items-center gap-3">
                     <PatenteMark
-                      tier={standing.patente.tier}
+                      tier={panel.patente.tier}
                       size={40}
                       state="earned"
                     />
                     <span className="flex flex-col leading-tight">
                       <span className="text-sm text-bone">
-                        {TIERS[standing.patente.tier].star}
+                        {TIERS[panel.patente.tier].star}
                       </span>
                       <span className="font-mono text-xs text-ash">
-                        {standing.previousTier &&
-                        standing.previousTier !== standing.patente.tier
-                          ? `de ${TIERS[standing.previousTier].star}`
-                          : `média de ${Math.round(standing.patente.wpm)} ppm`}
+                        {climbed && panel.previousTier
+                          ? `de ${TIERS[panel.previousTier].star}`
+                          : `média de ${Math.round(panel.patente.wpm)} ppm`}
                       </span>
                     </span>
                   </p>

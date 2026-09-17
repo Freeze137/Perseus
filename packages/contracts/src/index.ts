@@ -571,11 +571,25 @@ export type Identity = z.infer<typeof IdentitySchema>;
  * aparecer depois da tela. `previousTier` diferente de `tier` é o único momento
  * em que a vitrine se abre sozinha.
  */
-export const StandingSchema = z.object({
+export const BoardPlaceSchema = z.object({
   /** Posição no board do modo que acabou de ser digitado. */
   position: z.int().positive(),
   /** Quantas pessoas estão classificadas naquele board. */
   total: z.int().nonnegative(),
+});
+export type BoardPlace = z.infer<typeof BoardPlaceSchema>;
+
+export const StandingSchema = z.object({
+  /**
+   * Onde o seu recorde deste modo está — null enquanto não existe recorde.
+   *
+   * Existir separado do resto é o que deixa um texto curto ser uma corrida
+   * inteira sem ser um recorde: ele move a patente, que é média, e não move o
+   * board, que é máximo (ver LEADERBOARD_MIN_LENGTH). Quem ainda não tem
+   * recorde nenhum recebe null aqui e a patente do lado, em vez de uma posição
+   * inventada pra uma linha que não foi escrita.
+   */
+  board: BoardPlaceSchema.nullable(),
   /** True quando esta corrida melhorou o próprio recorde. */
   personalBest: z.boolean(),
   patente: PatenteSchema.nullable(),
@@ -725,11 +739,36 @@ export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
  * qualquer piso opinar. O que sobra pro piso é recusar a corrida que foi outra
  * atividade, não escolher quem digita bem.
  *
- * Dois pisos — um pro board e outro pra patente — seriam um produto que se
- * explica duas vezes. 'Ranqueou mas não contou pra patente' é uma frase que
- * ninguém deveria ter que entender.
+ * Dois pisos de precisão — um pro board e outro pra patente — seriam um produto
+ * que se explica duas vezes. 'Ranqueou mas não contou pra patente' é uma frase
+ * que ninguém deveria ter que entender.
  */
 export const LEADERBOARD_MIN_ACCURACY = 75;
+
+/**
+ * O tamanho mínimo de um texto pra corrida poder virar recorde.
+ *
+ * Outro eixo, e é por isso que ele existe apesar de o piso de precisão ser um
+ * só: aquele pergunta se aquilo foi digitação, este pergunta se aquilo é
+ * comparável. O board guarda o **máximo** de todas as suas tentativas e a
+ * patente guarda a **média** das cinco últimas, e as duas contas reagem ao
+ * tamanho do texto de maneiras opostas.
+ *
+ * Um texto curto é noventa caracteres, uns vinte segundos: sem fadiga, sem
+ * deriva de ritmo, e com variância alta o bastante pra uma frase fácil valer
+ * dez ppm. Cabem quatro deles no tempo de um longo, então quem escolhe curto
+ * tira quatro vezes mais amostras de uma distribuição mais larga — e recorde é
+ * o maior valor sorteado. O board acabava medindo quem recarregou mais.
+ *
+ * Na média isso quase se cancela sozinho, e é por isso que a patente não usa
+ * este piso: ela pondera por caractere digitado, e um texto curto pesa a fração
+ * que ele vale em vez de ser recusado.
+ *
+ * O número é o ponto médio entre o curto e o médio que a interface oferece
+ * (90 e 180): cair num lado ou no outro é o que a pessoa escolheu, e não um
+ * limite que ela descobre por acidente.
+ */
+export const LEADERBOARD_MIN_LENGTH = 135;
 
 /* ---------------------------------------------------------------------------
  * Duel — private 1v1
