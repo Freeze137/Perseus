@@ -73,6 +73,8 @@ export default function Home() {
   const [drawer, setDrawer] = useState<Drawers>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [duelOpen, setDuelOpen] = useState(false);
+  /** A janela do passaporte, chamada pelo convite no fim de uma corrida. */
+  const [passportOpen, setPassportOpen] = useState(false);
   const [now, setNow] = useState(0);
   const [focusSignal, setFocusSignal] = useState(0);
   const [swapping, setSwapping] = useState(false);
@@ -170,7 +172,7 @@ export default function Home() {
    */
   const cancelRun = useCallback(() => {
     // Painel aberto é dono do Escape — o aperto que o fecha para ali.
-    if (drawer !== null || settingsOpen || duelOpen) return;
+    if (drawer !== null || settingsOpen || duelOpen || passportOpen) return;
     // Reset e avanço juntos: o avanço é quem fornece texto novo, o reset é
     // quem garante sessão limpa mesmo se uma semente um dia repetir o texto.
     restart();
@@ -194,7 +196,16 @@ export default function Home() {
     // `bag` e `deferredConfig` entram aqui porque o avanço lê os dois. Sem
     // eles o Esc andaria a partir do cursor que existia quando este callback
     // foi criado, e cancelar duas vezes seguidas devolveria o mesmo texto.
-  }, [drawer, settingsOpen, duelOpen, running, restart, bag, deferredConfig]);
+  }, [
+    drawer,
+    settingsOpen,
+    duelOpen,
+    passportOpen,
+    running,
+    restart,
+    bag,
+    deferredConfig,
+  ]);
 
   useEffect(
     () => () => cancelTimers.current.forEach(window.clearTimeout),
@@ -245,6 +256,7 @@ export default function Home() {
             frames={frames}
             tier={tier}
             onEase={() => setPerformance(tier === "full" ? "light" : "minimal")}
+            onCreatePassport={() => setPassportOpen(true)}
             onRestart={restart}
             onNewText={newTest}
           />
@@ -329,6 +341,22 @@ export default function Home() {
         heading="hero"
       >
         <NewDuelPanel />
+      </Modal>
+
+      {/* A mesma identidade das configurações, numa janela só dela.
+          O convite no fim da corrida manda pra cá e não pra engrenagem: quem
+          acabou de ler "crie um passaporte" e cai num painel de teclado e nível
+          de desempenho foi mandado pro lugar errado. */}
+      <Modal
+        open={passportOpen}
+        onClose={() => {
+          setPassportOpen(false);
+          takeFocusBack();
+        }}
+        title="Passaporte"
+        heading="hero"
+      >
+        <IdentityPanel />
       </Modal>
 
       <Modal

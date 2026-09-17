@@ -308,6 +308,211 @@ code {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Painel de posição
+
+   Onde a corrida deixou quem digitou, dentro de uma caixa em vez de solto entre
+   os outros blocos. Solto, ele lia como mais uma métrica da corrida — e ele não
+   é: é a única linha da tela que fala do ranking, e a que responde a pergunta
+   que a pessoa de fato tem depois de terminar.
+
+   A caixa é vidro e não placa. O fundo é obsidiana a dois terços, então o campo
+   de estrelas continua passando por trás do número: é o mesmo preto da página
+   respirando dentro da moldura, e não um retângulo colado por cima dela. O
+   `backdrop-filter` some no nível mínimo, onde não há campo nenhum pra
+   desfocar.
+--------------------------------------------------------------------------- */
+.standing-panel {
+  border: 1px solid color-mix(in oklab, var(--color-jade) 55%, transparent);
+  background:
+    radial-gradient(
+      120% 150% at 0% 0%,
+      color-mix(in oklab, var(--color-jade) 16%, transparent),
+      transparent 62%
+    ),
+    color-mix(in oklab, var(--color-obsidian) 66%, transparent);
+  /* Sombra pra caixa flutuar, e um fio de menta na aresta de cima pra ela ter
+     uma quina iluminada — vidro sem topo aceso lê como furo, não como placa. */
+  box-shadow:
+    0 20px 44px -30px var(--color-void),
+    inset 0 1px 0 color-mix(in oklab, var(--color-mint) 14%, transparent);
+}
+
+.standing-panel[data-glass="true"] {
+  backdrop-filter: blur(3px);
+}
+
+/* Uma passada de luz, uma vez, quando o painel chega. Dura menos de um segundo
+   e não volta: o que ela tem a dizer é "isto aqui é novo", e uma luz que repete
+   para de dizer isso na terceira volta e vira um letreiro. */
+.standing-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    color-mix(in oklab, var(--color-mint) 13%, transparent) 50%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  animation: standing-shine 900ms var(--ease-snap) 280ms both;
+}
+
+/* Sem movimento, a passada não vira uma versão mais curta de si mesma: ela
+   simplesmente não acontece. Luz atravessando a caixa inteira é exatamente o
+   movimento grande que a chave recusa, e o painel já chega visível sem ela. */
+.standing-panel[data-still="true"]::after {
+  display: none;
+}
+
+@keyframes standing-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Botão farol
+
+   Um gradiente girando atrás de uma placa escura, e o mesmo gradiente no aro.
+   Dois cônicos e um desfoque; o halo é o mesmo desenho do aro, só que maior,
+   borrado e por baixo — que é o que faz a luz parecer vir de trás do botão em
+   vez de estar pintada nele.
+
+   A volta é um ângulo registrado que o compositor interpola sozinho, como no
+   aro dos painéis. Nada de `requestAnimationFrame`: a mesma regra do resto do
+   site vale aqui, e a tela do resultado é a que menos pode ter um laço de
+   quadro rodando debaixo dela.
+
+   Aceso e girando devagar o tempo todo, e não só no hover. Ele é a única coisa
+   desta tela que pede pra ser clicada, e um convite que só aparece quando o
+   ponteiro já chegou é um convite pra quem já tinha ido.
+--------------------------------------------------------------------------- */
+@property --beacon-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.beacon {
+  position: relative;
+  display: inline-flex;
+  border-radius: 0.375rem;
+}
+
+.beacon-halo {
+  position: absolute;
+  inset: -3px;
+  z-index: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--beacon-angle),
+    var(--color-jade),
+    var(--color-emerald),
+    var(--color-mint),
+    var(--color-emerald),
+    var(--color-jade)
+  );
+  filter: blur(9px);
+  opacity: 0.55;
+  transition: opacity 300ms var(--ease-snap);
+  animation: beacon-spin 7s linear infinite;
+  pointer-events: none;
+}
+
+/* A placa por cima do halo, com o aro do mesmo gradiente na borda: a placa em
+   `padding-box`, o cônico em `border-box`, como no aro dos painéis. */
+.beacon-face {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding: 0 1.5rem;
+  border: 1.5px solid transparent;
+  border-radius: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-mint);
+  cursor: pointer;
+  background:
+    linear-gradient(var(--color-obsidian), var(--color-obsidian)) padding-box,
+    conic-gradient(
+        from var(--beacon-angle),
+        var(--color-jade),
+        var(--color-emerald),
+        var(--color-mint),
+        var(--color-emerald),
+        var(--color-jade)
+      )
+      border-box;
+  transition: color 200ms var(--ease-snap);
+  animation: beacon-spin 7s linear infinite;
+}
+
+.beacon-face:hover,
+.beacon-face:focus-visible {
+  color: var(--color-bone);
+}
+
+/* O halo abre no hover em vez de a placa mudar de cor: a resposta ao ponteiro é
+   a luz de trás crescendo, que é a mesma coisa que o botão já estava fazendo. */
+.beacon:has(.beacon-face:hover) .beacon-halo,
+.beacon:has(.beacon-face:focus-visible) .beacon-halo {
+  opacity: 0.9;
+}
+
+.beacon:has(.beacon-face:active) .beacon-halo {
+  opacity: 1;
+}
+
+@keyframes beacon-spin {
+  to {
+    --beacon-angle: 360deg;
+  }
+}
+
+/* Parado, o gradiente inteiro continua na borda e no halo — o que sai é a
+   volta, não o verde. O halo passa a respirar, que é desvanecer e não
+   movimento, e é a alternativa que o resto do site já usa.
+
+   `!important` pelo mesmo motivo do aro dos painéis: sem ele a varredura global
+   zera a duração e congela o cônico num quadro, com um lado aceso e três
+   apagados. */
+@media (prefers-reduced-motion: reduce) {
+  .beacon-face {
+    animation: none !important;
+  }
+
+  .beacon-halo {
+    animation: beacon-breathe 5s ease-in-out infinite !important;
+    animation-duration: 5s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+.beacon[data-still="true"] .beacon-face {
+  animation: none;
+}
+
+.beacon[data-still="true"] .beacon-halo {
+  animation: beacon-breathe 5s ease-in-out infinite;
+}
+
+@keyframes beacon-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
 .focus-veil {
   position: absolute;
   inset: 0;
@@ -1240,15 +1445,19 @@ code {
 }
 
 /* ---------------------------------------------------------------------------
-   Anúncio de patente
+   Linhas vivas
 
-   A janela que interrompe quando uma patente nasce ou sobe de degrau. Ela é a
-   única do site que ganha borda além do aro: o aro desenha a caixa, e as linhas
-   por dentro dão a volta. Duas coisas diferentes acontecendo na mesma beirada é
-   exatamente o que se quer uma vez por conquista, e o que seria barulho em
-   qualquer painel que abrisse toda hora.
+   Dois traços de menta dando a volta pelo perímetro de uma caixa. Nasceram no
+   anúncio de patente e hoje marcam as duas caixas que carregam uma conquista: a
+   janela da patente e o painel de posição no fim da corrida.
+
+   Duas caixas e não qualquer uma. O que faz a linha significar alguma coisa é
+   ela não estar em volta de tudo — painel que abre toda hora com a borda viva
+   gasta o efeito em uma tarde. No anúncio elas somam ao aro de conic-gradient,
+   e ali as duas coisas na mesma beirada são o exagero que se quer uma vez por
+   conquista; no painel de posição a linha é a única borda acesa.
 --------------------------------------------------------------------------- */
-.patente-lines {
+.live-lines {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1262,24 +1471,24 @@ code {
    `non-scaling-stroke` é o par disso: sem ele, o `preserveAspectRatio="none"`
    que estica o quadrado esticaria a espessura junto, e a linha sairia grossa em
    cima e fina dos lados. */
-.patente-line {
+.live-line {
   fill: none;
   stroke: var(--color-mint);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 16 84;
   opacity: 0.9;
-  animation: patente-run 5.4s linear infinite;
+  animation: live-line-run 5.4s linear infinite;
 }
 
 /* A segunda passa do outro lado da volta. Duas e não quatro: com quatro, a
    borda vira uma corrente contínua e para de ler como algo que dá a volta. */
-.patente-line-tail {
+.live-line-tail {
   opacity: 0.45;
   animation-delay: -2.7s;
 }
 
-@keyframes patente-run {
+@keyframes live-line-run {
   to {
     stroke-dashoffset: -100;
   }
@@ -1293,19 +1502,32 @@ code {
    duração e congela o traço num quadro, deixando um lado aceso e três
    apagados. */
 @media (prefers-reduced-motion: reduce) {
-  .patente-line {
+  .live-line {
     stroke-dasharray: none;
-    animation: patente-line-breathe 5s ease-in-out infinite !important;
+    animation: live-line-breathe 5s ease-in-out infinite !important;
     animation-duration: 5s !important;
     animation-iteration-count: infinite !important;
   }
 
-  .patente-line-tail {
+  .live-line-tail {
     display: none;
   }
 }
 
-@keyframes patente-line-breathe {
+/* A mesma moldura parada quando quem pediu foi o nível de desempenho, e não o
+   sistema. As duas regras dizem a mesma coisa e não dá pra juntar numa só: uma
+   mora dentro de uma media query e a outra não. Quem decide o atributo é o
+   `useMotionLevel`, que é onde as duas entradas já são combinadas. */
+.live-lines[data-still="true"] .live-line {
+  stroke-dasharray: none;
+  animation: live-line-breathe 5s ease-in-out infinite;
+}
+
+.live-lines[data-still="true"] .live-line-tail {
+  display: none;
+}
+
+@keyframes live-line-breathe {
   0%,
   100% {
     opacity: 0.28;

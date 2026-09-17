@@ -5,14 +5,18 @@ import { keyStats, metrics, type Session } from '@perseus/engine';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Hint } from '@/components/ui/hint';
+import { LiveLines } from '@/components/ui/live-lines';
 import { TIERS } from '@perseus/contracts';
 import { PatenteMark } from '@/features/identity/patente-mark';
+import { PassportInvite } from '@/features/identity/passport-invite';
+import { useIdentity } from '@/features/identity/use-identity';
 import type { SyncResult } from '@/features/sync/use-result-sync';
 import type { FrameReport } from '@/features/settings/use-frame-rate';
 import {
   TIERS as PERFORMANCE_TIERS,
   type PerformanceTier,
 } from '@/features/settings/performance-tiers';
+import { useMotionLevel } from '@/features/settings/use-motion-level';
 
 type Props = {
   session: Session;
@@ -25,6 +29,8 @@ type Props = {
   tier: PerformanceTier;
   /** Desce a interface um nível. Oferecido, nunca tomado. */
   onEase: () => void;
+  /** Abre a janela do passaporte. Só chamado por quem ainda não tem um. */
+  onCreatePassport: () => void;
   onRestart: () => void;
   onNewText: () => void;
 };
@@ -42,6 +48,7 @@ export function ResultCard({
   frames,
   tier,
   onEase,
+  onCreatePassport,
   onRestart,
   onNewText,
 }: Props) {
@@ -57,6 +64,16 @@ export function ResultCard({
   // 30 fps firme numa tela de 30 Hz não é problema e nunca é mencionado.
   const struggled = frames !== null && frames.struggling && tier !== 'minimal';
   const nextTier: PerformanceTier = tier === 'full' ? 'light' : 'minimal';
+  const still = useMotionLevel() === 'none';
+  const { passport } = useIdentity();
+  /** Com posição na tela, o "registrado" é legenda dela e mora na mesma caixa. */
+  const statusInPanel = standing !== null && syncState === 'sent';
+  /**
+   * Sem passaporte a corrida é pontuada pelo servidor e não classifica ninguém,
+   * então "Resultado registrado no ranking" seria a tela mentindo — ela entrou
+   * em lugar nenhum. Quem diz o que de fato houve, ali, é o convite.
+   */
+  const statusSaid = statusInPanel || (!passport && syncState === 'sent');
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -220,48 +237,83 @@ export function ResultCard({
 
       {/* Onde esta corrida deixou você.
           Vem na mesma resposta do envio de propósito: uma segunda requisição
-          faria a posição chegar depois da tela que ela deveria explicar. */}
+          faria a posição chegar depois da tela que ela deveria explicar.
+
+          Numa caixa, e não solto entre os outros blocos: é a única parte desta
+          tela que fala do ranking, e solta ela lia como mais uma métrica da
+          corrida. As linhas verdes são as mesmas do anúncio de patente — a
+          borda acesa é desta tela e da janela de conquista, de mais nenhuma. */}
       {standing ? (
         <Block delay={120}>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <p className="flex items-baseline gap-2">
-              <span className="display text-3xl tabular-nums text-bone">
-                {standing.position}º
-              </span>
-              <span className="label">de {standing.total}</span>
-            </p>
+          <div
+            className="standing-panel relative overflow-hidden rounded-md px-5 py-4"
+            data-still={still}
+            data-glass={tier !== 'minimal'}
+          >
+            <LiveLines still={still} />
 
-            {standing.personalBest ? (
-              <p className="text-sm text-mint">Seu melhor neste modo.</p>
-            ) : null}
+            <div className="relative z-10 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <p className="flex items-baseline gap-2">
+                  <span className="display text-4xl tabular-nums text-bone">
+                    {standing.position}º
+                  </span>
+                  <span className="label">de {standing.total}</span>
+                </p>
 
-            {standing.patente ? (
-              <p className="flex items-center gap-3">
-                <PatenteMark
-                  tier={standing.patente.tier}
-                  size={34}
-                  state="earned"
-                />
-                <span className="flex flex-col leading-tight">
-                  <span className="text-sm text-bone">
-                    {TIERS[standing.patente.tier].star}
-                  </span>
-                  <span className="font-mono text-xs text-ash">
-                    {standing.previousTier &&
-                    standing.previousTier !== standing.patente.tier
-                      ? `de ${TIERS[standing.previousTier].star}`
-                      : `média de ${Math.round(standing.patente.wpm)} ppm`}
-                  </span>
-                </span>
-              </p>
-            ) : null}
+                {/* Citrino, que no sistema de cores é a reserva do recorde
+                    pessoal e não aparece em mais lugar nenhum. */}
+                {standing.personalBest ? (
+                  <p className="rounded-sm border border-citrine/40 px-2 py-1 text-xs uppercase tracking-wider text-citrine">
+                    Seu melhor neste modo
+                  </p>
+                ) : null}
+
+                {standing.patente ? (
+                  <p className="flex items-center gap-3">
+                    <PatenteMark
+                      tier={standing.patente.tier}
+                      size={40}
+                      state="earned"
+                    />
+                    <span className="flex flex-col leading-tight">
+                      <span className="text-sm text-bone">
+                        {TIERS[standing.patente.tier].star}
+                      </span>
+                      <span className="font-mono text-xs text-ash">
+                        {standing.previousTier &&
+                        standing.previousTier !== standing.patente.tier
+                          ? `de ${TIERS[standing.previousTier].star}`
+                          : `média de ${Math.round(standing.patente.wpm)} ppm`}
+                      </span>
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+
+              {/* A posição e o "registrado" são a mesma notícia. Separados por
+                  um bloco de distância, a tela dizia duas vezes que a corrida
+                  acabou — e a segunda vez sem a caixa que a primeira ganhou. */}
+              {statusInPanel ? (
+                <p className="text-sm text-ash">Resultado registrado no ranking.</p>
+              ) : null}
+            </div>
           </div>
         </Block>
       ) : null}
 
+      {/* O mesmo lugar da tela, a mesma pergunta, a outra resposta: sem
+          passaporte esta corrida não deixou ninguém em lugar nenhum, e é aqui
+          que isso é dito — junto com o que um passaporte mudaria. */}
+      {passport ? null : (
+        <Block delay={120}>
+          <PassportInvite tier={tier} onCreate={onCreatePassport} />
+        </Block>
+      )}
+
       {/* Said plainly. A run that failed to sync is still a real run, and
           pretending it was saved would be the one lie this screen could tell. */}
-      {syncState === 'idle' || syncState === 'off' ? null : (
+      {syncState === 'idle' || syncState === 'off' || statusSaid ? null : (
         <Block delay={140}>
           <p className="text-sm text-ash">
             {syncState === 'sending' ? 'Enviando para o ranking…' : null}

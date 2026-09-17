@@ -4,6 +4,7 @@ import { TIERS } from "@perseus/contracts";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LiveLines } from "@/components/ui/live-lines";
 import { transitionFor } from "@/features/settings/performance-tiers";
 import { useMotionLevel } from "@/features/settings/use-motion-level";
 import { setOverlayOpen } from "@/lib/overlay-bus";
@@ -122,17 +123,9 @@ export function PatentePopup() {
           }}
           className="glow-edge patente-announce pointer-events-auto relative w-[min(26rem,100%)] overflow-hidden rounded-md px-6 py-7 text-center"
         >
-          {/* As linhas vivas. Desenhadas por cima de tudo e fora do fluxo, com
-              `vector-effect` pra espessura não esticar junto com a caixa. */}
-          <svg
-            aria-hidden="true"
-            className="patente-lines"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            <rect className="patente-line" x="1" y="1" width="98" height="98" rx="2" pathLength={100} />
-            <rect className="patente-line patente-line-tail" x="1" y="1" width="98" height="98" rx="2" pathLength={100} />
-          </svg>
+          {/* As linhas vivas, as mesmas que dão a volta no painel de posição no
+              fim de cada corrida. */}
+          <LiveLines still={still} />
 
           <p className="label">{promoted ? "Você subiu" : "Nova patente"}</p>
 
