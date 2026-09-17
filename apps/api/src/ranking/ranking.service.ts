@@ -6,6 +6,7 @@ import {
   PATENTE_DORMANT_DAYS,
   PATENTE_MIN_RUNS,
   PATENTE_SAMPLE,
+  PATENTE_WEIGHT_CAP,
   tierOf,
   type Patente,
   type RankFamily,
@@ -214,18 +215,25 @@ export class RankingService {
         // `correct` e não `length`: `length` é o orçamento que o gerador tentou
         // acertar, e o que importa aqui é quanto de digitação aquela corrida
         // realmente contém.
+        //
+        // Com teto, e o teto é o que faz a janela e o peso concordarem: a
+        // janela conta cinco corridas, o peso conta caracteres, e sem limite
+        // uma corrida longa pesava tanto quanto as quatro curtas ao lado dela.
+        // Quem corria quatro vezes via a patente parada, segura por uma
+        // corrida que já tinha acontecido. Ver PATENTE_WEIGHT_CAP.
         const patente = await run<PatenteRow>(
           `with valid as (
              select wpm, correct, completed_at from public.runs
              where player_id = $1 and family = $2 and accuracy >= $3
            ),
            recent as (
-             select wpm, correct from valid order by completed_at desc limit $4
+             select wpm, least(correct, $5) as weight
+             from valid order by completed_at desc limit $4
            )
            insert into public.player_patentes
              (player_id, family, wpm_avg, runs_total, last_run_at)
            select $1, $2,
-                  (select sum(wpm * correct) / nullif(sum(correct), 0)
+                  (select sum(wpm * weight) / nullif(sum(weight), 0)
                      from recent),
                   (select count(*) from valid),
                   (select max(completed_at) from valid)
@@ -235,7 +243,13 @@ export class RankingService {
                  runs_total = excluded.runs_total,
                  last_run_at = excluded.last_run_at
            returning wpm_avg, runs_total, last_run_at`,
-          [playerId, family, LEADERBOARD_MIN_ACCURACY, PATENTE_SAMPLE],
+          [
+            playerId,
+            family,
+            LEADERBOARD_MIN_ACCURACY,
+            PATENTE_SAMPLE,
+            PATENTE_WEIGHT_CAP,
+          ],
         );
 
         // Sem recorde novo, o recorde é o que já estava lá — inclusive quando

@@ -61,8 +61,9 @@ export function PassportInvite({ tier, onCreate }: Props) {
         <p className="max-w-prose text-sm leading-relaxed text-ash">
           As cinco patentes são estrelas de Perseu, da mais fria à mais quente.
           A sua nasce na quinta corrida válida de cada família e é a média das
-          cinco mais recentes — ela mede o que você digita, e não o seu melhor
-          dia. Com passaporte, cada corrida passa a ter uma posição também.
+          cinco mais recentes, com o texto curto pesando menos — ela mede o que
+          você digita, e não o seu melhor dia. Com passaporte, cada corrida
+          passa a ter uma posição também.
         </p>
 
         <div className="flex flex-wrap items-center gap-4">

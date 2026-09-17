@@ -448,6 +448,24 @@ export const PATENTE_SAMPLE = 5;
 export const PATENTE_MIN_RUNS = 5;
 
 /**
+ * O teto do peso de uma corrida na média da patente, em caracteres acertados.
+ *
+ * A média é ponderada pelo que a pessoa digitou, porque uma corrida de noventa
+ * caracteres é uma amostra menor que uma de trezentos e sessenta e contá-las
+ * igual fazia a patente medir velocidade de rajada. Sem teto, porém, a janela
+ * conta corridas e o peso conta caracteres, e as duas contas discordam: numa
+ * janela de cinco, uma corrida longa sozinha pesa tanto quanto quatro curtas
+ * juntas — quem acabou de correr quatro vezes vê um número que não se mexe, e
+ * o que o segura é uma corrida de ontem.
+ *
+ * O teto é o tamanho médio que a interface oferece. Longo e médio pesam igual,
+ * curto pesa metade, e a distância entre a maior e a menor amostra da janela
+ * nunca passa de duas vezes — o suficiente pra rajada não valer o mesmo que
+ * fôlego, e pouco o bastante pra corrida nova sempre mover a agulha.
+ */
+export const PATENTE_WEIGHT_CAP = 180;
+
+/**
  * Quantos dias sem corrida deixam a patente dormente.
  *
  * Dormente não é rebaixado, e a diferença é o produto inteiro: nada é perdido,

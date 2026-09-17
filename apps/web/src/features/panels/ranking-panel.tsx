@@ -236,8 +236,11 @@ export function RankingPanel({ kind, language, syntax }: Props) {
 
           <p className="text-xs leading-relaxed text-ash">
             A patente sai da média das suas cinco corridas válidas mais
-            recentes, e aparece a partir da quinta. Sete dias sem corrida a
-            deixam dormente — nada é perdido, e uma corrida a reacende.
+            recentes, e aparece a partir da quinta. Texto curto entra pesando
+            menos que texto médio ou longo: vinte segundos são uma amostra
+            menor que um minuto, e a patente é o que você sustenta. Sete dias
+            sem corrida a deixam dormente — nada é perdido, e uma corrida a
+            reacende.
           </p>
         </div>
       </Modal>

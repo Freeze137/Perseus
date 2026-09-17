@@ -54,7 +54,7 @@ export function PatenteProgress({ family }: Props) {
         <p className="label">Patente de {label}</p>
         <p className="text-sm leading-relaxed text-ash">
           Ela aparece na sua quinta corrida válida de {label}, e é a média das
-          cinco mais recentes.
+          cinco mais recentes — com o texto curto pesando menos que o longo.
         </p>
       </div>
     );
