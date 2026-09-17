@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { DigitRain } from "@/components/ui/digit-rain";
 import { setOverlayOpen } from "@/lib/overlay-bus";
 import { SPRING } from "@/lib/springs";
 import { transitionFor } from "@/features/settings/performance-tiers";
@@ -12,6 +13,14 @@ type Props = {
   onClose: () => void;
   title: string;
   side: "left" | "right";
+  /**
+   * Chuva de dígitos no fundo do painel.
+   *
+   * Pedida por gaveta e não ligada em todas: o ranking é a que fica quase toda
+   * vazia enquanto o board for curto, e é atrás dele que a atmosfera tem o que
+   * fazer. Numa gaveta cheia ela seria textura atrás de texto e mais nada.
+   */
+  rain?: boolean;
   children: ReactNode;
 };
 
@@ -30,7 +39,14 @@ type Props = {
  * Antes dele, todo controle dentro de uma gaveta fechada ainda era tabulável a
  * partir da tela de digitação.
  */
-export function Drawer({ open, onClose, title, side, children }: Props) {
+export function Drawer({
+  open,
+  onClose,
+  title,
+  side,
+  rain = false,
+  children,
+}: Props) {
   const level = useMotionLevel();
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -79,7 +95,12 @@ export function Drawer({ open, onClose, title, side, children }: Props) {
           side === "left" ? "left-0" : "right-0"
         }`}
       >
-        <header className="flex items-center justify-between">
+        {rain ? <DigitRain /> : null}
+
+        {/* Acima da chuva, e num contexto de empilhamento próprio: o fundo é
+            atmosfera e o conteúdo é o painel, e a ordem entre os dois não pode
+            depender de quem foi declarado antes. */}
+        <header className="relative z-10 flex items-center justify-between">
           <h2 className="label">{title}</h2>
           <button
             ref={closeRef}
@@ -91,7 +112,9 @@ export function Drawer({ open, onClose, title, side, children }: Props) {
             ✕
           </button>
         </header>
-        {children}
+        <div className="relative z-10 flex min-h-0 flex-col gap-5">
+          {children}
+        </div>
       </motion.aside>
     </>
   );

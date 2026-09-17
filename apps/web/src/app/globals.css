@@ -513,6 +513,96 @@ code {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Chuva de dígitos
+
+   O fundo da gaveta de ranking. Doze colunas de mono caindo em velocidades
+   diferentes, em 14% de esmeralda — perto o bastante do preto pra o nome e o
+   ppm de cada linha continuarem sendo a coisa mais clara do painel.
+
+   Transformada e nada mais. A tentação era um canvas, e um canvas aqui seria o
+   segundo laço de quadro da página: o campo de estrelas já tem o dele, e é
+   justamente ele que descansa quando uma gaveta abre. Coluna de texto que
+   translada em Y o compositor resolve sozinho, sem repintar o painel.
+
+   A máscara é o que faz virar chuva em vez de cortina: os dígitos aparecem
+   descendo de um topo que não existe e somem antes de encostar no pé do painel,
+   então nenhuma coluna tem começo nem fim visível.
+--------------------------------------------------------------------------- */
+.digit-rain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 72%,
+    transparent 100%
+  );
+}
+
+.digit-rain-column {
+  /* A tira é duas cópias da mesma sequência, então ela tem o dobro da altura
+     que precisa aparecer e a volta anda exatamente metade. */
+  align-self: start;
+  white-space: pre;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.75;
+  color: var(--color-emerald);
+  opacity: 0.14;
+  will-change: transform;
+  animation: digit-fall var(--fall-duration, 12s) linear var(--fall-delay, 0s)
+    infinite;
+}
+
+@keyframes digit-fall {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Parada, a chuva vira um véu de dígitos que respira. O que a chave recusa é a
+   coisa atravessando o campo de visão — e doze colunas descendo o painel inteiro
+   são o exemplo mais literal disso que este site tem. A opacidade sobe e desce
+   no lugar, que é desvanecer e não movimento.
+
+   `!important` pelo mesmo motivo de sempre: sem ele a varredura global zera a
+   duração e congela a queda num quadro qualquer. */
+@media (prefers-reduced-motion: reduce) {
+  .digit-rain-column {
+    animation: digit-veil 6s ease-in-out var(--fall-delay, 0s) infinite
+      !important;
+    animation-duration: 6s !important;
+    animation-iteration-count: infinite !important;
+    transform: translateY(-50%);
+  }
+}
+
+.digit-rain[data-still="true"] .digit-rain-column {
+  animation: digit-veil 6s ease-in-out var(--fall-delay, 0s) infinite;
+  transform: translateY(-50%);
+}
+
+@keyframes digit-veil {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.18;
+  }
+}
+
 .focus-veil {
   position: absolute;
   inset: 0;

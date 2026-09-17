@@ -318,6 +318,7 @@ export default function Home() {
         onClose={closeDrawer}
         title="Ranking"
         side="left"
+        rain
       >
         <RankingPanel kind={kind} language={language} syntax={syntax} />
       </Drawer>
